@@ -1,0 +1,1091 @@
+# heron-notes.example.com (site_p07_seo_reg_en)
+
+## GET https://heron-notes.example.com/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heron Notes</title>
+<link rel="canonical" href="https://heron-notes.example.com/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Heron Notes">
+<meta property="og:url" content="https://heron-notes.example.com/">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://heron-notes.example.com/#webpage",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.com/#website"
+      },
+      "inLanguage": "en",
+      "about": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/heron-watching/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watching herons at dawn · Heron Notes</title>
+<meta name="description" content="A field guide to watching grey herons at dawn.">
+<link rel="canonical" href="https://heron-notes.example.com/heron-watching/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" hreflang="en" href="https://heron-notes.example.com/heron-watching/">
+<link rel="alternate" hreflang="x-default" href="https://heron-notes.example.com/heron-watching/">
+<link rel="alternate" hreflang="zh-CN" href="https://heron-notes.example.cn/heron-watching/">
+<link rel="alternate" type="text/markdown" href="https://heron-notes.example.com/heron-watching.md">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Watching herons at dawn · Heron Notes">
+<meta property="og:description" content="A field guide to watching grey herons at dawn.">
+<meta property="og:url" content="https://heron-notes.example.com/heron-watching/">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https://heron-notes.example.com/media/heron.jpg">
+<meta property="article:published_time" content="2026-10-01T06:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-01T06:00:00.000Z">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://heron-notes.example.com/heron-watching/#webpage",
+      "url": "https://heron-notes.example.com/heron-watching/",
+      "name": "Watching herons at dawn",
+      "description": "A field guide to watching grey herons at dawn.",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.com/#website"
+      },
+      "inLanguage": "en",
+      "breadcrumb": {
+        "@id": "https://heron-notes.example.com/heron-watching/#breadcrumb"
+      },
+      "primaryImageOfPage": {
+        "@id": "https://heron-notes.example.com/heron-watching/#primaryimage"
+      },
+      "datePublished": "2026-10-01T06:00:00.000Z",
+      "dateModified": "2026-10-01T06:00:00.000Z"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://heron-notes.example.com/heron-watching/#primaryimage",
+      "url": "https://heron-notes.example.com/media/heron.jpg",
+      "contentUrl": "https://heron-notes.example.com/media/heron.jpg"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://heron-notes.example.com/heron-watching/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Heron Notes",
+          "item": "https://heron-notes.example.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Field guides",
+          "item": "https://heron-notes.example.com/category/field-guides/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Watching herons at dawn",
+          "item": "https://heron-notes.example.com/heron-watching/"
+        }
+      ]
+    },
+    {
+      "@type": "BlogPosting",
+      "@id": "https://heron-notes.example.com/heron-watching/#article",
+      "headline": "Watching herons at dawn",
+      "description": "A field guide to watching grey herons at dawn.",
+      "image": {
+        "@id": "https://heron-notes.example.com/heron-watching/#primaryimage"
+      },
+      "datePublished": "2026-10-01T06:00:00.000Z",
+      "dateModified": "2026-10-01T06:00:00.000Z",
+      "author": {
+        "@type": "Person",
+        "name": "Ada Example",
+        "url": "https://heron-notes.example.com/author/ada/"
+      },
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      },
+      "mainEntityOfPage": {
+        "@id": "https://heron-notes.example.com/heron-watching/#webpage"
+      },
+      "inLanguage": "en"
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://heron-notes.example.com/heron-watching/#faq",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.com/heron-watching/#webpage"
+      },
+      "inLanguage": "en",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "When do herons feed?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mostly at dawn and dusk."
+          }
+        }
+      ]
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/wetland-checklist/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wetland birding checklist · Heron Notes</title>
+<meta name="description" content="What to pack for a morning in the marsh.">
+<link rel="canonical" href="https://heron-notes.example.com/wetland-checklist/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" type="text/markdown" href="https://heron-notes.example.com/wetland-checklist.md">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Wetland birding checklist · Heron Notes">
+<meta property="og:description" content="What to pack for a morning in the marsh.">
+<meta property="og:url" content="https://heron-notes.example.com/wetland-checklist/">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta property="article:published_time" content="2026-09-15T09:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-15T09:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://heron-notes.example.com/wetland-checklist/#webpage",
+      "url": "https://heron-notes.example.com/wetland-checklist/",
+      "name": "Wetland birding checklist",
+      "description": "What to pack for a morning in the marsh.",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.com/#website"
+      },
+      "inLanguage": "en",
+      "breadcrumb": {
+        "@id": "https://heron-notes.example.com/wetland-checklist/#breadcrumb"
+      },
+      "datePublished": "2026-09-15T09:00:00.000Z",
+      "dateModified": "2026-09-15T09:00:00.000Z"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://heron-notes.example.com/wetland-checklist/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Heron Notes",
+          "item": "https://heron-notes.example.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Wetland birding checklist",
+          "item": "https://heron-notes.example.com/wetland-checklist/"
+        }
+      ]
+    },
+    {
+      "@type": "BlogPosting",
+      "@id": "https://heron-notes.example.com/wetland-checklist/#article",
+      "headline": "Wetland birding checklist",
+      "description": "What to pack for a morning in the marsh.",
+      "datePublished": "2026-09-15T09:00:00.000Z",
+      "dateModified": "2026-09-15T09:00:00.000Z",
+      "author": {
+        "@type": "Person",
+        "name": "Ada Example",
+        "url": "https://heron-notes.example.com/author/ada/"
+      },
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      },
+      "mainEntityOfPage": {
+        "@id": "https://heron-notes.example.com/wetland-checklist/#webpage"
+      },
+      "inLanguage": "en"
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/about/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About Heron Notes · Heron Notes</title>
+<meta name="description" content="Who writes these notes.">
+<link rel="canonical" href="https://heron-notes.example.com/about/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" type="text/markdown" href="https://heron-notes.example.com/about.md">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="About Heron Notes · Heron Notes">
+<meta property="og:description" content="Who writes these notes.">
+<meta property="og:url" content="https://heron-notes.example.com/about/">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta property="article:published_time" content="2026-09-01T00:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-01T00:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://heron-notes.example.com/about/#webpage",
+      "url": "https://heron-notes.example.com/about/",
+      "name": "About Heron Notes",
+      "description": "Who writes these notes.",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.com/#website"
+      },
+      "inLanguage": "en",
+      "breadcrumb": {
+        "@id": "https://heron-notes.example.com/about/#breadcrumb"
+      },
+      "datePublished": "2026-09-01T00:00:00.000Z",
+      "dateModified": "2026-09-01T00:00:00.000Z"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://heron-notes.example.com/about/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Heron Notes",
+          "item": "https://heron-notes.example.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "About Heron Notes",
+          "item": "https://heron-notes.example.com/about/"
+        }
+      ]
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/category/field-guides/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field guides · Heron Notes</title>
+<meta name="description" content="Guides for the field.">
+<link rel="canonical" href="https://heron-notes.example.com/category/field-guides/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Field guides · Heron Notes">
+<meta property="og:description" content="Guides for the field.">
+<meta property="og:url" content="https://heron-notes.example.com/category/field-guides/">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    },
+    {
+      "@type": "CollectionPage",
+      "@id": "https://heron-notes.example.com/category/field-guides/#webpage",
+      "url": "https://heron-notes.example.com/category/field-guides/",
+      "name": "Field guides",
+      "description": "Guides for the field.",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.com/#website"
+      },
+      "inLanguage": "en",
+      "breadcrumb": {
+        "@id": "https://heron-notes.example.com/category/field-guides/#breadcrumb"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://heron-notes.example.com/category/field-guides/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Heron Notes",
+          "item": "https://heron-notes.example.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Field guides",
+          "item": "https://heron-notes.example.com/category/field-guides/"
+        }
+      ]
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/tag/wetlands/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wetlands · Heron Notes</title>
+<link rel="canonical" href="https://heron-notes.example.com/tag/wetlands/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Wetlands · Heron Notes">
+<meta property="og:url" content="https://heron-notes.example.com/tag/wetlands/">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    },
+    {
+      "@type": "CollectionPage",
+      "@id": "https://heron-notes.example.com/tag/wetlands/#webpage",
+      "url": "https://heron-notes.example.com/tag/wetlands/",
+      "name": "Wetlands",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.com/#website"
+      },
+      "inLanguage": "en",
+      "breadcrumb": {
+        "@id": "https://heron-notes.example.com/tag/wetlands/#breadcrumb"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://heron-notes.example.com/tag/wetlands/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Heron Notes",
+          "item": "https://heron-notes.example.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Wetlands",
+          "item": "https://heron-notes.example.com/tag/wetlands/"
+        }
+      ]
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/author/ada/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ada Example · Heron Notes</title>
+<link rel="canonical" href="https://heron-notes.example.com/author/ada/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ada Example · Heron Notes">
+<meta property="og:url" content="https://heron-notes.example.com/author/ada/">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    },
+    {
+      "@type": "CollectionPage",
+      "@id": "https://heron-notes.example.com/author/ada/#webpage",
+      "url": "https://heron-notes.example.com/author/ada/",
+      "name": "Ada Example",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.com/#website"
+      },
+      "inLanguage": "en",
+      "breadcrumb": {
+        "@id": "https://heron-notes.example.com/author/ada/#breadcrumb"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://heron-notes.example.com/author/ada/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Heron Notes",
+          "item": "https://heron-notes.example.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Ada Example",
+          "item": "https://heron-notes.example.com/author/ada/"
+        }
+      ]
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/members-notes/
+status: 200
+content-type: text/html; charset=utf-8
+x-robots-tag: noindex
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Members notes · Heron Notes</title>
+<meta name="robots" content="noindex">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Members notes · Heron Notes">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta property="article:published_time" content="2026-09-02T00:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-02T00:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/search/?q=heron
+status: 200
+content-type: text/html; charset=utf-8
+x-robots-tag: noindex
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>heron · Heron Notes</title>
+<meta name="robots" content="noindex">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="heron · Heron Notes">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/robots.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+User-agent: *
+Allow: /
+
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: Meta-ExternalAgent
+User-agent: Bytespider
+User-agent: Amazonbot
+Disallow: /
+
+Sitemap: https://heron-notes.example.com/sitemap.xml
+Sitemap: https://heron-notes.example.com/news-sitemap.xml
+# Feed: https://heron-notes.example.com/feed.xml
+# Feed: https://heron-notes.example.com/atom.xml
+
+## GET https://heron-notes.example.com/sitemap.xml
+status: 200
+content-type: application/xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<sitemap><loc>https://heron-notes.example.com/sitemap-1.xml</loc><lastmod>2026-10-01T06:00:00.000Z</lastmod></sitemap>
+<sitemap><loc>https://heron-notes.example.com/news-sitemap.xml</loc></sitemap>
+</sitemapindex>
+
+## GET https://heron-notes.example.com/sitemap-1.xml
+status: 200
+content-type: application/xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<url><loc>https://heron-notes.example.com/</loc></url>
+<url><loc>https://heron-notes.example.com/about/</loc><lastmod>2026-09-01T00:00:00.000Z</lastmod></url>
+<url><loc>https://heron-notes.example.com/author/ada/</loc><lastmod>2026-09-01T00:00:00.000Z</lastmod></url>
+<url><loc>https://heron-notes.example.com/category/field-guides/</loc><lastmod>2026-09-01T00:00:00.000Z</lastmod></url>
+<url><loc>https://heron-notes.example.com/heron-watching/</loc><lastmod>2026-10-01T06:00:00.000Z</lastmod><xhtml:link rel="alternate" hreflang="en" href="https://heron-notes.example.com/heron-watching/"/><xhtml:link rel="alternate" hreflang="x-default" href="https://heron-notes.example.com/heron-watching/"/><xhtml:link rel="alternate" hreflang="zh-CN" href="https://heron-notes.example.cn/heron-watching/"/></url>
+<url><loc>https://heron-notes.example.com/tag/wetlands/</loc><lastmod>2026-09-01T00:00:00.000Z</lastmod></url>
+<url><loc>https://heron-notes.example.com/wetland-checklist/</loc><lastmod>2026-09-15T09:00:00.000Z</lastmod></url>
+</urlset>
+
+## GET https://heron-notes.example.com/sitemap.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+https://heron-notes.example.com/
+https://heron-notes.example.com/about/
+https://heron-notes.example.com/author/ada/
+https://heron-notes.example.com/category/field-guides/
+https://heron-notes.example.com/heron-watching/
+https://heron-notes.example.com/tag/wetlands/
+https://heron-notes.example.com/wetland-checklist/
+
+## GET https://heron-notes.example.com/news-sitemap.xml
+status: 200
+content-type: application/xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+<url><loc>https://heron-notes.example.com/heron-watching/</loc><news:news><news:publication><news:name>Heron Notes</news:name><news:language>en</news:language></news:publication><news:publication_date>2026-10-01T06:00:00.000Z</news:publication_date><news:title>Watching herons at dawn</news:title></news:news></url>
+</urlset>
+
+## GET https://heron-notes.example.com/feed.xml
+status: 200
+content-type: application/rss+xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel><title>Heron Notes</title><link>https://heron-notes.example.com/</link><description>Heron Notes</description><language>en</language><lastBuildDate>Thu, 01 Oct 2026 06:00:00 GMT</lastBuildDate><atom:link href="https://heron-notes.example.com/feed.xml" rel="self" type="application/rss+xml"/>
+<item><title>Watching herons at dawn</title><link>https://heron-notes.example.com/heron-watching/</link><guid isPermaLink="true">https://heron-notes.example.com/heron-watching/</guid><pubDate>Thu, 01 Oct 2026 06:00:00 GMT</pubDate><description>A field guide to watching grey herons at dawn.</description><content:encoded>&lt;h2 data-block-id=&quot;<block:1>&quot;&gt;Before sunrise&lt;/h2&gt;&lt;p data-block-id=&quot;<block:2>&quot;&gt;Herons feed in the shallows. See also the &lt;a href=&quot;https://heron-notes.example.com/wetland-checklist/&quot;&gt;wetland checklist&lt;/a&gt;.&lt;/p&gt;&lt;p data-block-id=&quot;<block:3>&quot;&gt;&lt;img src=&quot;https://heron-notes.example.com/media/heron-dawn.jpg&quot; alt=&quot;A grey heron at dawn&quot; /&gt;&lt;/p&gt;</content:encoded></item>
+<item><title>Wetland birding checklist</title><link>https://heron-notes.example.com/wetland-checklist/</link><guid isPermaLink="true">https://heron-notes.example.com/wetland-checklist/</guid><pubDate>Tue, 15 Sep 2026 09:00:00 GMT</pubDate><description>What to pack for a morning in the marsh.</description><content:encoded>&lt;p data-block-id=&quot;<block:4>&quot;&gt;Binoculars, boots and patience.&lt;/p&gt;</content:encoded></item>
+</channel>
+</rss>
+
+## GET https://heron-notes.example.com/atom.xml
+status: 200
+content-type: application/atom+xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+<id>https://heron-notes.example.com/atom.xml</id><title>Heron Notes</title><subtitle>Heron Notes</subtitle><updated>2026-10-01T06:00:00.000Z</updated><author><name>Heron Notes Collective</name></author><link rel="self" type="application/atom+xml" href="https://heron-notes.example.com/atom.xml"/><link rel="alternate" type="text/html" href="https://heron-notes.example.com/"/>
+<entry><id>https://heron-notes.example.com/heron-watching/</id><title>Watching herons at dawn</title><link rel="alternate" type="text/html" href="https://heron-notes.example.com/heron-watching/"/><published>2026-10-01T06:00:00.000Z</published><updated>2026-10-01T06:00:00.000Z</updated><summary>A field guide to watching grey herons at dawn.</summary><content type="html">&lt;h2 data-block-id=&quot;<block:1>&quot;&gt;Before sunrise&lt;/h2&gt;&lt;p data-block-id=&quot;<block:2>&quot;&gt;Herons feed in the shallows. See also the &lt;a href=&quot;https://heron-notes.example.com/wetland-checklist/&quot;&gt;wetland checklist&lt;/a&gt;.&lt;/p&gt;&lt;p data-block-id=&quot;<block:3>&quot;&gt;&lt;img src=&quot;https://heron-notes.example.com/media/heron-dawn.jpg&quot; alt=&quot;A grey heron at dawn&quot; /&gt;&lt;/p&gt;</content></entry>
+<entry><id>https://heron-notes.example.com/wetland-checklist/</id><title>Wetland birding checklist</title><link rel="alternate" type="text/html" href="https://heron-notes.example.com/wetland-checklist/"/><published>2026-09-15T09:00:00.000Z</published><updated>2026-09-15T09:00:00.000Z</updated><summary>What to pack for a morning in the marsh.</summary><content type="html">&lt;p data-block-id=&quot;<block:4>&quot;&gt;Binoculars, boots and patience.&lt;/p&gt;</content></entry>
+</feed>
+
+## GET https://heron-notes.example.com/feed/pages.xml
+status: 200
+content-type: application/rss+xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel><title>Heron Notes · pages</title><link>https://heron-notes.example.com/</link><description>Heron Notes</description><language>en</language><lastBuildDate>Tue, 01 Sep 2026 00:00:00 GMT</lastBuildDate><atom:link href="https://heron-notes.example.com/feed/pages.xml" rel="self" type="application/rss+xml"/>
+<item><title>About Heron Notes</title><link>https://heron-notes.example.com/about/</link><guid isPermaLink="true">https://heron-notes.example.com/about/</guid><pubDate>Tue, 01 Sep 2026 00:00:00 GMT</pubDate><description>Who writes these notes.</description><content:encoded>&lt;p data-block-id=&quot;<block:5>&quot;&gt;We are birders.&lt;/p&gt;</content:encoded></item>
+</channel>
+</rss>
+
+## GET https://heron-notes.example.com/llms.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+# Heron Notes
+
+> Heron Notes, by Heron Notes Collective.
+
+## Pages
+- [About Heron Notes](https://heron-notes.example.com/about/): Who writes these notes.
+
+## Recent
+- [Watching herons at dawn](https://heron-notes.example.com/heron-watching/): A field guide to watching grey herons at dawn.
+- [Wetland birding checklist](https://heron-notes.example.com/wetland-checklist/): What to pack for a morning in the marsh.
+
+## Optional
+- [RSS feed](https://heron-notes.example.com/feed.xml)
+- [Atom feed](https://heron-notes.example.com/atom.xml)
+- [Sitemap](https://heron-notes.example.com/sitemap.xml)
+- [News sitemap](https://heron-notes.example.com/news-sitemap.xml)
+- [Full text](https://heron-notes.example.com/llms-full.txt)
+
+## GET https://heron-notes.example.com/llms-full.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+# Heron Notes
+
+> Heron Notes, by Heron Notes Collective.
+
+(Full text of https://heron-notes.example.com/ — pages, then the newest articles.)
+
+---
+
+# About Heron Notes
+
+> Who writes these notes.
+
+- URL: <https://heron-notes.example.com/about/>
+- Published: 2026-09-01T00:00:00.000Z
+- Modified: 2026-09-01T00:00:00.000Z
+
+We are birders.
+
+---
+
+# Watching herons at dawn
+
+> A field guide to watching grey herons at dawn.
+
+- URL: <https://heron-notes.example.com/heron-watching/>
+- Published: 2026-10-01T06:00:00.000Z
+- Modified: 2026-10-01T06:00:00.000Z
+
+## Before sunrise
+
+Herons feed in the shallows. See also the [wetland checklist](https://heron-notes.example.com/wetland-checklist/).
+
+![A grey heron at dawn](https://heron-notes.example.com/media/heron-dawn.jpg)
+
+---
+
+# Wetland birding checklist
+
+> What to pack for a morning in the marsh.
+
+- URL: <https://heron-notes.example.com/wetland-checklist/>
+- Published: 2026-09-15T09:00:00.000Z
+- Modified: 2026-09-15T09:00:00.000Z
+
+Binoculars, boots and patience.
+
+## GET https://heron-notes.example.com/heron-watching.md
+status: 200
+content-type: text/markdown; charset=utf-8
+x-robots-tag: noindex
+link: <https://heron-notes.example.com/heron-watching/>; rel="canonical"
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+# Watching herons at dawn
+
+> A field guide to watching grey herons at dawn.
+
+- URL: <https://heron-notes.example.com/heron-watching/>
+- Published: 2026-10-01T06:00:00.000Z
+- Modified: 2026-10-01T06:00:00.000Z
+
+## Before sunrise
+
+Herons feed in the shallows. See also the [wetland checklist](https://heron-notes.example.com/wetland-checklist/).
+
+![A grey heron at dawn](https://heron-notes.example.com/media/heron-dawn.jpg)
+
+## GET https://heron-notes.example.com/members-notes.md
+status: 404
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 · Heron Notes</title>
+<meta name="robots" content="noindex">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="404 · Heron Notes">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://heron-notes.example.com/unpublished-draft/
+status: 404
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 · Heron Notes</title>
+<meta name="robots" content="noindex">
+<link rel="alternate" type="application/rss+xml" title="Heron Notes" href="https://heron-notes.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Heron Notes" href="https://heron-notes.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="404 · Heron Notes">
+<meta property="og:site_name" content="Heron Notes">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://heron-notes.example.com/#identity",
+      "name": "Heron Notes Collective",
+      "url": "https://heron-notes.example.com/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://heron-notes.example.com/media/logo.png"
+      },
+      "email": "editors@example.com",
+      "sameAs": [
+        "https://social.example.com/heron-notes",
+        "https://video.example.com/heron-notes"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.com/#website",
+      "url": "https://heron-notes.example.com/",
+      "name": "Heron Notes",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://heron-notes.example.com/#identity"
+      }
+    }
+  ]
+}

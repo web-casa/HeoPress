@@ -1,0 +1,18 @@
+{
+  "backlog": {
+    "title": "翻译待办",
+    "description": "已上线内容的译文缺失、过期或等待审核的条目。",
+    "collection": "集合",
+    "locale": "语言",
+    "columns": {
+      "missing": "缺失",
+      "stale": "过期",
+      "in_review": "待审"
+    },
+    "empty": "暂无。",
+    "create": "创建译文",
+    "noGroup": "该条目还没有翻译组：请先在条目里创建。",
+    "truncated": "还有更多条目；计数只覆盖当前显示的条目。",
+    "failed": "待办列表加载失败。"
+  }
+}
