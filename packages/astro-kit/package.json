@@ -1,0 +1,31 @@
+{
+  "name": "@heopress/astro-kit",
+  "version": "1.0.0-rc.4",
+  "private": true,
+  "description": "HeoPress Astro theme kit: the page data contract's types and the system components (head, item body, sponsor disclosure, card) an Astro theme places but never writes.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./SeoHead.astro": "./src/SeoHead.astro",
+    "./ItemBody.astro": "./src/ItemBody.astro",
+    "./SponsorDisclosure.astro": "./src/SponsorDisclosure.astro",
+    "./Card.astro": "./src/Card.astro"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo dist"
+  },
+  "dependencies": {
+    "@heopress/contracts": "workspace:*"
+  },
+  "peerDependencies": {
+    "astro": "7.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^5.6.2"
+  }
+}
