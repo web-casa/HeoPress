@@ -1,0 +1,117 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { CORE_SKILLS as SHARED_SKILLS } from '@heopress/ai-skills';
+import { describe, expect, it } from 'vitest';
+import { AISecureHarness, CORE_SKILLS } from '../ai-harness';
+
+const harness = new AISecureHarness({ db: {} as never, siteId: 'test-site' });
+
+describe('governed skill registry', () => {
+  it('keeps the harness and @heopress/ai-skills registries in sync (same key set)', () => {
+    const harnessKeys = Object.keys(CORE_SKILLS).sort();
+    const sharedKeys = Object.keys(SHARED_SKILLS).sort();
+    expect(harnessKeys).toEqual(sharedKeys);
+  });
+
+  it('registers the new governed skills', () => {
+    for (const name of [
+      'listRelations',
+      'createRelation',
+      'deleteRelation',
+      'listRoles',
+      'createRole',
+      'deleteRole',
+      'listPolicies',
+      'createPolicy',
+      'deletePolicy',
+      'listIntents',
+      'createIntent',
+      'deleteIntent',
+      'listFlows',
+      'createFlow',
+      'deleteFlow',
+      'runFlow',
+      'listVersions',
+      'compareVersion',
+      'createVersion',
+      'updateVersion',
+      'deleteVersion',
+      'promoteVersion',
+    ]) {
+      expect(CORE_SKILLS[name], `missing harness skill: ${name}`).toBeDefined();
+    }
+  });
+});
+
+describe('governed risk classification', () => {
+  const DANGEROUS = [
+    'createRole',
+    'deleteRole',
+    'createPolicy',
+    'deletePolicy',
+    'createRelation',
+    'deleteRelation',
+    'createIntent',
+    'deleteIntent',
+    'createFlow',
+    'deleteFlow',
+    'runFlow',
+    'createApiKey',
+    'rotateApiKey',
+    'revokeApiKey',
+    'inviteUser',
+    'updateUser',
+    'removeUser',
+    'createTeam',
+    'deleteTeam',
+    'addTeamMember',
+    'removeTeamMember',
+    'upsertSetting',
+    'deleteSetting',
+    'createTranslation',
+    'updateTranslation',
+    'deleteTranslation',
+    'createWebhook',
+    'updateWebhook',
+    'deleteWebhook',
+    'installExtension',
+    'updateExtension',
+    'uninstallExtension',
+    'createVersion',
+    'updateVersion',
+    'deleteVersion',
+    'promoteVersion',
+  ];
+  const SAFE = [
+    'listRelations',
+    'listVersions',
+    'compareVersion',
+    'listRoles',
+    'listPolicies',
+    'listIntents',
+    'listFlows',
+    'listApiKeys',
+    'listUsers',
+    'listTeams',
+    'listSettings',
+    'listTranslations',
+    'listWebhooks',
+    'listExtensions',
+  ];
+
+  it('classifies every governed write/delete skill as dangerous (HITL-gated)', () => {
+    for (const name of DANGEROUS) {
+      expect(harness.evaluateRisk(CORE_SKILLS[name]!, name), `${name} should be dangerous`).toBe(true);
+    }
+  });
+
+  it('keeps read-only governed skills safe', () => {
+    for (const name of SAFE) {
+      expect(harness.evaluateRisk(CORE_SKILLS[name]!, name), `${name} should be safe`).toBe(false);
+    }
+  });
+
+  it('does not change item CRUD risk classification', () => {
+    expect(harness.evaluateRisk(CORE_SKILLS['createItem']!, 'createItem')).toBe(false);
+    expect(harness.evaluateRisk(CORE_SKILLS['updateItem']!, 'updateItem')).toBe(false);
+  });
+});
