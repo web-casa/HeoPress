@@ -1,0 +1,13 @@
+{
+  "name": "example-word-count",
+  "version": "0.1.0",
+  "type": "hook",
+  "entry": "./dist/index.js",
+  "capabilities": [
+    "items:read:posts",
+    "log:write"
+  ],
+  "config": [
+    { "key": "minWords", "type": "integer", "default": 100 }
+  ]
+}
