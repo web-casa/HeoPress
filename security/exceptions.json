@@ -1,0 +1,1840 @@
+{
+  "$comment": "Exceptions to the nightly and pre-release security scans (P07 task 8.1, ADR-0017 §5), checked by scripts/check-security-scan.mjs; see docs/dev/security-scanning.md. A vulnerability exception (scanner pnpm-audit or trivy) names the advisory id (GHSA or CVE), the package, the exact installed versions it covers, its owner, the reason and the review deadline reviewBy (YYYY-MM-DD, at most 180 days ahead); once the deadline has passed every scan fails until it is reviewed and renewed or removed. A gitleaks exception records a finding reviewed as not a secret: its id is the review id (SHA-256 of path, rule and the exact line, as the public export computes it), so any change to the line makes it a new finding. A trivy exception lists the images it covers (images) and covers no other image; the same advisory and package may be excepted again for other versions or images, with its own reason. A finding with a published fix (Trivy FixedVersion, npm patched versions) is fixed, not excepted: an exception covers it only with fixBlockedBy (why the fix cannot be taken yet) and a review deadline at most 30 days ahead. The triage of the image findings is described in docs/dev/security-scanning.md.",
+  "exceptions": [
+    {
+      "scanner": "gitleaks",
+      "id": "8b00b298db6197cb40e433f352119f8d0d8b050cbf86cb5eb0f92c4f1f9a1675",
+      "path": ".env.example:29",
+      "owner": "maintainer",
+      "reason": "JWT_SECRET placeholder (replace-me-…) in the example environment file; not a secret."
+    },
+    {
+      "scanner": "gitleaks",
+      "id": "6d0f68427210dda9d0ffce0db620e51c8ab8ba220b2315d60ee090e4e5e2e2ad",
+      "path": "apps/cms/src/services/__tests__/effective-capability-service.db.integration.test.ts:33",
+      "owner": "maintainer",
+      "reason": "An API key id of a test fixture (REVOKED_KEY), not a key."
+    },
+    {
+      "scanner": "gitleaks",
+      "id": "1c54b895a2010d6aea6d6e2283517e09ab476362f172413ee3fa0e0ceb521007",
+      "path": "apps/cms/src/services/__tests__/effective-capability-service.db.integration.test.ts:35",
+      "owner": "maintainer",
+      "reason": "An API key id of a test fixture (OTHER_KEY), not a key."
+    },
+    {
+      "scanner": "gitleaks",
+      "id": "fcc4c73c79af9a937e87b314032755a5c077ad2830a5cdbaa07ff9a6e2e54de9",
+      "path": "docs/en/features/marketplace.md:46",
+      "owner": "maintainer",
+      "reason": "An elided public key (BEGIN PUBLIC KEY … END PUBLIC KEY) in a configuration example."
+    },
+    {
+      "scanner": "gitleaks",
+      "id": "ec259b35c3b0b9dae16b5d16a17631de702a3d303c87adc075c48f63074295c0",
+      "path": "docs/legacy/kiro-specs/high-load-cache-readiness/dod-review.md:7",
+      "owner": "maintainer",
+      "reason": "Prose of an upstream LumiBase review note; no credential."
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-16742",
+      "package": "libsystemd0",
+      "versions": [
+        "257.13-1~deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "libsystemd0 of the Debian 13 postgres:18 base image, linked by the PostgreSQL server for sd_notify only; the finding is a systemd-homed privilege escalation, and the container runs neither systemd nor systemd-homed. Debian defers the fix. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2025-69720",
+      "package": "libtinfo6",
+      "versions": [
+        "6.5+20250216-2"
+      ],
+      "owner": "maintainer",
+      "reason": "libtinfo6 (ncurses) of the Debian 13 postgres:18 base image, loaded by psql and by the LLVM JIT for terminal capabilities only; it reads the terminfo database of the image, not data from the database or the network. Debian has published no fixed version. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-6653",
+      "package": "libxml2",
+      "versions": [
+        "2.12.7+dfsg+really2.9.14-2.1+deb13u3"
+      ],
+      "owner": "maintainer",
+      "reason": "libxml2 of the Debian 13 postgres:18 base image, linked by the PostgreSQL server (xml type and functions) and its LLVM JIT; Debian has published no fixed version. The flaws need crafted XML parsed through SQL XML functions (or the Python bindings / xml2 extension); HeoPress has no xml column and calls no XML function; the database port is published only on 127.0.0.1 (docker-compose.yml) and not at all in production (docker-compose.prod.yml). Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-74860",
+      "package": "libxml2",
+      "versions": [
+        "2.12.7+dfsg+really2.9.14-2.1+deb13u3"
+      ],
+      "owner": "maintainer",
+      "reason": "libxml2 of the Debian 13 postgres:18 base image, linked by the PostgreSQL server (xml type and functions) and its LLVM JIT; Debian has published no fixed version. The flaws need crafted XML parsed through SQL XML functions (or the Python bindings / xml2 extension); HeoPress has no xml column and calls no XML function; the database port is published only on 127.0.0.1 (docker-compose.yml) and not at all in production (docker-compose.prod.yml). Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-86138",
+      "package": "libxml2",
+      "versions": [
+        "2.12.7+dfsg+really2.9.14-2.1+deb13u3"
+      ],
+      "owner": "maintainer",
+      "reason": "libxml2 of the Debian 13 postgres:18 base image, linked by the PostgreSQL server (xml type and functions) and its LLVM JIT; Debian has published no fixed version. The flaws need crafted XML parsed through SQL XML functions (or the Python bindings / xml2 extension); HeoPress has no xml column and calls no XML function; the database port is published only on 127.0.0.1 (docker-compose.yml) and not at all in production (docker-compose.prod.yml). Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-86139",
+      "package": "libxml2",
+      "versions": [
+        "2.12.7+dfsg+really2.9.14-2.1+deb13u3"
+      ],
+      "owner": "maintainer",
+      "reason": "libxml2 of the Debian 13 postgres:18 base image, linked by the PostgreSQL server (xml type and functions) and its LLVM JIT; Debian has published no fixed version. The flaws need crafted XML parsed through SQL XML functions (or the Python bindings / xml2 extension); HeoPress has no xml column and calls no XML function; the database port is published only on 127.0.0.1 (docker-compose.yml) and not at all in production (docker-compose.prod.yml). Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-86140",
+      "package": "libxml2",
+      "versions": [
+        "2.12.7+dfsg+really2.9.14-2.1+deb13u3"
+      ],
+      "owner": "maintainer",
+      "reason": "libxml2 of the Debian 13 postgres:18 base image, linked by the PostgreSQL server (xml type and functions) and its LLVM JIT; Debian has published no fixed version. The flaws need crafted XML parsed through SQL XML functions (or the Python bindings / xml2 extension); HeoPress has no xml column and calls no XML function; the database port is published only on 127.0.0.1 (docker-compose.yml) and not at all in production (docker-compose.prod.yml). Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-86142",
+      "package": "libxml2",
+      "versions": [
+        "2.12.7+dfsg+really2.9.14-2.1+deb13u3"
+      ],
+      "owner": "maintainer",
+      "reason": "libxml2 of the Debian 13 postgres:18 base image, linked by the PostgreSQL server (xml type and functions) and its LLVM JIT; Debian has published no fixed version. The flaws need crafted XML parsed through SQL XML functions (or the Python bindings / xml2 extension); HeoPress has no xml column and calls no XML function; the database port is published only on 127.0.0.1 (docker-compose.yml) and not at all in production (docker-compose.prod.yml). Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-86143",
+      "package": "libxml2",
+      "versions": [
+        "2.12.7+dfsg+really2.9.14-2.1+deb13u3"
+      ],
+      "owner": "maintainer",
+      "reason": "libxml2 of the Debian 13 postgres:18 base image, linked by the PostgreSQL server (xml type and functions) and its LLVM JIT; Debian has published no fixed version. The flaws need crafted XML parsed through SQL XML functions (or the Python bindings / xml2 extension); HeoPress has no xml column and calls no XML function; the database port is published only on 127.0.0.1 (docker-compose.yml) and not at all in production (docker-compose.prod.yml). Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-86144",
+      "package": "libxml2",
+      "versions": [
+        "2.12.7+dfsg+really2.9.14-2.1+deb13u3"
+      ],
+      "owner": "maintainer",
+      "reason": "libxml2 of the Debian 13 postgres:18 base image, linked by the PostgreSQL server (xml type and functions) and its LLVM JIT; Debian has published no fixed version. The flaws need crafted XML parsed through SQL XML functions (or the Python bindings / xml2 extension); HeoPress has no xml column and calls no XML function; the database port is published only on 127.0.0.1 (docker-compose.yml) and not at all in production (docker-compose.prod.yml). Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-76642",
+      "package": "bsdutils",
+      "versions": [
+        "1:2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78408",
+      "package": "bsdutils",
+      "versions": [
+        "1:2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78409",
+      "package": "bsdutils",
+      "versions": [
+        "1:2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78410",
+      "package": "bsdutils",
+      "versions": [
+        "1:2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-24882",
+      "package": "dirmngr",
+      "versions": [
+        "2.4.7-21+deb13u1+b5"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-24882",
+      "package": "gnupg",
+      "versions": [
+        "2.4.7-21+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-24882",
+      "package": "gnupg-l10n",
+      "versions": [
+        "2.4.7-21+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-24882",
+      "package": "gpg",
+      "versions": [
+        "2.4.7-21+deb13u1+b5"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-24882",
+      "package": "gpg-agent",
+      "versions": [
+        "2.4.7-21+deb13u1+b5"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-24882",
+      "package": "gpgconf",
+      "versions": [
+        "2.4.7-21+deb13u1+b5"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-24882",
+      "package": "gpgsm",
+      "versions": [
+        "2.4.7-21+deb13u1+b5"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-54369",
+      "package": "libacl1",
+      "versions": [
+        "2.3.2-2+b1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-76642",
+      "package": "libblkid1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78408",
+      "package": "libblkid1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78409",
+      "package": "libblkid1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78410",
+      "package": "libblkid1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-76642",
+      "package": "liblastlog2-2",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78408",
+      "package": "liblastlog2-2",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78409",
+      "package": "liblastlog2-2",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78410",
+      "package": "liblastlog2-2",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-76642",
+      "package": "libmount1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78408",
+      "package": "libmount1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78409",
+      "package": "libmount1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78410",
+      "package": "libmount1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2025-69720",
+      "package": "libncursesw6",
+      "versions": [
+        "6.5+20250216-2"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-9538",
+      "package": "libperl5.40",
+      "versions": [
+        "5.40.1-6+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-76642",
+      "package": "libsmartcols1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78408",
+      "package": "libsmartcols1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78409",
+      "package": "libsmartcols1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78410",
+      "package": "libsmartcols1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-16742",
+      "package": "libudev1",
+      "versions": [
+        "257.13-1~deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-76642",
+      "package": "libuuid1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78408",
+      "package": "libuuid1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78409",
+      "package": "libuuid1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78410",
+      "package": "libuuid1",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-76642",
+      "package": "login",
+      "versions": [
+        "1:4.16.0-2+really2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78408",
+      "package": "login",
+      "versions": [
+        "1:4.16.0-2+really2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78409",
+      "package": "login",
+      "versions": [
+        "1:4.16.0-2+really2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78410",
+      "package": "login",
+      "versions": [
+        "1:4.16.0-2+really2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-76642",
+      "package": "mount",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78408",
+      "package": "mount",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78409",
+      "package": "mount",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78410",
+      "package": "mount",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2025-69720",
+      "package": "ncurses-base",
+      "versions": [
+        "6.5+20250216-2"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2025-69720",
+      "package": "ncurses-bin",
+      "versions": [
+        "6.5+20250216-2"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-9538",
+      "package": "perl",
+      "versions": [
+        "5.40.1-6+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-9538",
+      "package": "perl-base",
+      "versions": [
+        "5.40.1-6+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-9538",
+      "package": "perl-modules-5.40",
+      "versions": [
+        "5.40.1-6+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-76642",
+      "package": "util-linux",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78408",
+      "package": "util-linux",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78409",
+      "package": "util-linux",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-78410",
+      "package": "util-linux",
+      "versions": [
+        "2.41.5-0+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "Debian 13 package of the upstream postgres:18 base image (OS tooling: util-linux, login, GnuPG for apt keys, Perl, ncurses); Debian has published no fixed version (apt-get upgrade at build finds none). Not loaded by the PostgreSQL server or the extensions HeoPress creates (pg_trgm, vector, zhparser): ldd of /usr/lib/postgresql/18/{bin,lib}; libuuid1 only by uuid-ossp, which HeoPress does not create. Review when Debian ships a fix. Also covers the CMS and rendering-service images (node:24-trixie-slim, the same Debian 13 package and version; extended with the maintainer's approval on 2026-10-28): no package is installed beyond the base (Git snapshots run in process, no git program); node and sharp/libvips link only libc, libstdc++, libgcc_s, libm, libdl, libpthread and libresolv (ldd). The CMS does start programs: the Astro build runner spawns node build children, under prlimit (util-linux) when present; the rendering service starts none.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-103484",
+      "package": "postgresql-18-pgvector",
+      "versions": [
+        "0.8.7-1.pgdg13+1"
+      ],
+      "owner": "maintainer",
+      "reason": "pgvector from the PGDG repository, used by HeoPress vector search; no fixed package is published yet. The flaw is an out-of-bounds write while building an IVFFlat index; HeoPress builds HNSW indexes only, and only the application's own database roles can create indexes. Short review: upgrade as soon as PGDG publishes the fixed pgvector.",
+      "reviewBy": "2026-11-22",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119373",
+      "package": "libsqlite3-0",
+      "versions": [
+        "3.46.1-7+deb13u2"
+      ],
+      "owner": "maintainer",
+      "reason": "libsqlite3-0 is a Debian 13 base-image package (node:24-trixie-slim and postgres:18); HeoPress uses PostgreSQL only, the workspace has no sqlite3 dependency, and nothing in the CMS, the worker, the rendering service or PostgreSQL links or loads libsqlite3 (the library ships with the base image; the CMS's node runtime and sharp/libvips do not use it). Debian has no fixed version yet: apt-cache policy in the built image reports 3.46.1-7+deb13u2 as the archive candidate. Review when Debian ships a fix.",
+      "reviewBy": "2027-05-01",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119374",
+      "package": "libsqlite3-0",
+      "versions": [
+        "3.46.1-7+deb13u2"
+      ],
+      "owner": "maintainer",
+      "reason": "libsqlite3-0 is a Debian 13 base-image package (node:24-trixie-slim and postgres:18); HeoPress uses PostgreSQL only, the workspace has no sqlite3 dependency, and nothing in the CMS, the worker, the rendering service or PostgreSQL links or loads libsqlite3 (the library ships with the base image; the CMS's node runtime and sharp/libvips do not use it). Debian has no fixed version yet: apt-cache policy in the built image reports 3.46.1-7+deb13u2 as the archive candidate. Review when Debian ships a fix.",
+      "reviewBy": "2027-05-01",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119379",
+      "package": "libsqlite3-0",
+      "versions": [
+        "3.46.1-7+deb13u2"
+      ],
+      "owner": "maintainer",
+      "reason": "libsqlite3-0 is a Debian 13 base-image package (node:24-trixie-slim and postgres:18); HeoPress uses PostgreSQL only, the workspace has no sqlite3 dependency, and nothing in the CMS, the worker, the rendering service or PostgreSQL links or loads libsqlite3 (the library ships with the base image; the CMS's node runtime and sharp/libvips do not use it). Debian has no fixed version yet: apt-cache policy in the built image reports 3.46.1-7+deb13u2 as the archive candidate. Review when Debian ships a fix.",
+      "reviewBy": "2027-05-01",
+      "images": [
+        "postgres",
+        "cms",
+        "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112315",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112315",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112315",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112315",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112316",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112316",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112316",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112316",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112317",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112317",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112317",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112317",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112318",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112318",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112318",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112318",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112319",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112319",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112319",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112319",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112320",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112320",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112320",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112320",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112321",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112321",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112321",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112321",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112322",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112322",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112322",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112322",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112323",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112323",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112323",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112323",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119079",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119079",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119079",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119079",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-107364",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-107364",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-107364",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-107364",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-118380",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-118380",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-118380",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-118380",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71199",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71199",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71199",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71199",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71200",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71200",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71200",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71200",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    }
+  ]
+}
