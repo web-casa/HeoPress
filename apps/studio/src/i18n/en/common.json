@@ -1,0 +1,66 @@
+{
+  "loading": "Loading…",
+  "retry": "Retry",
+  "cancel": "Cancel",
+  "save": "Save",
+  "discard": "Discard",
+  "undo": "Undo",
+  "close": "Close",
+  "noPermission": "No permission",
+  "unavailable": "Temporarily unavailable",
+  "mfaRequired": "Two-step verification required",
+  "noDomain": "No domain bound",
+  "noPrimaryDomain": "No primary domain set",
+  "incomplete": "Incomplete",
+  "allSites": "All sites",
+  "currentSite": "Current site",
+  "relativeExact": "{{relative}} ({{exact}})",
+  "health": {
+    "ok": "Healthy",
+    "warn": "Warning",
+    "bad": "Failing",
+    "unknown": "Unknown"
+  },
+  "empty": {
+    "title": "Nothing here yet",
+    "body": "There is nothing to show for this view."
+  },
+  "errors": {
+    "load": "This could not be loaded.",
+    "fixCount_one": "Fix {{count}} error first",
+    "fixCount_other": "Fix {{count}} errors first"
+  },
+  "languageNames": {
+    "zhCN": "简体中文",
+    "en": "English"
+  },
+  "switchPendingWrites": "A change is still being saved and its result is unknown. Switch anyway?",
+  "changeVsPrevious": "{{value}}% vs previous period",
+  "noPrevious": "No previous period to compare",
+  "sitesExcluded": {
+    "mfa_one": "{{count}} site needs two-step verification",
+    "mfa_other": "{{count}} sites need two-step verification",
+    "unavailable_one": "{{count}} site temporarily unavailable",
+    "unavailable_other": "{{count}} sites temporarily unavailable",
+    "noPermission_one": "{{count}} site not visible to you",
+    "noPermission_other": "{{count}} sites not visible to you",
+    "partial_one": "{{count}} site counts readable collections only",
+    "partial_other": "{{count}} sites count readable collections only"
+  },
+  "open": "Open",
+  "switchAndVerify": "Switch and verify",
+  "reasons": {
+    "reachability_errors_one": "{{count}} reachability error",
+    "reachability_errors_other": "{{count}} reachability errors",
+    "reachability_warnings_one": "{{count}} reachability warning",
+    "reachability_warnings_other": "{{count}} reachability warnings",
+    "domain_failed": "Domain {{host}} failed",
+    "domain_pending": "Domain {{host}} unverified for over 24 hours",
+    "audit_errors_one": "{{count}} error-level audit issue",
+    "audit_errors_other": "{{count}} error-level audit issues",
+    "audit_failed": "The last audit run failed",
+    "no_primary_domain": "No primary domain set",
+    "not_checked": "Not checked yet",
+    "not_readable": "Not readable with your permissions"
+  }
+}

@@ -1,0 +1,64 @@
+# Nightly long-sequence model tests (HeoPress P09 task 7.1, ADR-0017). Pull requests run the same files with a few
+# short sequences inside ci.yml `db-suites`; here HEOPRESS_MODEL_TEST_RUNS asks for long ones, plus the P09 nightly
+# pipeline scenario (task 6.1). Models answer with fixed responses from local mocks: no model key, no network
+# (task 7.2). A failure prints fast-check's seed and path: add them to REGRESSIONS in the test file.
+name: Nightly model tests
+
+on:
+  schedule:
+    - cron: '47 18 * * *' # 02:47 Asia/Shanghai
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24
+  PNPM_VERSION: 9.12.0
+  HUSKY: 0
+
+jobs:
+  model-tests:
+    name: P09 model tests (long sequences) and nightly pipeline scenario
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: heopress
+          POSTGRES_PASSWORD: heopress_ci
+          POSTGRES_DB: heopress
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U heopress"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_OWNER_URL: postgresql://heopress:heopress_ci@localhost:5432/heopress
+      DATABASE_URL: postgresql://heopress_app:heopress_app_ci@localhost:5432/heopress
+      HEOPRESS_TEST_APP_ROLE: heopress_app
+      HEOPRESS_RUNTIME: docker
+      HEOPRESS_ENV: development
+      JWT_SECRET: ci_nightly_model_secret
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Migrate as the owner, then create the application role
+        run: |
+          DATABASE_URL="$DATABASE_OWNER_URL" pnpm --filter @heopress/database migrate
+          DATABASE_URL="$DATABASE_OWNER_URL" HEOPRESS_APP_PASSWORD=heopress_app_ci pnpm --filter @heopress/database app-role --test-database
+      - name: Model tests, long sequences
+        run: pnpm --filter @heopress/cms exec vitest --run --silent=false src/__tests__/p09-pipeline-model.property.db.integration.test.ts src/__tests__/p10-plan-approval-model.property.db.integration.test.ts
+        env:
+          HEOPRESS_MODEL_TEST_RUNS: '500'
+      - name: Nightly pipeline scenario (3 English sources → zh-CN → gate → publish / review)
+        run: pnpm --filter @heopress/cms exec vitest --run --silent=false src/__tests__/p09-pipeline-scenario.db.integration.test.ts

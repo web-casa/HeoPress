@@ -1,0 +1,8 @@
+---
+// The item's sanitised body (`{% item_body %}`). Place it once on an item page.
+import type { PageDataPage } from '@heopress/contracts/page-data';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const id = page.vm.item?.id ?? '';
+---
+<div class="heopress-body" set:html={page.bodies[id] ?? ''} />

@@ -1,0 +1,168 @@
+{
+  "source": "Cloudflare API v4 response envelopes as documented and as Wrangler reads them (workers-sdk pages/upload.ts, api/pages/deploy.ts), 2026-10-28. Refresh from a real deployment: apps/cms/scripts/p11-deploy-smoke.ts --transcript.",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/heo-docs",
+      "status": 200,
+      "response": {
+        "success": true,
+        "errors": [],
+        "result": {
+          "name": "heo-docs",
+          "production_branch": "main",
+          "subdomain": "heo-docs.pages.dev"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/heo-docs/upload-token",
+      "status": 200,
+      "response": {
+        "success": true,
+        "errors": [],
+        "result": {
+          "jwt": "jwt-fake"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.cloudflare.com/client/v4/pages/assets/check-missing",
+      "status": 200,
+      "response": {
+        "success": true,
+        "errors": [],
+        "result": "$MISSING_FIRST"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.cloudflare.com/client/v4/pages/assets/upload",
+      "status": 200,
+      "response": {
+        "success": true,
+        "errors": [],
+        "result": {
+          "successful_key_count": 1,
+          "unsuccessful_keys": []
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.cloudflare.com/client/v4/pages/assets/upsert-hashes",
+      "status": 200,
+      "response": {
+        "success": true,
+        "errors": [],
+        "result": null
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/heo-docs/deployments",
+      "status": 200,
+      "response": {
+        "success": true,
+        "errors": [],
+        "result": {
+          "id": "f64788e9-fccd-4d4a-a28a-cb84f88f6a7a",
+          "url": "https://f64788e9.heo-docs.pages.dev",
+          "environment": "production",
+          "latest_stage": {
+            "name": "queued",
+            "status": "active"
+          },
+          "deployment_trigger": {
+            "type": "ad_hoc",
+            "metadata": {
+              "branch": "main",
+              "commit_hash": "",
+              "commit_message": "heopress-site_a-dep1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/heo-docs/deployments/f64788e9-fccd-4d4a-a28a-cb84f88f6a7a",
+      "status": 200,
+      "response": {
+        "success": true,
+        "errors": [],
+        "result": {
+          "id": "f64788e9-fccd-4d4a-a28a-cb84f88f6a7a",
+          "url": "https://f64788e9.heo-docs.pages.dev",
+          "latest_stage": {
+            "name": "deploy",
+            "status": "success"
+          },
+          "deployment_trigger": {
+            "metadata": {
+              "branch": "main",
+              "commit_message": "heopress-site_a-dep1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/heo-docs/deployments?env=production&per_page=25",
+      "status": 200,
+      "response": {
+        "success": true,
+        "errors": [],
+        "result": [
+          {
+            "id": "f64788e9-fccd-4d4a-a28a-cb84f88f6a7a",
+            "url": "https://f64788e9.heo-docs.pages.dev",
+            "latest_stage": {
+              "name": "deploy",
+              "status": "success"
+            },
+            "deployment_trigger": {
+              "metadata": {
+                "commit_message": "heopress-site_a-dep1"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/heo-docs/deployments/bad1",
+      "status": 200,
+      "response": {
+        "success": true,
+        "errors": [],
+        "result": {
+          "id": "bad1",
+          "latest_stage": {
+            "name": "deploy",
+            "status": "failure"
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/missing",
+      "status": 404,
+      "response": {
+        "success": false,
+        "errors": [
+          {
+            "code": 8000007,
+            "message": "Project not found. The specified project name does not match any of your existing projects."
+          }
+        ],
+        "result": null
+      }
+    }
+  ]
+}

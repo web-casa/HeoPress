@@ -1,0 +1,7 @@
+---
+import type { PageDataPage } from '@heopress/astro-kit';
+interface Props { page: PageDataPage }
+const { vm } = Astro.props.page;
+const year = (vm.item?.publishedAt ?? '2026').slice(0, 4);
+---
+<footer>&copy; {year} {vm.site.name}. All rights reserved.</footer>
