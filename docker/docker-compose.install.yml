@@ -1,0 +1,39 @@
+# An installation made by docker/install.sh (HeoPress P13 task 3.1), applied last, after
+# docker-compose.yml, docker-compose.prod.yml, docker-compose.tls.yml and docker-compose.domains.yml:
+#
+#   docker compose --project-name heopress --env-file /opt/heopress/.env \
+#     -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.tls.yml \
+#     -f docker-compose.domains.yml -f docker-compose.install.yml …
+#
+# (the installer writes this command as /opt/heopress/heopress-compose). The installer pulls or builds every image
+# before Compose runs, so nothing is built here; the database image is the one it built or was given. Caddy reads
+# the installer's Caddyfile (the shipped Caddyfile.domains, or a copy using Caddy's local CA with --tls internal)
+# and listens on the chosen host ports. Nothing else changes: PostgreSQL has no host port, the CMS is reachable
+# only through Caddy on the administration domain, and the site domains reach the rendering service only.
+services:
+  postgres:
+    image: ${HEOPRESS_DB_IMAGE:?Set HEOPRESS_DB_IMAGE (docker/install.sh writes it)}
+    build: !reset null
+
+  cms:
+    image: ${HEOPRESS_CMS_IMAGE:?Set HEOPRESS_CMS_IMAGE (docker/install.sh writes it)}
+
+  cms-worker:
+    image: ${HEOPRESS_CMS_IMAGE:?Set HEOPRESS_CMS_IMAGE (docker/install.sh writes it)}
+
+  site-classic:
+    image: ${HEOPRESS_SITE_IMAGE:?Set HEOPRESS_SITE_IMAGE (docker/install.sh writes it)}
+
+  caddy:
+    ports: !override
+      - "${HEOPRESS_HTTP_PORT:-80}:80"
+      - "${HEOPRESS_HTTPS_PORT:-443}:443"
+    volumes: !override
+      - ${HEOPRESS_CADDYFILE:?Set HEOPRESS_CADDYFILE (docker/install.sh writes it)}:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on: !override
+      cms:
+        condition: service_healthy
+      site-classic:
+        condition: service_started

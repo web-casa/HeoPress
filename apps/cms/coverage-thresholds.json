@@ -1,0 +1,106 @@
+{
+  "$comment": "Coverage baselines of the CMS (HeoPress P13 task 6.3, ADR-0017 §2): critical modules by file (each module's files together), and `other`: all files under coverage.include (Vitest's global thresholds). Measured on the whole suite with a database (pnpm quality:pr, group db): each value is the lowest of four full runs (three local and one CI run, 2026-10-29), rounded down, because runs differ by a few branches or functions (state-reconciliation.ts, rls-transaction.ts, governed-capabilities.ts, subscription-state.ts, plan-service.ts). Baselines only go up: node scripts/coverage-baseline.mjs --summary <run 1> --summary <run 2> --update. Target for the critical modules: 90% lines, 85% branches.",
+  "target": {
+    "lines": 90,
+    "branches": 85
+  },
+  "modules": {
+    "permissions": {
+      "files": [
+        "src/services/permission-service.ts",
+        "src/services/permission-dsl.ts",
+        "src/services/effective-capability-service.ts",
+        "src/services/governed-capabilities.ts",
+        "src/services/access/admin-guard.ts",
+        "src/services/sites/site-roles.ts",
+        "src/services/agent-access/agent-access-service.ts",
+        "src/middleware/site-admin.ts",
+        "src/middleware/site-editor.ts",
+        "src/middleware/site-member.ts",
+        "src/middleware/site-membership.ts",
+        "src/middleware/studio-access.ts",
+        "src/middleware/control-plane-access-guard.ts"
+      ],
+      "baseline": {
+        "lines": 84,
+        "branches": 72,
+        "functions": 92,
+        "statements": 80
+      }
+    },
+    "site-scope": {
+      "files": [
+        "src/middleware/tenant.ts",
+        "src/middleware/tenant-exists.ts",
+        "src/middleware/rls.ts",
+        "src/services/rls-transaction.ts",
+        "src/services/domains/public-host.ts",
+        "src/services/domains/host-cache.ts",
+        "src/services/domains/site-exists-cache.ts"
+      ],
+      "baseline": {
+        "lines": 94,
+        "branches": 88,
+        "functions": 93,
+        "statements": 93
+      }
+    },
+    "approvals": {
+      "files": [
+        "src/services/approval-requester.ts",
+        "src/services/approval-claim-sweeper.ts",
+        "src/services/veto-service.ts",
+        "src/services/veto-commit-worker.ts",
+        "src/services/agent-plans/plan-rules.ts",
+        "src/services/agent-plans/plan-service.ts",
+        "src/services/autonomy-service.ts"
+      ],
+      "baseline": {
+        "lines": 81,
+        "branches": 70,
+        "functions": 84,
+        "statements": 77
+      }
+    },
+    "budgets": {
+      "files": [
+        "src/services/llm/ledger.ts",
+        "src/services/llm/usage-service.ts",
+        "src/services/llm/governance.ts",
+        "src/services/llm/daily.ts",
+        "src/services/ingest/providers/budget.ts",
+        "src/services/load-guard-service.ts"
+      ],
+      "baseline": {
+        "lines": 98,
+        "branches": 87,
+        "functions": 96,
+        "statements": 94
+      }
+    },
+    "state-machines": {
+      "files": [
+        "src/services/editorial-service.ts",
+        "src/services/publish-guard.ts",
+        "src/services/publishing/state-reconciliation.ts",
+        "src/services/llm/recovery.ts",
+        "src/modules/cdc/change-feed/subscription-state.ts",
+        "src/services/agent-run-service.ts"
+      ],
+      "baseline": {
+        "lines": 92,
+        "branches": 85,
+        "functions": 91,
+        "statements": 91
+      }
+    }
+  },
+  "other": {
+    "baseline": {
+      "lines": 79,
+      "branches": 70,
+      "functions": 79,
+      "statements": 77
+    }
+  }
+}
