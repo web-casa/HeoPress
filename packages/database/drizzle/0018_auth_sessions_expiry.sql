@@ -1,0 +1,1 @@
+ALTER TABLE "lumibase_auth_sessions" ADD COLUMN "expires_at" timestamp with time zone;

@@ -1,0 +1,59 @@
+{
+  "back": "Back to the list",
+  "outline": "Outline",
+  "noHeadings": "Add H2 or H3 headings to build the outline.",
+  "titlePlaceholder": "Title",
+  "save": "Save",
+  "saveState": {
+    "dirty": "Unsaved changes",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "savedAt": "Saved {{time}}",
+    "failed": "Save failed: {{reason}}",
+    "retry": "Retry"
+  },
+  "submitReview": "Submit for review",
+  "publish": "Publish",
+  "preview": "Preview",
+  "previewOff": "Previews are not set up on this server.",
+  "leave": "You have unsaved changes. Leave anyway?",
+  "editing": "{{name}} is editing here",
+  "present": "Also here: {{names}}",
+  "conflict": {
+    "title": "Someone else saved this article meanwhile",
+    "changed": "Changed by them: {{fields}}",
+    "merge": "Keep their changes and mine",
+    "theirs": "Use their version",
+    "hint": "Their changes to other fields are kept; your changes stay in the editor. Review, then save again."
+  },
+  "tabs": {
+    "seo": "SEO",
+    "indexing": "Indexing and citation",
+    "props": "Properties"
+  },
+  "inspector": {
+    "checkedAt": "Checks as of the save",
+    "notSaved": "Checks follow the last save.",
+    "seoTitle": "SEO title",
+    "seoDescription": "Description",
+    "robots": "Search engines",
+    "canonical": "Canonical address",
+    "serp": "Search result preview",
+    "descriptionHint": "{{count}} characters — {{hint}}",
+    "short": "short, aim for 80 or more",
+    "long": "long, may be cut",
+    "ok": "good length",
+    "markdown": "Markdown copy",
+    "markdownAt": "{{path}}.md once published",
+    "reviewer": "Last reviewed by",
+    "author": "Author",
+    "none": "—"
+  },
+  "kind": {
+    "label": "Edit as article",
+    "hint": "Opens items in the article editor (outline, SEO, indexing).",
+    "preset": "The preset Articles type always uses the article editor.",
+    "failed": "Could not change this."
+  },
+  "fullForm": "All fields and actions"
+}
