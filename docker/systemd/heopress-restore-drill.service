@@ -1,0 +1,17 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+[Unit]
+Description=HeoPress restore drill
+Documentation=https://github.com/web-casa/HeoPress
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=heopress
+Group=heopress
+WorkingDirectory=/opt/heopress
+EnvironmentFile=/etc/heopress/restore-drill.env
+ExecStart=/opt/heopress/docker/scripts/restore-drill.sh
+Nice=5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

@@ -1,0 +1,61 @@
+{
+  "name": "@heopress/sdk",
+  "version": "1.0.0-rc.4",
+  "description": "HeoPress JS SDK (REST + WebSocket) + typegen core. Isomorphic ESM.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/web-casa/HeoPress.git",
+    "directory": "packages/sdk"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo dist"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.6.2",
+    "vitest": "^5.0.3"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "homepage": "https://docs.heopress.example",
+  "bugs": {
+    "url": "https://github.com/web-casa/HeoPress/issues"
+  },
+  "keywords": [
+    "heopress",
+    "cms",
+    "headless-cms",
+    "sdk",
+    "typescript",
+    "rest",
+    "graphql",
+    "realtime",
+    "typegen"
+  ]
+}
