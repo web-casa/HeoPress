@@ -1,0 +1,1 @@
+ALTER TABLE "lumibase_schedule_runs" ADD COLUMN "lease_until" timestamp with time zone;
