@@ -1,0 +1,231 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the SEO head slot (task 1.2) > a page not indexed: no canonical, no alternates; the graph describes the site only — as the data layer says 1`] = `
+{
+  "alternates": [],
+  "canonical": null,
+  "jsonLd": [
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@id": "https://head.example.com/#identity",
+          "@type": "Organization",
+          "name": "Head Org",
+          "sameAs": [
+            "https://social.example.com/head",
+          ],
+          "url": "https://head.example.com/",
+        },
+        {
+          "@id": "https://head.example.com/#website",
+          "@type": "WebSite",
+          "inLanguage": "en",
+          "name": "Head Site",
+          "publisher": {
+            "@id": "https://head.example.com/#identity",
+          },
+          "url": "https://head.example.com/",
+        },
+      ],
+    },
+  ],
+  "meta": [
+    {
+      "content": "article",
+      "property": "og:type",
+    },
+    {
+      "content": "Hello <world> · Head Site",
+      "property": "og:title",
+    },
+    {
+      "content": "An excerpt & more.",
+      "property": "og:description",
+    },
+    {
+      "content": "Head Site",
+      "property": "og:site_name",
+    },
+    {
+      "content": "en",
+      "property": "og:locale",
+    },
+    {
+      "content": "https://head.example.com/media/hello.jpg",
+      "property": "og:image",
+    },
+    {
+      "content": "2026-10-01T08:00:00.000Z",
+      "property": "article:published_time",
+    },
+    {
+      "content": "2026-10-02T09:30:00.000Z",
+      "property": "article:modified_time",
+    },
+    {
+      "content": "summary_large_image",
+      "name": "twitter:card",
+    },
+  ],
+  "robots": "noindex",
+  "title": "Hello <world> · Head Site",
+}
+`;
+
+exports[`the SEO head slot (task 1.2) > an article: canonical, hreflang, social metadata and JSON-LD in the HTML are the data layer's objects 1`] = `
+{
+  "alternates": [
+    {
+      "locale": "en",
+      "url": "https://head.example.com/hello/",
+    },
+    {
+      "locale": "zh-CN",
+      "url": "https://head.example.com/zh/hello/",
+    },
+    {
+      "locale": "x-default",
+      "url": "https://head.example.com/hello/",
+    },
+  ],
+  "canonical": "https://head.example.com/hello/",
+  "jsonLd": [
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@id": "https://head.example.com/#identity",
+          "@type": "Organization",
+          "name": "Head Org",
+          "sameAs": [
+            "https://social.example.com/head",
+          ],
+          "url": "https://head.example.com/",
+        },
+        {
+          "@id": "https://head.example.com/#website",
+          "@type": "WebSite",
+          "inLanguage": "en",
+          "name": "Head Site",
+          "publisher": {
+            "@id": "https://head.example.com/#identity",
+          },
+          "url": "https://head.example.com/",
+        },
+        {
+          "@id": "https://head.example.com/hello/#webpage",
+          "@type": "WebPage",
+          "breadcrumb": {
+            "@id": "https://head.example.com/hello/#breadcrumb",
+          },
+          "dateModified": "2026-10-02T09:30:00.000Z",
+          "datePublished": "2026-10-01T08:00:00.000Z",
+          "description": "An excerpt & more.",
+          "inLanguage": "en",
+          "isPartOf": {
+            "@id": "https://head.example.com/#website",
+          },
+          "name": "Hello <world>",
+          "primaryImageOfPage": {
+            "@id": "https://head.example.com/hello/#primaryimage",
+          },
+          "url": "https://head.example.com/hello/",
+        },
+        {
+          "@id": "https://head.example.com/hello/#primaryimage",
+          "@type": "ImageObject",
+          "contentUrl": "https://head.example.com/media/hello.jpg",
+          "url": "https://head.example.com/media/hello.jpg",
+        },
+        {
+          "@id": "https://head.example.com/hello/#breadcrumb",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "item": "https://head.example.com/",
+              "name": "Head Site",
+              "position": 1,
+            },
+            {
+              "@type": "ListItem",
+              "item": "https://head.example.com/category/news/",
+              "name": "News",
+              "position": 2,
+            },
+            {
+              "@type": "ListItem",
+              "item": "https://head.example.com/hello/",
+              "name": "Hello <world>",
+              "position": 3,
+            },
+          ],
+        },
+        {
+          "@id": "https://head.example.com/hello/#article",
+          "@type": "BlogPosting",
+          "dateModified": "2026-10-02T09:30:00.000Z",
+          "datePublished": "2026-10-01T08:00:00.000Z",
+          "description": "An excerpt & more.",
+          "headline": "Hello <world>",
+          "image": {
+            "@id": "https://head.example.com/hello/#primaryimage",
+          },
+          "inLanguage": "en",
+          "mainEntityOfPage": {
+            "@id": "https://head.example.com/hello/#webpage",
+          },
+          "publisher": {
+            "@id": "https://head.example.com/#identity",
+          },
+        },
+      ],
+    },
+  ],
+  "meta": [
+    {
+      "content": "article",
+      "property": "og:type",
+    },
+    {
+      "content": "Hello <world> · Head Site",
+      "property": "og:title",
+    },
+    {
+      "content": "An excerpt & more.",
+      "property": "og:description",
+    },
+    {
+      "content": "https://head.example.com/hello/",
+      "property": "og:url",
+    },
+    {
+      "content": "Head Site",
+      "property": "og:site_name",
+    },
+    {
+      "content": "en",
+      "property": "og:locale",
+    },
+    {
+      "content": "https://head.example.com/media/hello.jpg",
+      "property": "og:image",
+    },
+    {
+      "content": "2026-10-01T08:00:00.000Z",
+      "property": "article:published_time",
+    },
+    {
+      "content": "2026-10-02T09:30:00.000Z",
+      "property": "article:modified_time",
+    },
+    {
+      "content": "summary_large_image",
+      "name": "twitter:card",
+    },
+  ],
+  "robots": "max-image-preview:large",
+  "title": "Hello <world> · Head Site",
+}
+`;
