@@ -1,0 +1,135 @@
+{
+  "title": "审稿工作台",
+  "description": "所有等待处理的稿件集中在一个列表中。",
+  "views": {
+    "title": "视图",
+    "inbox": "收件箱",
+    "mine": "我的稿件",
+    "pending": "待审核",
+    "scheduled": "定时发布",
+    "published": "已发布",
+    "drafts": "草稿"
+  },
+  "filters": {
+    "collection": "内容类型",
+    "allCollections": "全部内容类型",
+    "author": "作者",
+    "anyAuthor": "任何人",
+    "locale": "语言",
+    "anyLocale": "任何语言",
+    "search": "搜索标题"
+  },
+  "list": {
+    "empty": "此视图没有稿件。",
+    "more": "加载更多",
+    "updated": "更新于",
+    "nothingYet": "还没有文章。",
+    "nothingYetHint": "开始写这个站点的第一篇文章：先起个标题，然后在编辑器里撰写。"
+  },
+  "state": {
+    "draft": "草稿",
+    "in_review": "待审核",
+    "approved": "已批准",
+    "rejected": "已退回",
+    "scheduled": "定时",
+    "published": "已发布"
+  },
+  "detail": {
+    "empty": "选择一篇稿件进行审核。",
+    "properties": "属性",
+    "status": "状态",
+    "author": "作者",
+    "length": "篇幅",
+    "words_one": "{{count}} 字",
+    "words_other": "{{count}} 字",
+    "publishAt": "计划发布",
+    "indexing": "收录",
+    "preview": "正文预览",
+    "checks": "发布前检查",
+    "history": "处理记录",
+    "noHistory": "还没有审核记录。",
+    "openEditor": "在编辑器打开",
+    "approve": "批准",
+    "approveAnyway": "仍然批准",
+    "reject": "退回",
+    "rejectReason": "退回原因",
+    "rejectRequired": "请写明作者可以据此修改的原因。",
+    "confirmReject": "退回修改",
+    "publish": "发布",
+    "schedule": "按计划发布",
+    "scheduleAt": "发布时间",
+    "approvePublish": "批准并发布",
+    "retryPublish": "重试发布",
+    "publishFailed": "已批准，但发布失败：{{reason}}",
+    "noReview": "需要管理员或已获得审核权限的角色审核。",
+    "noPublish": "发布需要此集合的更新权限。",
+    "failingChecks_one": "{{count}} 项检查未通过：",
+    "failingChecks_other": "{{count}} 项检查未通过：",
+    "cancel": "取消"
+  },
+  "history": {
+    "submitted": "提交审核",
+    "approved": "已批准",
+    "rejected": "已退回"
+  },
+  "checks": {
+    "title": "标题长度",
+    "description": "描述长度",
+    "indexing": "收录设置",
+    "structured_data": "结构化数据",
+    "links": "正文链接",
+    "images": "图片替代文本",
+    "status": {
+      "pass": "通过",
+      "warn": "需注意",
+      "fail": "未通过",
+      "not_checked": "未检查",
+      "no_permission": "无权查看"
+    },
+    "reason": {
+      "missing": "缺少",
+      "too_short": "过短（{{value}}）",
+      "too_long": "过长（{{value}}）",
+      "noindex_by_item": "不收录（条目设置）",
+      "noindex_by_collection": "不收录（集合设置）",
+      "noindex_by_page_type": "不收录（页面类型设置）",
+      "noindex_by_site": "不收录（站点设置）",
+      "generated_on_publish": "发布时生成",
+      "see_audit": "见站点审计",
+      "broken_internal": "链接指向无法访问的页面",
+      "missing_alt": "{{value}} 张图片缺少替代文本"
+    },
+    "link": {
+      "ok": "正常",
+      "broken": "失效",
+      "redirected": "已重定向",
+      "not_checked": "未检查",
+      "no_alt": "缺少替代文本"
+    }
+  },
+  "new": {
+    "title": "新建文章",
+    "hint": "只需标题、网址和语言即可开始，其余内容在编辑器里完成。",
+    "type": "内容类型",
+    "articleTitle": "标题",
+    "slug": "网址别名（slug）",
+    "slugHint": "小写字母、数字和连字符，根据标题自动填写；标题没有拉丁字母时使用带日期的网址。",
+    "language": "语言",
+    "cancel": "取消",
+    "create": "创建并编辑",
+    "creating": "正在创建…",
+    "failed": "无法创建这篇文章。",
+    "none": "你没有在此站点创建文章的权限。",
+    "noneHint": "请联系管理员授予权限，或把某个内容类型标记为“文章”。"
+  },
+  "types": {
+    "title": "内容类型",
+    "hint": "本站点的各类内容。打开一个类型查看其中的条目。",
+    "failed": "无法加载内容类型。",
+    "empty": "还没有内容类型。",
+    "emptyHint": "管理员可以在 设置 › 高级 › 数据模型 中定义。",
+    "single": "单个条目",
+    "article": "文章编辑器",
+    "articleHint": "勾选“按文章编辑”后，该类型的条目在文章编辑器中打开（大纲、SEO、收录）；预设的文章类型始终如此。"
+  }
+}

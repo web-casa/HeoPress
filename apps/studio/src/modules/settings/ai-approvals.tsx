@@ -1,0 +1,186 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { useState, useEffect, useCallback } from 'react';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
+import { getActiveToken, getActiveSite } from '@/lib/api';
+import { siteFetch } from '@/lib/http';
+import { PageHeader } from '@/workspace/ui/page-header';
+
+interface ApprovalRecord {
+  id: string;
+  siteId: string;
+  agentName: string;
+  skillName: string;
+  arguments: Record<string, unknown>;
+  status: string;
+  context: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  decidedBy: string | null;
+}
+
+async function fetchApprovals(): Promise<ApprovalRecord[]> {
+  const token = getActiveToken();
+  const site = getActiveSite();
+  const res = await siteFetch('/api/v1/ai/approvals', {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(site ? { 'X-HeoPress-Site': site } : {}),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(i18n.t('system:approvals.fetchFailed', { status: res.status }));
+  }
+  const body = (await res.json()) as { data: ApprovalRecord[] };
+  return body.data;
+}
+
+async function decideApproval(
+  id: string,
+  decision: 'approved' | 'rejected',
+): Promise<void> {
+  const token = getActiveToken();
+  const site = getActiveSite();
+  const res = await siteFetch(`/api/v1/ai/approvals/${id}/decide`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(site ? { 'X-HeoPress-Site': site } : {}),
+    },
+    body: JSON.stringify({ decision }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      i18n.t(decision === 'approved' ? 'system:approvals.approveFailed' : 'system:approvals.rejectFailed', { status: res.status }),
+    );
+  }
+}
+
+
+const MAX_DISPLAY_CARDS = 50;
+
+export function AIApprovalsPage() {
+  const { t } = useTranslation('system');
+  const [approvals, setApprovals] = useState<ApprovalRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+
+  const loadApprovals = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchApprovals();
+      setApprovals(data.slice(0, MAX_DISPLAY_CARDS));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : i18n.t('system:approvals.loadFailed'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadApprovals();
+  }, [loadApprovals]);
+
+  const handleDecision = async (id: string, decision: 'approved' | 'rejected') => {
+    setProcessingIds((prev) => new Set(prev).add(id));
+    setError(null);
+    try {
+      await decideApproval(id, decision);
+      setApprovals((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('approvals.actionFailed'));
+    } finally {
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-dim" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={t('approvals.title')}
+        description={t('approvals.description')}
+      />
+
+      {error && (
+        <div className="rounded-ctl border border-bad/40 bg-bad-soft px-4 py-3 text-sm text-bad">
+          {error}
+        </div>
+      )}
+
+      {approvals.length === 0 && !error && (
+        <div className="rounded-card border border-dashed p-12 text-center text-dim">
+          {t('approvals.empty')}
+        </div>
+      )}
+
+      <div className="grid gap-4">
+        {approvals.map((approval) => {
+          const isProcessing = processingIds.has(approval.id);
+          return (
+            <div
+              key={approval.id}
+              className="rounded-card border border-line bg-panel p-4"
+            >
+              <div className="mb-3">
+                <h3 className="font-semibold text-base">{approval.skillName}</h3>
+                {approval.context && (
+                  <p className="mt-1 text-sm text-dim">{approval.context}</p>
+                )}
+              </div>
+
+              <pre className="mb-4 overflow-auto rounded-ctl bg-panel-2 p-3 text-xs">
+                {JSON.stringify(approval.arguments, null, 2)}
+              </pre>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isProcessing}
+                  onClick={() => void handleDecision(approval.id, 'approved')}
+                  className="inline-flex items-center gap-1.5 rounded-ctl bg-ok-soft px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4" />
+                  )}
+                  {t('approvals.approve')}
+                </button>
+                <button
+                  type="button"
+                  disabled={isProcessing}
+                  onClick={() => void handleDecision(approval.id, 'rejected')}
+                  className="inline-flex items-center gap-1.5 rounded-ctl bg-bad-soft px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <XCircle className="h-4 w-4" />
+                  )}
+                  {t('approvals.reject')}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
