@@ -1,0 +1,95 @@
+{
+  "saving": "保存中…",
+  "origin": {
+    "human": "人工",
+    "mt": "机翻",
+    "imported": "导入"
+  },
+  "strings": {
+    "title": "界面翻译",
+    "add": "添加",
+    "tab": {
+      "ui": "界面",
+      "field": "字段",
+      "content": "内容"
+    },
+    "key": "键",
+    "value": "值",
+    "status": "状态",
+    "actions": "操作",
+    "empty": "没有找到翻译。",
+    "edit": "编辑",
+    "editTitle": "编辑翻译",
+    "newTitle": "新建翻译",
+    "statusValue": {
+      "draft": "草稿",
+      "published": "已发布",
+      "approved": "已审核"
+    }
+  },
+  "add": {
+    "title": "添加条目",
+    "sourceLang": "源语言",
+    "sourceLangAria": "条目源语言",
+    "targetLang": "目标语言",
+    "targetLangAria": "条目目标语言",
+    "sourceText": "原文",
+    "sourceTextAria": "条目原文",
+    "targetText": "译文",
+    "targetTextAria": "条目译文",
+    "saveFailed": "保存失败。",
+    "save": "保存条目"
+  },
+  "lookup": {
+    "title": "模糊查找",
+    "placeholder": "要查找的文本…",
+    "queryAria": "查找内容",
+    "sourceLangAria": "查找源语言",
+    "targetLangAria": "查找目标语言",
+    "pending": "查找中…",
+    "submit": "查找",
+    "failed": "查找失败。",
+    "similarity": "相似度 {{value}}%",
+    "noMatch": "没有超过阈值的匹配。"
+  },
+  "translate": {
+    "title": "翻译（翻译记忆 → 术语表 → 服务商）",
+    "placeholder": "要翻译的文本…",
+    "textAria": "待翻译文本",
+    "fromAria": "翻译源语言",
+    "toAria": "翻译目标语言",
+    "pending": "翻译中…",
+    "submit": "翻译",
+    "failed": "翻译失败。"
+  },
+  "page": {
+    "title": "翻译记忆",
+    "subtitle": "可复用的译文，供机器翻译流程使用——也就是智能体和编辑翻译内容时拿到的结果。"
+  },
+  "entries": {
+    "title": "条目",
+    "editTargetAria": "编辑 {{id}} 的译文",
+    "saveAria": "保存翻译记忆条目 {{id}}",
+    "cancelAria": "取消编辑 {{id}}",
+    "editAria": "编辑翻译记忆条目 {{id}}",
+    "deleteAria": "删除翻译记忆条目 {{id}}",
+    "sourcePlaceholder": "源语言",
+    "targetPlaceholder": "目标语言",
+    "filterSourceAria": "按源语言筛选",
+    "filterTargetAria": "按目标语言筛选",
+    "filterOriginAria": "按来源筛选",
+    "allOrigins": "全部来源",
+    "loading": "正在加载条目…",
+    "empty": "没有符合筛选条件的条目。",
+    "pair": "语言对",
+    "source": "原文",
+    "target": "译文",
+    "quality": "质量",
+    "origin": "来源",
+    "actions": "操作",
+    "pageInfo_one": "共 {{count}} 条 · 第 {{page}}/{{pages}} 页",
+    "pageInfo_other": "共 {{count}} 条 · 第 {{page}}/{{pages}} 页",
+    "prev": "上一页",
+    "next": "下一页"
+  }
+}
