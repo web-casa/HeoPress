@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="{{ page.locale }}">
+<head>
+<meta charset="utf-8">
+{% seo_head %}
+</head>
+<body class="heopress-corrections heopress-corrections-notice">
+<main>
+<article>
+<h1>{{ item.title }}</h1>
+{% if item.fields.page_path and item.fields.page_path != "" %}<p class="heopress-corrections-page">Corrected page: <a href="{{ item.fields.page_path | url }}">{{ item.fields.page_path }}</a></p>{% endif %}
+{% if item.fields.corrected_on and item.fields.corrected_on != "" %}<p class="heopress-corrections-date"><time datetime="{{ item.fields.corrected_on }}">{{ item.fields.corrected_on | slice: 0, 10 }}</time></p>{% endif %}
+{% if item.fields.excerpt and item.fields.excerpt != "" %}<blockquote class="heopress-corrections-quote"><p>{{ item.fields.excerpt }}</p></blockquote>{% endif %}
+{% if item.fields.correction and item.fields.correction != "" %}<p class="heopress-corrections-correction">{{ item.fields.correction }}</p>{% endif %}
+{% item_body %}
+</article>
+</main>
+</body>
+</html>

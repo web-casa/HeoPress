@@ -1,0 +1,103 @@
+#!/usr/bin/env tsx
+/**
+ * Create or update the application role (P03 task 7.1). Run as the owner of
+ * the tables, after migrations:
+ *
+ *   DATABASE_URL=<owner url> HEOPRESS_APP_ROLE=heopress_app \
+ *     HEOPRESS_APP_PASSWORD=<secret> pnpm --filter @heopress/database app-role
+ *
+ * Then point the application (and the database test suites) at the app role.
+ *
+ * `--render` provisions the rendering service's read-only role instead (P06, design R20):
+ * HEOPRESS_RENDER_ROLE (default heopress_render), HEOPRESS_RENDER_PASSWORD.
+ *
+ * The role creates and owns nothing (HeoPress P14, ADR-0024): runtime tables it created before are taken back by the
+ * owner, with row-level security; any other object it owns is listed and the run exits 1.
+ *
+ * `--test-database` also grants TRUNCATE, which the database test suites use
+ * to reset tables, and lifts the hold on deleted site ids in this database. Row-level security does not apply to TRUNCATE: never pass
+ * it for a deployment.
+ *
+ * `--check` provisions nothing: DATABASE_URL is the runtime's own connection (the application role), and the check
+ * passes only when row-level security applies to it — not a superuser, no BYPASSRLS, not the tables' owner, no
+ * membership in such a role — and a live probe on that connection sees one site's row of two (HeoPress P13, security
+ * review S-5). Exit 0: it applies; 1: it does not (the reason is printed); 2: the database could not be asked. The
+ * Docker entrypoint runs it before the server starts. Nothing secret is printed.
+ */
+import postgres from 'postgres';
+import { AppRoleOwnsObjectsError, checkRlsInstallation, ensureAppRole, MAINTENANCE_SEARCH_PATH, probeRls, rlsBypassReason } from '../src/app-role';
+import { ensureRenderRole } from '../src/render-role';
+
+const url = process.env.DATABASE_URL;
+const render = process.argv.includes('--render');
+const check = process.argv.includes('--check');
+
+async function runCheck(connection: string): Promise<number> {
+  const sql = postgres(connection, { max: 1, onnotice: () => {}, connect_timeout: 15, fetch_types: false });
+  try {
+    const { role, reason } = await rlsBypassReason(sql);
+    const visible = await sql.begin((tx) => probeRls(tx));
+    const installation = await checkRlsInstallation(sql);
+    if (reason || visible !== 1 || installation.problems.length > 0) {
+      const why = [
+        reason ?? `the probe saw ${visible} of 2 rows`,
+        ...installation.problems.map((p) => `policy: ${p}`),
+      ];
+      console.error(
+        `[app-role] ${role}: row-level security is not in force (${why.join('; ')}). ` +
+          'Run the migrations as the owner, then `app-role`; connect the runtime as the application role ' +
+          '(docs/zh-CN/operations/install.md, "数据库角色").',
+      );
+      return 1;
+    }
+    console.log(`[app-role] ${role}: row-level security applies (no superuser, no BYPASSRLS, not the owner; the probe saw 1 of 2 rows; policies match the registry; no CREATE, owns nothing)`);
+    return 0;
+  } catch (err) {
+    // A connection error, never the connection string: postgres.js messages carry no password.
+    console.error('[app-role] could not check the database role:', err instanceof Error ? err.message : err);
+    return 2;
+  } finally {
+    await sql.end({ timeout: 2 });
+  }
+}
+
+if (check) {
+  if (!url) {
+    console.error('[app-role] --check needs DATABASE_URL (the runtime connection).');
+    process.exit(2);
+  }
+  process.exitCode = await runCheck(url);
+} else {
+  const role = render ? process.env.HEOPRESS_RENDER_ROLE || 'heopress_render' : process.env.HEOPRESS_APP_ROLE || 'heopress_app';
+  const password = render ? process.env.HEOPRESS_RENDER_PASSWORD : process.env.HEOPRESS_APP_PASSWORD;
+  const testDatabase = process.argv.includes('--test-database');
+  if (!url || !password) {
+    console.error(`[app-role] DATABASE_URL (owner) and ${render ? 'HEOPRESS_RENDER_PASSWORD' : 'HEOPRESS_APP_PASSWORD'} are required.`);
+    process.exit(1);
+  }
+  const sql = postgres(url, { max: 1, onnotice: () => {}, connection: { search_path: MAINTENANCE_SEARCH_PATH } });
+  try {
+    if (render) {
+      // One transaction: a failure leaves the role as it was, never half revoked.
+      await sql.begin((tx) => ensureRenderRole(tx, { role, password }));
+      console.log(`[app-role] ${role} ready (rendering role: reads the public projection only)`);
+    } else {
+      const { reclaimed } = await ensureAppRole(sql, { role, password, testDatabase });
+      if (reclaimed.length > 0) {
+        console.log(`[app-role] the owner took back ${reclaimed.length} runtime table(s) ${role} had created, with row-level security: ${reclaimed.join(', ')}`);
+      }
+      console.log(`[app-role] ${role} ready (no superuser, no BYPASSRLS, creates and owns nothing${testDatabase ? '; TRUNCATE for test suites' : ''})`);
+    }
+  } catch (err) {
+    if (err instanceof AppRoleOwnsObjectsError) {
+      // An upgrade stops here, in maintenance (ADR-0024): every object, one per line, for an operator to review.
+      console.error(`[app-role] FAILED: ${err.role} owns objects the runtime never creates. Review each, drop it or hand it to the owner, and run app-role again:`);
+      for (const o of err.objects) console.error(`[app-role]   ${o}`);
+    } else {
+      console.error('[app-role] FAILED:', err instanceof Error ? err.message : err);
+    }
+    process.exitCode = 1;
+  } finally {
+    await sql.end({ timeout: 2 });
+  }
+}

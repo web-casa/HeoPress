@@ -1,0 +1,2 @@
+ALTER TABLE "lumibase_items" ADD COLUMN "needs_update_reminded_at" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "items_review_due_idx" ON "lumibase_items" USING btree ("site_id","needs_update_due_at") WHERE "lumibase_items"."needs_update_since" is not null AND "lumibase_items"."needs_update_due_at" is not null;

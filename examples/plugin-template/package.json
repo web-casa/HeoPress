@@ -1,0 +1,22 @@
+{
+  "name": "heopress-plugin-template",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A HeoPress plugin (hook extension) that depends only on @heopress/extension-sdk.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "heopress-extension.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@heopress/extension-sdk": "^1.0.0-rc.4",
+    "typescript": "5.9.3"
+  }
+}
