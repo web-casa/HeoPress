@@ -1,0 +1,69 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+# Production override.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Differences from the base file:
+# - Uses the published CMS image by default (add docker-compose.build.yml to
+#   build it from the checkout instead)
+# - NODE_ENV / HEOPRESS_ENV=production, so production config validation runs
+# - The database has no host port; everything stateful stays on the Compose network
+# - The CMS port is published on 127.0.0.1 only (the TLS overlay removes it)
+# - Supports Docker secret files via *_FILE environment variables
+
+x-prod-env: &prod-env
+  NODE_ENV: production
+  HEOPRESS_ENV: production
+  # The application role's connection (security review S-5; docs/zh-CN/operations/install.md "数据库角色").
+  DATABASE_URL: ${DATABASE_URL:-}
+  DATABASE_URL_FILE: ${DATABASE_URL_FILE:-}
+  DATABASE_SSL_MODE: ${DATABASE_SSL_MODE:-require}
+  JWT_SECRET: ${JWT_SECRET:-}
+  JWT_SECRET_FILE: ${JWT_SECRET_FILE:-}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+  ENCRYPTION_KEY_FILE: ${ENCRYPTION_KEY_FILE:-}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+
+services:
+  postgres:
+    ports: !reset []
+
+  meilisearch:
+    environment:
+      MEILI_ENV: production
+
+  cms:
+    build: !reset null
+    image: ${HEOPRESS_CMS_IMAGE:-ghcr.io/web-casa/heopress-cms:${HEOPRESS_VERSION:-latest}}
+    # Reachable from this host only (a reverse proxy here); docker-compose.tls.yml removes it entirely.
+    ports: !override
+      - "127.0.0.1:${CMS_PORT:-1989}:1989"
+    environment:
+      <<: *prod-env
+      # The owner's connection and the application role's password, for the entrypoint only (migrations, role
+      # provisioning; unset before the server starts), and no development default. Unset (a deployment from before
+      # security review S-5): DATABASE_URL is the owner's and the server warns that it bypasses row-level security.
+      DATABASE_OWNER_URL: ${DATABASE_OWNER_URL:-}
+      DATABASE_OWNER_URL_FILE: ${DATABASE_OWNER_URL_FILE:-}
+      HEOPRESS_APP_PASSWORD: ${HEOPRESS_APP_PASSWORD:-}
+      HEOPRESS_APP_PASSWORD_FILE: ${HEOPRESS_APP_PASSWORD_FILE:-}
+      # No development default for the rendering role in production: set it (or *_FILE). The API
+      # process only; the worker never sees it.
+      HEOPRESS_RENDER_PASSWORD: ${HEOPRESS_RENDER_PASSWORD:-}
+      HEOPRESS_RENDER_PASSWORD_FILE: ${HEOPRESS_RENDER_PASSWORD_FILE:-}
+      HEOPRESS_INTERNAL_SECRET_FILE: ${HEOPRESS_INTERNAL_SECRET_FILE:-}
+
+  cms-worker:
+    image: ${HEOPRESS_CMS_IMAGE:-ghcr.io/web-casa/heopress-cms:${HEOPRESS_VERSION:-latest}}
+    environment:
+      <<: *prod-env
+
+  site-classic:
+    build: !reset null
+    image: ${HEOPRESS_SITE_IMAGE:-ghcr.io/web-casa/heopress-site-classic:${HEOPRESS_VERSION:-latest}}
+    environment:
+      NODE_ENV: production
+      # The rendering role's connection (with its password), or a file with it; without either the
+      # service refuses to start.
+      DATABASE_URL: ${HEOPRESS_RENDER_DATABASE_URL:-}
+      DATABASE_URL_FILE: ${HEOPRESS_RENDER_DATABASE_URL_FILE:-}
+      HEOPRESS_INTERNAL_SECRET_FILE: ${HEOPRESS_INTERNAL_SECRET_FILE:-}
