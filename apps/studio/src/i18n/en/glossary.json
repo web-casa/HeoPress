@@ -1,0 +1,54 @@
+{
+  "page": {
+    "title": "Glossary",
+    "subtitle": "The site's terminology for a language pair — the rules the two-model translation enforces before a text is accepted."
+  },
+  "saving": "Saving…",
+  "rule": {
+    "prefer": "Prefer",
+    "preferHelp": "When the term appears in the source, the translation must use this rendering.",
+    "do-not-translate": "Do not translate",
+    "doNotTranslateHelp": "The term keeps its source spelling in the translation; the translation equals the term.",
+    "forbidden": "Forbidden",
+    "forbiddenHelp": "This wording must never appear in the target text, whatever the source says."
+  },
+  "form": {
+    "addTitle": "Add term",
+    "editTitle": "Edit term",
+    "sourceLang": "Source language",
+    "sourceLangAria": "Term source language",
+    "targetLang": "Target language",
+    "targetLangAria": "Term target language",
+    "term": "Term",
+    "termAria": "Term in the source language",
+    "translation": "Translation",
+    "translationAria": "Required rendering in the target language",
+    "rule": "Rule",
+    "ruleAria": "Term rule",
+    "note": "Note (optional)",
+    "noteAria": "Term note",
+    "save": "Save term",
+    "saveFailed": "Could not save the term."
+  },
+  "entries": {
+    "title": "Terms",
+    "fromPlaceholder": "from",
+    "filterFromAria": "Filter source language",
+    "toPlaceholder": "to",
+    "filterToAria": "Filter target language",
+    "loading": "Loading terms…",
+    "empty": "No terms for this language pair.",
+    "pair": "Pair",
+    "term": "Term",
+    "translation": "Translation",
+    "rule": "Rule",
+    "note": "Note",
+    "actions": "Actions",
+    "editAria": "Edit term {{term}}",
+    "deleteAria": "Delete term {{term}}",
+    "pageInfo_one": "{{count}} term · page {{page}} of {{pages}}",
+    "pageInfo_other": "{{count}} terms · page {{page}} of {{pages}}",
+    "prev": "Prev",
+    "next": "Next"
+  }
+}

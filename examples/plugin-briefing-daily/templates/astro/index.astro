@@ -1,0 +1,21 @@
+---
+import type { PageDataPage } from '@heopress/astro-kit';
+import { safeUrl } from '@heopress/astro-kit';
+import SeoHead from '@heopress/astro-kit/SeoHead.astro';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const { vm } = page;
+---
+<html lang={vm.page.locale}>
+<head>
+<meta charset="utf-8">
+<SeoHead page={page} />
+</head>
+<body class="heopress-briefing heopress-briefing-index">
+<main>
+<h1>{vm.route?.title}</h1>
+{vm.list.length > 0 && <ul class="heopress-briefing-list">{vm.list.map((c) => <li><a href={safeUrl(c.url)}>{c.title}</a>{c.excerpt !== '' && <p class="heopress-briefing-excerpt">{c.excerpt}</p>}</li>)}</ul>}
+{vm.pagination && <nav class="heopress-briefing-pages">{vm.pagination.prevUrl && <a href={safeUrl(vm.pagination.prevUrl)} rel="prev">Previous</a>}{vm.pagination.nextUrl && <a href={safeUrl(vm.pagination.nextUrl)} rel="next">Next</a>}</nav>}
+</main>
+</body>
+</html>

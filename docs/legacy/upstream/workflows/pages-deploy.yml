@@ -1,0 +1,340 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+name: Deploy Pages
+
+# Stable production deployment for the four Cloudflare Pages sites, plus a
+# manual redeploy path for a chosen tag.
+#
+# The trigger glob `v*.*.*` matches `v1.0.0-rc.1`, so a release candidate used
+# to start this workflow and then hit a `^v[0-9]+\.[0-9]+\.[0-9]+$` validator
+# that rejects prereleases — a red run for a tag that was never meant to deploy
+# here (issue #451, run 33715778982). The trigger and the validator disagreed
+# about what a deployable tag is. Prereleases now **skip** the job instead of
+# failing it, matching how `release.yml` gates its own `deploy-pages` matrix.
+#
+# A manual dispatch may still target a prerelease deliberately, which is the one
+# case a redeploy tool is most needed for, so the validator accepts both shapes.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to deploy (for example v0.26.0 or v1.0.0-rc.1). Required — a branch name is not deployable."
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-deploy-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 24
+  WRANGLER_SEND_METRICS: "false"
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  deploy:
+    name: Build and deploy Pages apps
+    runs-on: ubuntu-latest
+    # Prerelease tags skip this stable production workflow (#451). Same
+    # expression `release.yml` uses on its `deploy-cloudflare-pages-apps` and
+    # `deploy-cloudflare-worker-cms` jobs, so the two files cannot drift apart on
+    # what "prerelease" means. A manual dispatch is exempt: choosing an RC by
+    # hand is an explicit act, not an accident.
+    # Only the `github` context is legal in a job-level `if` — an `env` lookup
+    # here invalidates the whole workflow file (see backlog B31).
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.ref_name, '-') }}
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      # marketplace (apps/marketplace) lives in the private heopress-ai/marketplace
+      # repo; `pnpm marketplace:build` needs it to emit apps/marketplace/out. The
+      # runner's GITHUB_TOKEN can't read another org's repo, so authenticate with
+      # the MARKETPLACE_SUBMODULE_TOKEN PAT via a scoped insteadOf rewrite. Init
+      # ONLY this path — enterprise/extensions are private too and a blanket
+      # `submodules: true` checkout would abort with "repository not found".
+      - name: Fetch marketplace submodule
+        env:
+          MARKETPLACE_SUBMODULE_TOKEN: ${{ secrets.MARKETPLACE_SUBMODULE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MARKETPLACE_SUBMODULE_TOKEN}" ]; then
+            echo "::error::MARKETPLACE_SUBMODULE_TOKEN is not configured; cannot fetch the private apps/marketplace submodule." >&2
+            exit 1
+          fi
+          git config --global url."https://x-access-token:${MARKETPLACE_SUBMODULE_TOKEN}@github.com/heopress-ai/".insteadOf "https://github.com/heopress-ai/"
+          git submodule update --init --depth=1 apps/marketplace
+          git config --global --unset url."https://x-access-token:${MARKETPLACE_SUBMODULE_TOKEN}@github.com/heopress-ai/".insteadOf
+
+      # Accepts prereleases (`v1.0.0-rc.1`) as well as stable tags. The previous
+      # stable-only pattern made a release candidate unpublishable here even by
+      # hand, which is the one case a manual redeploy tool is most needed for.
+      - name: Validate release tag
+        run: |
+          if ! [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::tag must match vX.Y.Z or vX.Y.Z-prerelease, got: '$RELEASE_TAG'. Branch names are not deployable — pass a tag." >&2
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check package versions
+        run: pnpm version:check
+
+      - name: Export build metadata
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          COMMIT_SHA="$(git rev-parse HEAD)"
+          SHORT_SHA="${COMMIT_SHA::7}"
+          BUILD_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          {
+            echo "HEOPRESS_VERSION=$VERSION"
+            echo "HEOPRESS_RELEASE_TAG=$RELEASE_TAG"
+            echo "HEOPRESS_COMMIT_SHA=$COMMIT_SHA"
+            echo "HEOPRESS_SHORT_SHA=$SHORT_SHA"
+            echo "HEOPRESS_BUILD_TIME=$BUILD_TIME"
+            echo "NEXT_PUBLIC_HEOPRESS_VERSION=$VERSION"
+            echo "NEXT_PUBLIC_HEOPRESS_RELEASE_TAG=$RELEASE_TAG"
+            echo "NEXT_PUBLIC_HEOPRESS_COMMIT_SHA=$COMMIT_SHA"
+            echo "NEXT_PUBLIC_HEOPRESS_SHORT_SHA=$SHORT_SHA"
+            echo "NEXT_PUBLIC_HEOPRESS_BUILD_TIME=$BUILD_TIME"
+            echo "VITE_HEOPRESS_VERSION=$VERSION"
+            echo "VITE_HEOPRESS_RELEASE_TAG=$RELEASE_TAG"
+            echo "VITE_HEOPRESS_COMMIT_SHA=$COMMIT_SHA"
+            echo "VITE_HEOPRESS_SHORT_SHA=$SHORT_SHA"
+            echo "VITE_HEOPRESS_BUILD_TIME=$BUILD_TIME"
+          } >> "$GITHUB_ENV"
+
+      - name: Check Cloudflare credentials
+        id: cloudflare-credentials
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] && [ -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "can_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "can_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping Cloudflare Pages deployment because CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not configured."
+          fi
+
+      - name: Build docs
+        # VITE_GA_ID is inlined at build time, same contract as the landing app's
+        # NEXT_PUBLIC_GA_ID below. Unset means no GA tag and no cookie banner.
+        env:
+          VITE_GA_ID: ${{ vars.VITE_GA_ID }}
+        run: pnpm docs:build
+
+      - name: Deploy docs to Cloudflare Pages
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        id: deploy_docs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          pnpm exec wrangler pages deploy dist --project-name heopress-docs --branch main --cwd apps/docs 2>&1 | tee docs-deploy.log
+          URL="$(grep -Eo 'https://[^[:space:]]+' docs-deploy.log | tail -n1 | sed 's/[),.]*$//')"
+          if [ -z "$URL" ]; then
+            echo "Failed to parse docs deployment URL" >&2
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verify docs deployment
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        env:
+          DOCS_URL: ${{ steps.deploy_docs.outputs.url }}
+        run: |
+          set -euo pipefail
+          base="${DOCS_URL%/}"
+
+          # 1. Homepage must load.
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 5 \
+            --max-time 20 "$base" --output /dev/null
+
+          # 2. Unmatched deep-links must serve the prerendered 404.html SPA shell.
+          #    This is a PRERENDERED site (scripts/prerender.mjs): the former
+          #    `/* /index.html 200` catch-all was removed in fe9fa9db because it
+          #    shadowed every prerendered page and broke hard-nav/F5. Now an
+          #    unmatched path falls through to 404.html — which by Cloudflare
+          #    Pages convention is served with HTTP 404 but is the SPA shell that
+          #    boots the client router (NotFoundPage / client-only routes). So we
+          #    assert 404 + a shell body (has #root and the JS bundle), NOT a bare
+          #    Cloudflare error page and NOT a 200.
+          probe="$base/en/docs/__spa-fallback-probe__"
+          body="$(mktemp)"
+          status="$(curl --silent --show-error --location --retry 5 --retry-delay 5 \
+            --max-time 20 --output "$body" --write-out '%{http_code}' "$probe")"
+          if [ "$status" != "404" ]; then
+            echo "Unmatched deep-link returned HTTP $status for $probe (expected 404 from 404.html)." >&2
+            exit 1
+          fi
+          if ! grep -q 'id="root"' "$body" || ! grep -qE '/assets/.*\.js' "$body"; then
+            echo "404 response for $probe is not the prerendered SPA shell (missing #root / JS bundle)." >&2
+            echo "The client router will not boot — direct page refreshes will show a bare 404." >&2
+            exit 1
+          fi
+          echo "SPA 404 shell fallback OK ($probe -> $status, shell served)."
+
+      - name: Build landing
+        # NEXT_PUBLIC_GA_ID is inlined at build time (static export). Leave the
+        # repo variable unset to ship the landing page with no GA tag and no
+        # cookie banner — Cloudflare Web Analytics is cookieless and needs neither.
+        env:
+          NEXT_PUBLIC_GA_ID: ${{ vars.NEXT_PUBLIC_GA_ID }}
+        run: pnpm landing:build
+
+      - name: Deploy landing to Cloudflare Pages
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        id: deploy_landing
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          pnpm exec wrangler pages deploy apps/landing/out --project-name heopress-landing --branch main 2>&1 | tee landing-deploy.log
+          URL="$(grep -Eo 'https://[^[:space:]]+' landing-deploy.log | tail -n1 | sed 's/[),.]*$//')"
+          if [ -z "$URL" ]; then
+            echo "Failed to parse landing deployment URL" >&2
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verify landing deployment
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        run: curl --fail --silent --show-error --location --retry 5 --retry-delay 5 --max-time 20 "${{ steps.deploy_landing.outputs.url }}" --output /dev/null
+
+      # marketplace is a standalone submodule excluded from the pnpm workspace,
+      # so it installs & builds on its own (its deps are not in the root lockfile).
+      - name: Build marketplace
+        working-directory: apps/marketplace
+        run: |
+          pnpm install --no-frozen-lockfile --ignore-workspace
+          pnpm build
+
+      - name: Deploy marketplace to Cloudflare Pages
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        id: deploy_marketplace
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          pnpm exec wrangler pages deploy apps/marketplace/out --project-name heopress-marketplace --branch main 2>&1 | tee marketplace-deploy.log
+          URL="$(grep -Eo 'https://[^[:space:]]+' marketplace-deploy.log | tail -n1 | sed 's/[),.]*$//')"
+          if [ -z "$URL" ]; then
+            echo "Failed to parse marketplace deployment URL" >&2
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verify marketplace deployment
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        run: curl --fail --silent --show-error --location --retry 5 --retry-delay 5 --max-time 20 "${{ steps.deploy_marketplace.outputs.url }}" --output /dev/null
+
+      - name: Build studio
+        env:
+          # The Studio is a static SPA with no co-located backend on
+          # Cloudflare Pages, so it must call the CMS cross-origin. Point it
+          # at the deployed CMS origin (the same repo variable the CMS deploy
+          # verifies against). The CMS must allow this Studio origin via
+          # CORS_ALLOWED_ORIGINS. If unset, the build falls back to
+          # same-origin and the Studio will fail to reach the API.
+          VITE_API_URL: ${{ vars.HEOPRESS_CMS_PRODUCTION_URL }}
+        run: pnpm --filter @heopress/studio build
+
+      - name: Deploy studio to Cloudflare Pages
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        id: deploy_studio
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          pnpm exec wrangler pages deploy apps/studio/dist --project-name heopress-studio --branch main 2>&1 | tee studio-deploy.log
+          URL="$(grep -Eo 'https://[^[:space:]]+' studio-deploy.log | tail -n1 | sed 's/[),.]*$//')"
+          if [ -z "$URL" ]; then
+            echo "Failed to parse studio deployment URL" >&2
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure Studio custom domain
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # Idempotently attach the production Studio domain to the Pages project
+        # so studio.heopress.example resolves (Cloudflare provisions the proxied DNS
+        # record). The CMS API lives on the separate api.heopress.example origin,
+        # which the Worker owns via wrangler `custom_domain`.
+        run: node scripts/ensure-pages-domain.mjs --project heopress-studio --domain studio.heopress.example
+
+      - name: Verify studio deployment
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        run: curl --fail --silent --show-error --location --retry 5 --retry-delay 5 --max-time 20 "${{ steps.deploy_studio.outputs.url }}" --output /dev/null
+
+      - name: Add deployment URLs to GitHub Release notes
+        if: steps.cloudflare-credentials.outputs.can_deploy == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOCS_URL: ${{ steps.deploy_docs.outputs.url }}
+          LANDING_URL: ${{ steps.deploy_landing.outputs.url }}
+          MARKETPLACE_URL: ${{ steps.deploy_marketplace.outputs.url }}
+          STUDIO_URL: ${{ steps.deploy_studio.outputs.url }}
+        run: |
+          cat > deployment-notes.md <<EOF_NOTES
+          <!-- heopress-pages-deployments:start -->
+          ## Cloudflare Pages deployments
+
+          - Docs: ${DOCS_URL}
+          - Landing: ${LANDING_URL}
+          - Marketplace: ${MARKETPLACE_URL}
+          - Studio: ${STUDIO_URL}
+          <!-- heopress-pages-deployments:end -->
+          EOF_NOTES
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release view "$RELEASE_TAG" --json body --jq .body > current-release-notes.md
+            python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          current = Path("current-release-notes.md").read_text().rstrip()
+          block = Path("deployment-notes.md").read_text().strip()
+          pattern = re.compile(
+              r"<!-- heopress-pages-deployments:start -->.*?<!-- heopress-pages-deployments:end -->",
+              re.S,
+          )
+
+          if pattern.search(current):
+              updated = pattern.sub(block, current)
+          elif current:
+              updated = f"{current}\n\n{block}"
+          else:
+              updated = block
+
+          Path("updated-release-notes.md").write_text(updated + "\n")
+          PY
+            gh release edit "$RELEASE_TAG" --notes-file updated-release-notes.md
+          else
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file deployment-notes.md
+          fi

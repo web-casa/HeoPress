@@ -1,0 +1,11 @@
+{
+  "run_id": "run_example_2",
+  "status": "COMPLETED",
+  "result": {
+    "title": "",
+    "final_url": "https://news.example.com/harbour",
+    "markdown": "",
+    "access_denied": true
+  },
+  "error": null
+}

@@ -1,0 +1,133 @@
+# HeoPress container images on GHCR (docs/zh-CN/operations/install.md, docs/en/deployment/docker.md).
+#
+# Until this workflow existed, `docker/install.sh` pointed at `ghcr.io/web-casa/heopress-{cms,site-classic}:<version>`
+# and nothing had ever been pushed there: every install fell back to building from source (v1.6.2). A tag on the public
+# repository is the release signal, so this publishes exactly the tree the tag names — the same commit the release page
+# describes — for amd64 and arm64.
+#
+# The database image is published too: building it needs github.com for the pinned SCWS and zhparser tarballs, which is
+# the step that fails on restricted networks.
+name: Images
+
+on:
+  push:
+    tags: ['v*']
+  # Re-publish a tag without moving it (a base image fix, a build that failed): the tag is the input, never a branch.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to (re)build, e.g. v1.6.2
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+# Publishing two tags at once must not race on the same manifest list.
+concurrency:
+  group: images-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  # The release channel baked into the CMS build; docker/install.sh builds local images with the same value so a
+  # published image and a locally built one report themselves the same way.
+  RELEASE_CHANNEL: self-hosted
+
+jobs:
+
+  publish:
+    name: ${{ matrix.image }} (${{ matrix.platforms }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: heopress-cms
+            dockerfile: docker/Dockerfile
+            context: .
+            target: ''
+            platforms: linux/amd64,linux/arm64
+          - image: heopress-site-classic
+            dockerfile: docker/Dockerfile
+            context: .
+            target: site-classic
+            platforms: linux/amd64,linux/arm64
+          - image: heopress-postgres
+            dockerfile: docker/postgres/Dockerfile
+            context: docker/postgres
+            target: ''
+            platforms: linux/amd64,linux/arm64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # workflow_dispatch may name an older tag: build that commit, not the default branch.
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      # The version the images are tagged with: the release tag without its leading "v", which is what
+      # docker/install.sh appends to the registry prefix.
+      - name: Version
+        id: version
+        run: |
+          tag='${{ github.event.inputs.tag || github.ref_name }}'
+          version="${tag#v}"
+          case "$version" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "not a release tag: $tag" >&2; exit 1 ;;
+          esac
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      # arm64 is emulated on the amd64 runner; qemu is what makes the second platform build at all.
+      - uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+      - uses: docker/setup-buildx-action@f7ce87c1d6bead3e36075b2ce75da1f6cc28aaca # v3.9.0
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@b2391d37b4157fa4aa2e118d643f417910ff3242 # v3.8.0
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/web-casa/${{ matrix.image }}
+          # `latest` only when a human asked for it: a re-published patch must not silently become "latest".
+          tags: |
+            type=raw,value=${{ steps.version.outputs.value }}
+            type=raw,value=latest,enable=${{ github.event_name == 'push' && !contains(steps.version.outputs.value, '-') }}
+
+      - uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          platforms: ${{ matrix.platforms }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            HEOPRESS_RELEASE_CHANNEL=${{ env.RELEASE_CHANNEL }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  # The install path only uses these images if they are readable without credentials: GHCR defaults to private, so the
+  # release is not done until an anonymous pull of every tag succeeds.
+  verify-anonymous-pull:
+    name: Anonymous pull works
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Pull the published tags without credentials
+        env:
+          VERSION: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          version="${VERSION#v}"
+          docker logout ghcr.io || true
+          for image in heopress-cms heopress-site-classic heopress-postgres; do
+            if ! docker pull "ghcr.io/web-casa/${image}:${version}"; then
+              echo "::error::ghcr.io/web-casa/${image}:${version} is not anonymously pullable — set the package to public (see docs/en/deployment/docker.md). docker/install.sh falls back to building from source, but only publicly readable images are any use to an installer."
+              exit 1
+            fi
+          done
