@@ -1,0 +1,122 @@
+/* Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE. */
+@import 'tailwindcss';
+@config '../tailwind.config.ts';
+
+/*
+ * Carbon design tokens (ADR-0019 §3); the values mirror `src/theme/tokens.ts`.
+ * The shadcn names below stay as aliases (HSL triples) so existing pages and
+ * Settings → Branding overrides keep working.
+ */
+@layer base {
+  :root {
+    --bg: #F7F7F9; --panel: #FFFFFF; --panel-2: #F1F1F4; --line: #E4E4E9;
+    --fg: #16161A; --muted: #5F5F6B; --icon: #7E7E89;
+    --accent: #5B57E0; --accent-fg: #FFFFFF; --soft: #EEEDFD; --sel: #F0EFFE;
+    --ok: #13795B; --ok-soft: #E2F3EC; --warn: #9A5B00; --warn-soft: #FBF0DC;
+    --bad: #BE3A31; --bad-soft: #FCE8E6; --ai: #7C3AED;
+    --chart-1: #4C48D9; --chart-2: #8F8CF0; --chart-3: #CDCBFA;
+
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+      'Noto Sans CJK SC', 'Noto Sans SC', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+    --row-h: 40px;
+    --pad: 16px;
+
+    --background: 240 14.3% 97.3%;
+    --foreground: 240 8.3% 9.4%;
+    --primary: 242 68.8% 61%;
+    --primary-foreground: 0 0% 100%;
+    --muted-hsl: 240 12% 95.1%;
+    --muted-foreground: 240 5.9% 39.6%;
+    --accent-hsl: 240 12% 95.1%;
+    --accent-foreground: 240 8.3% 9.4%;
+    --destructive: 4 59% 46.9%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 10.2% 90.4%;
+    --input: 240 10.2% 90.4%;
+    --ring: 242 68.8% 61%;
+    --radius: 0.5rem;
+    color-scheme: light;
+  }
+
+  .dark {
+    --bg: #0D0D10; --panel: #141417; --panel-2: #1B1B1F; --line: #26262C;
+    --fg: #ECECF1; --muted: #9F9FAB; --icon: #75757F;
+    --accent: #8A87FF; --accent-fg: #0D0D10; --soft: #1F1E3A; --sel: #1C1B30;
+    --ok: #45CF9C; --ok-soft: #10261E; --warn: #F0B44F; --warn-soft: #2A2010;
+    --bad: #FF8379; --bad-soft: #2E1513; --ai: #B794FF;
+    --chart-1: #8A87FF; --chart-2: #5753C4; --chart-3: #34317A;
+
+    --background: 240 10.3% 5.7%;
+    --foreground: 240 15.2% 93.5%;
+    --primary: 242 100% 76.5%;
+    --primary-foreground: 240 10.3% 5.7%;
+    --muted-hsl: 240 6.9% 11.4%;
+    --muted-foreground: 240 6.7% 64.7%;
+    --accent-hsl: 240 6.9% 11.4%;
+    --accent-foreground: 240 15.2% 93.5%;
+    --destructive: 4 100% 73.7%;
+    --destructive-foreground: 240 10.3% 5.7%;
+    --border: 240 7.3% 16.1%;
+    --input: 240 7.3% 16.1%;
+    --ring: 242 100% 76.5%;
+    color-scheme: dark;
+  }
+
+  [data-density='compact'] { --row-h: 32px; --pad: 12px; }
+
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-size: 14px;
+  }
+  code, kbd, pre, samp { font-family: var(--font-mono); }
+  .tabular, td, [data-numeric] { font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+}
+
+/* Type scale (ADR-0019 §4). */
+@layer components {
+  .t-page { font-size: 22px; line-height: 30px; font-weight: 600; letter-spacing: -0.01em; }
+  .t-section { font-size: 14px; line-height: 20px; font-weight: 600; }
+  .t-body { font-size: 14px; line-height: 21px; }
+  .t-aux { font-size: 12.5px; line-height: 18px; color: var(--muted); }
+  .t-num { font-variant-numeric: tabular-nums; }
+}
+
+/* The rich-text editor (ADR-0020): Tiptap's content in the Carbon look. */
+@layer components {
+  .rt .rt-content { outline: none; min-height: 6rem; font-size: 14px; line-height: 1.7; }
+  .rt-article .rt-content { min-height: 18rem; font-size: 15.5px; line-height: 1.8; }
+  .rt .rt-content > * + * { margin-top: 0.6em; }
+  .rt .rt-content h2 { font-size: 1.35em; font-weight: 600; line-height: 1.35; margin-top: 1.4em; }
+  .rt .rt-content h3 { font-size: 1.15em; font-weight: 600; line-height: 1.4; margin-top: 1.2em; }
+  .rt .rt-content h4 { font-size: 1em; font-weight: 600; margin-top: 1em; }
+  .rt .rt-content ul { list-style: disc; padding-left: 1.4em; }
+  .rt .rt-content ol { list-style: decimal; padding-left: 1.4em; }
+  .rt .rt-content li > p { margin: 0; }
+  .rt .rt-content blockquote { border-left: 3px solid var(--line); padding-left: 1em; color: var(--muted); }
+  .rt .rt-content pre { background: var(--panel-2); border-radius: 6px; padding: 0.75em 1em; font-family: var(--font-mono); font-size: 0.88em; overflow-x: auto; }
+  .rt .rt-content :not(pre) > code { background: var(--panel-2); border-radius: 4px; padding: 0.1em 0.35em; font-family: var(--font-mono); font-size: 0.88em; }
+  .rt .rt-content a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+  .rt .rt-content hr { border: 0; border-top: 1px solid var(--line); margin: 1.5em 0; }
+  .rt .rt-content img { max-width: 100%; height: auto; border-radius: 6px; }
+  .rt .rt-content img.ProseMirror-selectednode { outline: 2px solid var(--accent); }
+  .rt .rt-content video { display: block; width: 100%; max-height: 480px; border-radius: 6px; background: #000; }
+  .rt .rt-content video.ProseMirror-selectednode { outline: 2px solid var(--accent); }
+  .rt .rt-content table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .rt .rt-content th, .rt .rt-content td { border: 1px solid var(--line); padding: 0.4em 0.6em; vertical-align: top; }
+  .rt .rt-content th { background: var(--panel-2); font-weight: 600; text-align: left; }
+  .rt .rt-content .selectedCell { background: var(--sel); }
+  /* Empty lines show what to type: "/" for blocks. */
+  .rt .rt-content .is-empty::before { content: attr(data-placeholder); color: var(--muted); opacity: 0.7; float: left; height: 0; pointer-events: none; }
+  .rt .rt-content .ProseMirror-gapcursor::after { border-top-color: var(--fg); }
+  .rt-handle { transition: opacity 120ms; }
+  .rt .rt-content .ProseMirror-focused { outline: none; }
+}
+@media (prefers-reduced-motion: reduce) { .rt-handle { transition: none; } }

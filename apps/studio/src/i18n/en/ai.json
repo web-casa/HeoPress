@@ -1,0 +1,154 @@
+{
+  "loadFailed": "Could not load this page. Reload to try again.",
+  "checkStatus": {
+    "passed": "Passed",
+    "warning": "Warning",
+    "needs_review": "Needs a person",
+    "blocked": "Blocked",
+    "off": "Off"
+  },
+  "gateState": {
+    "missing": "not run",
+    "stale": "out of date",
+    "passed": "passed",
+    "blocked": "blocked",
+    "needs_review": "needs a person",
+    "approved": "approved",
+    "rejected": "rejected"
+  },
+  "queueStatus": {
+    "review": "In review",
+    "veto_window": "Veto window",
+    "queued": "Queued"
+  },
+  "review": {
+    "title": "AI review",
+    "description": "Drafts the pipeline could not publish on its own: the gate's score, each check's evidence and what to fix. Decide several at once.",
+    "score": "Score {{score}}",
+    "mandatory": "mandatory",
+    "evidence": "Evidence",
+    "emptyTitle": "Nothing waits for review",
+    "emptyBody": "Drafts land here when a condition of auto-publishing is not met, or while their veto window is open.",
+    "batch": "Decide the selected entries",
+    "selected": "Selected: {{n}}",
+    "selectAll": "Select all",
+    "reason": "Reason (recorded with each decision)",
+    "reasonRequired": "Write a reason first.",
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "dismiss": "Dismiss",
+      "veto": "Veto"
+    },
+    "failed": "The decision failed: {{reason}}",
+    "results": "Results",
+    "resultOk": "Done",
+    "resultFailed": "Not done",
+    "resultStatus": "{{status}} ({{reason}})",
+    "select": "Select {{title}}",
+    "reasonCode": "Why: {{reason}}",
+    "noGate": "No gate result",
+    "gateState": "Gate: {{state}}",
+    "hide": "Hide",
+    "details": "Details",
+    "fits": "Possible: {{actions}}",
+    "conditions": "Unmet conditions: {{list}}",
+    "stale": "The gate result is out of date: {{list}}"
+  },
+  "workbench": {
+    "title": "Prompt workbench",
+    "description": "Try an unsaved prompt and editorial policy on a sample source document. No draft or content item is written; the model call is billed to this site.",
+    "defaultPrompt": "Rewrite the source into one article for this site: adapt it to the audience, keep every fact, and cite the source in each paragraph with a link.",
+    "noSourcesTitle": "No source documents yet",
+    "noSourcesBody": "Add a source and fetch it first: the workbench tries prompts on real source documents.",
+    "source": "Sample source document",
+    "mode": "Mode",
+    "modes": {
+      "rewrite": "Rewrite",
+      "write": "Write",
+      "translate": "Translate"
+    },
+    "locale": "Target language",
+    "prompt": "Prompt (not saved)",
+    "policy": "Editorial policy, JSON (not saved)",
+    "policyInvalid": "The editorial policy must be a JSON object.",
+    "unsavedNote": "Nothing here is saved; a trial never creates a draft.",
+    "run": "Run trial",
+    "running": "Running…",
+    "stop": "Stop",
+    "output": "Output",
+    "stages": {
+      "source": "Reading the source",
+      "model": "Waiting for the model",
+      "diagnostics": "Checking",
+      "done": "Done"
+    },
+    "failed": "The trial failed: {{reason}}",
+    "noOutput": "Run a trial to see the output here.",
+    "usage": "{{model}} · {{input}} in / {{output}} out · cost {{cost}}",
+    "diagnostics": "Gate diagnostics",
+    "verdict": "The gate would say: {{state}} (score {{score}})",
+    "notRun": "Not run in a trial: {{list}}",
+    "uncited": "Paragraphs without a citation",
+    "paragraph": "Paragraph {{n}}: {{text}}",
+    "sourcePassage": "Likely from source paragraph {{n}} ({{similarity}}% shared): {{text}}",
+    "noSourcePassage": "No source passage matches."
+  },
+  "flows": {
+    "title": "Flow drafts",
+    "description": "Flows drafted by agents wait here until a person approves them. Approval mode: {{mode}}.",
+    "modes": {
+      "solo": "solo (you may approve your own draft with an authenticator code)",
+      "team": "team (someone else approves)"
+    },
+    "status": {
+      "pending": "Waiting",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "via": {
+      "agent": "drafted by an agent",
+      "studio": "drafted in Studio"
+    },
+    "trigger": "Trigger: {{trigger}}",
+    "operations": "Operations",
+    "ownTeam": "You drafted this flow: in team mode someone else approves it.",
+    "secondFactor": "Authenticator code (you drafted this flow)",
+    "reason": "Reason",
+    "approve": "Approve and enable",
+    "reject": "Reject",
+    "failed": "Not done: {{reason}}",
+    "decided": "Decision: {{reason}}",
+    "emptyTitle": "No flow drafts",
+    "emptyBody": "An agent drafts a flow with its draftFlow tool; it appears here for approval."
+  },
+  "settings": {
+    "title": "AI pipeline",
+    "description": "Pause the pipeline, set model budgets and the daily processing limit, and decide how auto-publishing paces itself.",
+    "pipeline": "Pipeline",
+    "running": "Running.",
+    "paused": "Paused: {{reasons}}.",
+    "reasons": {
+      "budget": "budget used up",
+      "manual": "paused by hand",
+      "incident": "incident",
+      "kill_switch": "kill switch"
+    },
+    "pause": "Pause",
+    "resume": "Resume ({{reason}})",
+    "killSwitch": "The site's kill switch is on: lift it under Agents first.",
+    "budget": "Budgets and quota",
+    "monthly": "Monthly model budget ({{currency}})",
+    "daily": "Daily model budget ({{currency}})",
+    "processingLimit": "Source documents processed per day",
+    "emptyMeansNone": "Leave a field empty for no limit.",
+    "invalid": "Check the values: amounts and whole numbers only.",
+    "save": "Save",
+    "saved": "Saved.",
+    "autoPublish": "Auto-publishing",
+    "vetoWindow": "Veto window (minutes)",
+    "dailyLimit": "Auto-publishes per day (empty: no limit)",
+    "minInterval": "Minimum interval between publishes (minutes)",
+    "sourceMaxAge": "Source freshness (days)"
+  }
+}

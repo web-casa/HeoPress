@@ -1,0 +1,1 @@
+ALTER TABLE "lumibase_public_items" ADD COLUMN "structured" jsonb DEFAULT '{}'::jsonb NOT NULL;
