@@ -1,0 +1,25 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+# Development override: hot reload from the checkout, one process for API and
+# workers. Migrations are not run by the dev image — against the published port, as the owner, run
+# `pnpm --filter @heopress/database migrate` and then (HEOPRESS_APP_PASSWORD=heopress_app_dev, or yours)
+# `pnpm --filter @heopress/database app-role`: the CMS connects as the application role heopress_app.
+#
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d --build
+
+services:
+  cms:
+    image: heopress-cms:dev
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    environment:
+      HEOPRESS_PROCESS_ROLE: all
+    volumes:
+      - ../apps/cms/src:/app/apps/cms/src
+      - ../packages:/app/packages
+      - storage:/app/data/storage
+
+  # The dev `cms` already runs the workers.
+  cms-worker:
+    profiles: ["split"]
+    image: heopress-cms:dev
