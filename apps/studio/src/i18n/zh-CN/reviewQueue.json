@@ -1,0 +1,16 @@
+{
+  "reviewQueue": {
+    "title": "复核队列",
+    "description": "所有需要人来处理的内容：编辑手工标记的、长期没人更新的，以及等待复核的条目。",
+    "groups": {
+      "manual": "编辑标记",
+      "auto": "长期未更新",
+      "awaiting_review": "等待复核"
+    },
+    "empty": "这里还没有内容。",
+    "truncated": "还有更多条目符合条件；计数只覆盖当前显示的条目。",
+    "failed": "复核队列加载失败。",
+    "due": "截止 {{date}}",
+    "updated": "更新于 {{date}}"
+  }
+}
