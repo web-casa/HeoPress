@@ -1,0 +1,44 @@
+{
+  "name": "@heopress/plugin-glossary",
+  "version": "1.0.0-rc.4",
+  "private": true,
+  "description": "The official HeoPress glossary plugin (heopress-glossary): a term collection with term and index pages, term links in article bodies, a citation gate check, and a term tooltip component. Built only on @heopress/extension-sdk.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./build": {
+      "types": "./scripts/build.d.mts",
+      "default": "./scripts/build.mjs"
+    },
+    "./heopress-extension.json": "./heopress-extension.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "heopress-extension.json",
+    "templates",
+    "src",
+    "!src/**/__tests__",
+    "scripts/build.mjs",
+    "scripts/build.d.mts",
+    "tsconfig.json",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run",
+    "clean": "rm -rf .turbo dist"
+  },
+  "devDependencies": {
+    "@heopress/extension-sdk": "workspace:*",
+    "@types/node": "^26.6.4",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.6.2",
+    "vitest": "^5.0.3"
+  }
+}
