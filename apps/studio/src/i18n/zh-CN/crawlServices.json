@@ -1,0 +1,52 @@
+{
+  "title": "采集服务",
+  "description": "仅在原生抓取因技术原因失败时使用（超时、服务端错误、需要浏览器渲染的页面）。站点拒绝访问（401、403、451、robots.txt、禁止 AI 声明）时该 URL 直接终止，不会让任何服务绕过。",
+  "adminOnly": "只有站点管理员可以修改这些设置。",
+  "close": "关闭",
+  "open": "采集服务",
+  "saved": "已保存。",
+  "hosts": "只能访问：{{hosts}}",
+  "hostsEndpoint": "只能访问下方配置的服务地址（或实例自带的 Crawl4AI）。",
+  "provider": {
+    "firecrawl": "Firecrawl",
+    "crawl4ai": "Crawl4AI",
+    "cloudflare": "Cloudflare Browser Run",
+    "tinyfish": "TinyFish"
+  },
+  "reason": {
+    "ready": "使用中",
+    "disabled": "未启用",
+    "no_consent": "未确认外发",
+    "no_credential": "缺少凭据",
+    "missing_option": "配置不完整",
+    "budget_exhausted": "本月预算已用完",
+    "breaker_open": "连续失败已暂停"
+  },
+  "usage": {
+    "month": "{{month}} 月度",
+    "requests_one": "{{count}} 次请求",
+    "requests_other": "{{count}} 次请求",
+    "cost": "估算费用",
+    "costValue": "{{cost}} / {{budget}} USD",
+    "noCeiling": "无上限",
+    "failures": "失败次数",
+    "pausedUntil": "暂停至"
+  },
+  "form": {
+    "enabled": "启用该服务",
+    "position": "在原生抓取之后的顺序",
+    "consent": "我确认本站的目标网址可以发送给 {{service}}。",
+    "credential": {
+      "api_key": "API Key",
+      "api_token": "API Token",
+      "optional_token": "Token（可选）"
+    },
+    "credentialSet": "已设置（…{{hint}}），输入新值可替换",
+    "clearCredential": "清除凭据",
+    "budget": "月度预算（USD，留空表示无上限）",
+    "endpoint": "服务地址",
+    "endpointPlaceholder": "留空：使用实例自带的 Crawl4AI",
+    "accountId": "账户 ID",
+    "save": "保存"
+  }
+}

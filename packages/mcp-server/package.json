@@ -1,0 +1,65 @@
+{
+  "name": "@heopress/mcp-server",
+  "version": "1.0.0-rc.4",
+  "description": "HeoPress MCP server — lets AI assistants manage the full HeoPress Content OS: collections, fields, items, relations, RBAC (roles/policies/permissions/API keys), users & teams, intents, flows, webhooks, translations & translation memory, search, media & transform presets, read-only insights, presets, editorial workflow, content releases, share links, read-only deployments, extensions, and site administration.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/web-casa/HeoPress.git",
+    "directory": "packages/mcp-server"
+  },
+  "bin": {
+    "heopress-mcp": "./dist/index.cjs"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf .turbo dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsup": "^8.5.1",
+    "typescript": "^5.6.2",
+    "vitest": "^5.0.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://docs.heopress.example",
+  "bugs": {
+    "url": "https://github.com/web-casa/HeoPress/issues"
+  },
+  "keywords": [
+    "heopress",
+    "cms",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "claude",
+    "cursor",
+    "stdio"
+  ]
+}

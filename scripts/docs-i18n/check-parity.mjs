@@ -1,0 +1,421 @@
+#!/usr/bin/env node
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+// Check that an zh-CN/en pair is structurally the same document.
+//
+// WHY THIS EXISTS
+// ---------------
+// The other two checkers answer different questions. `sync.mjs` compares hashes
+// ("same source revision?"). `verify-code-refs.mjs` compares the doc's claims to
+// the source tree ("is what it says true?"). Neither can tell you the translation
+// is *the same document*: a hand-written target can silently drop three sections,
+// truncate mid-table, translate an env-var name, or — the most common failure —
+// be committed still in the source language.
+//
+// This script is the reviewer that a hand-translation workflow otherwise needs.
+// Translations here are written by an LLM in the editor and land without a second
+// pair of eyes (docs/.i18n/TASKS.md §6), so the gate has to be mechanical:
+//
+//   1. language      — the target side must actually read as the target language
+//   2. headings      — same count, same level sequence (text differs, shape does not)
+//   3. code fences   — same count, and each body byte-identical: code is never translated
+//   4. inline code   — same multiset of spans (`siteId`, `HEOPRESS_X`, paths…)
+//   5. link targets  — same multiset of URLs/paths (link text differs, destinations do not)
+//   6. tables        — same table count and same row count per table
+//   7. front matter  — target carries the provenance keys the tooling relies on
+//   8. bulk          — body length within a sane band, to catch a dropped tail
+//
+// It is deliberately blind to prose quality. It cannot tell you a translation
+// reads well; it can tell you it is not the same document, which is the class of
+// error nobody notices until a reader hits it.
+//
+// Usage:
+//   node scripts/docs-i18n/check-parity.mjs                 # every pair
+//   node scripts/docs-i18n/check-parity.mjs features/x.md   # one rel
+//   node scripts/docs-i18n/check-parity.mjs --json          # machine-readable
+//
+// Exit code: 0 = no problems, 1 = problems found, 2 = bad usage.
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { LOCALES, DOCS_ROOT } from './config.mjs';
+import { splitFrontMatter, readKey } from './frontmatter.mjs';
+import { detectLang } from './lang-detect.mjs';
+
+const ARGS = process.argv.slice(2);
+const AS_JSON = ARGS.includes('--json');
+const RELS = ARGS.filter((a) => !a.startsWith('--'));
+
+/**
+ * Body-length ratio tolerated between the two sides. Chinese technical prose
+ * runs longer than English (compound terms spelled out, more function words), so
+ * the band is asymmetric-friendly and wide: this is a truncation tripwire, not a
+ * style rule. A target at 45% of its source has lost content, not been concise.
+ */
+const MIN_RATIO = 0.6;
+const MAX_RATIO = 1.9;
+
+/**
+ * Fence languages whose bodies are code and must be identical on both sides.
+ * Anything else — `text`, `tree`, `mermaid`, an untagged block — holds prose or a
+ * diagram whose labels are supposed to be translated, so only its presence is
+ * checked, not its content.
+ */
+const CODE_LANGS = new Set([
+  'bash', 'sh', 'shell', 'zsh', 'console',
+  'ts', 'tsx', 'typescript', 'js', 'jsx', 'javascript',
+  'json', 'jsonc', 'yaml', 'yml', 'toml', 'ini', 'env', 'dotenv',
+  'sql', 'graphql', 'gql', 'http', 'html', 'css', 'diff', 'dockerfile', 'docker',
+  'python', 'py', 'go', 'rust', 'rs', 'java', 'kotlin', 'swift', 'php', 'ruby',
+]);
+
+/** A doc can waive a specific check when the divergence is deliberate. */
+const WAIVER = /<!--\s*check-parity:\s*allow\s+([^>]+?)\s*-->/g;
+
+function readWaivers(raw) {
+  const out = new Set();
+  WAIVER.lastIndex = 0;
+  let m;
+  while ((m = WAIVER.exec(raw)) !== null) {
+    for (const token of m[1].split(/\s+/)) if (token) out.add(token);
+  }
+  return out;
+}
+
+/** Fenced code blocks: returns [{ lang, body }] in document order. */
+function codeFences(body) {
+  const out = [];
+  const re = /^([ \t]*)(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)^[ \t]*\2[ \t]*$/gm;
+  let m;
+  while ((m = re.exec(body)) !== null) {
+    out.push({ lang: m[3].trim(), body: m[4] });
+  }
+  return out;
+}
+
+/** Body with fenced blocks removed, so fence content never feeds prose checks. */
+function withoutFences(body) {
+  return body.replace(/^([ \t]*)(`{3,}|~{3,})[^\n]*\n[\s\S]*?^[ \t]*\2[ \t]*$/gm, '');
+}
+
+function headings(body) {
+  return withoutFences(body)
+    .split('\n')
+    .map((l) => /^(#{1,6})\s+\S/.exec(l))
+    .filter(Boolean)
+    .map((m) => m[1].length);
+}
+
+function inlineCode(body) {
+  const out = [];
+  const re = /`([^`\n]+)`/g;
+  let m;
+  while ((m = re.exec(withoutFences(body))) !== null) out.push(m[1].trim());
+  return out;
+}
+
+/**
+ * Link destinations, split by kind.
+ *
+ * In-page anchors (`#deployment-steps`) are generated from heading text, so a
+ * correctly translated doc *must* have different ones — comparing their values
+ * would flag every good translation. Their count still has to match: a missing
+ * anchor link means a missing cross-reference. Fragments on relative Markdown
+ * links follow the same rule because the target heading is translated; compare
+ * their file paths while preserving fragments on external URLs. Everything else
+ * must match exactly: a translated file path is a broken link.
+ *
+ * With `from` ({ rel, locale }), a relative link is compared by the file it
+ * actually RESOLVES to, not by its literal text. Two locales legitimately write
+ * a different path for the same target: `docs/zh-CN/README.md` has to say
+ * `../en/llms.txt` for a file that exists only under `docs/en/`, while
+ * `docs/en/README.md` says `./llms.txt`. Comparing the literal strings called
+ * that a mismatch and — worse — called the *broken* VI link (`./llms.txt`,
+ * pointing at a `docs/zh-CN/llms.txt` that does not exist) a perfect match. So:
+ * resolve both sides, then collapse the locale segment only when the target
+ * exists in both trees, which is what makes an ordinary cross-doc link compare
+ * equal while a single-locale target still has to agree on one real file.
+ * Backlog B67, and the false positive B37(d) recorded.
+ */
+export function linkTargets(body, from = null) {
+  const files = [];
+  let anchors = 0;
+  const re = /\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+  let m;
+  while ((m = re.exec(withoutFences(body))) !== null) {
+    if (m[1].startsWith('#')) anchors += 1;
+    else {
+      const localMarkdown = !/^[a-z][a-z0-9+.-]*:/i.test(m[1]) && !m[1].startsWith('//');
+      if (!localMarkdown) {
+        files.push(m[1]);
+        continue;
+      }
+      const withoutFragment = m[1].replace(/(?<=\.md)#[^#]*$/i, '');
+      files.push(from ? resolveDocLink(withoutFragment, from) : withoutFragment);
+    }
+  }
+  return { files, anchors };
+}
+
+/**
+ * A relative link reduced to the file it points at, locale-collapsed when both
+ * locales have that file. Absolute-looking targets (`/api/...`) and anything
+ * that escapes the docs tree are returned untouched, so they still compare
+ * literally.
+ */
+export function resolveDocLink(target, { rel, locale }) {
+  if (target.startsWith('/')) return target;
+  const [pathPart, ...rest] = target.split('#');
+  const fragment = rest.length > 0 ? `#${rest.join('#')}` : '';
+  const fromDir = path.posix.dirname(path.posix.join('docs', locale, rel));
+  const resolved = path.posix.normalize(path.posix.join(fromDir, pathPart));
+  const match = /^docs\/([A-Za-z-]+)\/(.*)$/.exec(resolved);
+  if (!match) return resolved + fragment;
+  const [, targetLocale, inner] = match;
+  if (!LOCALES.includes(targetLocale)) return resolved + fragment;
+  // Extensionless slug links (`../features/foo`) name `foo.md`.
+  const exists = (l) =>
+    [inner, `${inner}.md`].some((candidate) => fs.existsSync(path.join(DOCS_ROOT, l, candidate)));
+  const present = LOCALES.filter(exists).length;
+  // Present in every locale: an ordinary cross-doc link, compare equal. Present
+  // in none: parity is not a dead-link check, and a link that is dead in both
+  // trees is not a locale mismatch either — collapse it so the two sides compare
+  // as they did before resolution, instead of reporting a misleading mismatch.
+  // Present in only some: each side has to agree on one real file (B67).
+  const collapse = present === LOCALES.length || present === 0;
+  return (collapse ? `docs/*/${inner}` : resolved) + fragment;
+}
+
+/** Row counts of each pipe table, in document order. */
+function tableShapes(body) {
+  const shapes = [];
+  let rows = 0;
+  for (const line of withoutFences(body).split('\n')) {
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      rows += 1;
+    } else if (rows > 0) {
+      shapes.push(rows);
+      rows = 0;
+    }
+  }
+  if (rows > 0) shapes.push(rows);
+  return shapes;
+}
+
+/** Multiset difference, reported both ways, capped so output stays readable. */
+function multisetDiff(a, b) {
+  const count = (xs) => xs.reduce((m, x) => m.set(x, (m.get(x) ?? 0) + 1), new Map());
+  const ca = count(a);
+  const cb = count(b);
+  const missing = [];
+  const extra = [];
+  for (const [k, n] of ca) {
+    const d = n - (cb.get(k) ?? 0);
+    if (d > 0) missing.push(d > 1 ? `${k} (×${d})` : k);
+  }
+  for (const [k, n] of cb) {
+    const d = n - (ca.get(k) ?? 0);
+    if (d > 0) extra.push(d > 1 ? `${k} (×${d})` : k);
+  }
+  return { missing, extra };
+}
+
+function sample(list, n = 5) {
+  return list.length <= n ? list.join(', ') : `${list.slice(0, n).join(', ')} … +${list.length - n} more`;
+}
+
+/**
+ * Compare one rel across both locales.
+ * @returns {{rel: string, skipped?: string, sourceLocale?: string, problems: Array<{check: string, detail: string}>}}
+ */
+export function checkPair(rel) {
+  const abs = Object.fromEntries(LOCALES.map((l) => [l, path.join(DOCS_ROOT, l, rel)]));
+  for (const l of LOCALES) {
+    if (!fs.existsSync(abs[l])) {
+      return { rel, skipped: `no docs/${l}/${rel} yet — nothing to compare`, missing: l, problems: [] };
+    }
+  }
+
+  const raw = Object.fromEntries(LOCALES.map((l) => [l, fs.readFileSync(abs[l], 'utf8')]));
+  const parts = Object.fromEntries(LOCALES.map((l) => [l, splitFrontMatter(raw[l])]));
+  const waived = new Set([...readWaivers(raw.en), ...readWaivers(raw['zh-CN'])]);
+
+  // Authoring direction decides which side must carry provenance. `sourceLang`
+  // is per-file and can be zh-CN, so this is read, never assumed.
+  // zh-CN is the default source language (P02); a Chinese file that says it
+  // was translated from English makes English the source for that pair.
+  const zhFrom = readKey(parts['zh-CN'].fmRaw, 'translatedFrom');
+  const sourceLocale = zhFrom === 'en' ? 'en' : 'zh-CN';
+  const targetLocale = sourceLocale === 'en' ? 'zh-CN' : 'en';
+
+  const problems = [];
+  const add = (check, detail) => {
+    if (!waived.has(check)) problems.push({ check, detail });
+  };
+
+  // 1. language — the single most common failure is a target still in the source
+  //    language, which every hash-based check reads as perfectly fine.
+  const det = detectLang(parts[targetLocale].body);
+  if (det && det.lang && det.lang !== targetLocale) {
+    add(
+      'language',
+      `docs/${targetLocale}/${rel} reads as "${det.lang}", not "${targetLocale}" — untranslated or copied from the source side`,
+    );
+  }
+
+  // 2. headings
+  const hs = Object.fromEntries(LOCALES.map((l) => [l, headings(parts[l].body)]));
+  if (hs.en.length !== hs['zh-CN'].length) {
+    add('headings', `en has ${hs.en.length} headings, zh-CN has ${hs['zh-CN'].length}`);
+  } else if (hs.en.join(',') !== hs['zh-CN'].join(',')) {
+    add('headings', `same count (${hs.en.length}) but different level sequence`);
+  }
+
+  // 3. code fences — count always, content only for blocks that hold real code.
+  const fences = Object.fromEntries(LOCALES.map((l) => [l, codeFences(parts[l].body)]));
+  if (fences.en.length !== fences['zh-CN'].length) {
+    add('code-fences', `en has ${fences.en.length} fenced blocks, zh-CN has ${fences['zh-CN'].length}`);
+  } else {
+    // Comments inside a fence are prose and are meant to be translated, so they
+    // are stripped before comparing. Prose-shaped fences (diagrams, trees,
+    // sample output, untagged blocks) are compared by count only — translating
+    // an ASCII architecture diagram's labels is correct, not drift.
+    const stripComments = (s) =>
+      s
+        .split('\n')
+        .filter((l) => !/^\s*(#|\/\/|--)/.test(l))
+        .join('\n')
+        .trim();
+    const real = [];
+    for (let i = 0; i < fences.en.length; i += 1) {
+      if (!CODE_LANGS.has(fences.en[i].lang.toLowerCase())) continue;
+      if (stripComments(fences.en[i].body) !== stripComments(fences['zh-CN'][i].body)) {
+        real.push(`#${i + 1} (${fences.en[i].lang})`);
+      }
+    }
+    if (real.length) {
+      add('code-fences', `code differs (ignoring comment lines) in block(s) ${real.join(', ')}`);
+    }
+  }
+
+  // 4. inline code
+  const ic = multisetDiff(inlineCode(parts.en.body), inlineCode(parts['zh-CN'].body));
+  if (ic.missing.length || ic.extra.length) {
+    const bits = [];
+    if (ic.missing.length) bits.push(`missing in zh-CN: ${sample(ic.missing)}`);
+    if (ic.extra.length) bits.push(`only in zh-CN: ${sample(ic.extra)}`);
+    add('inline-code', bits.join(' · '));
+  }
+
+  // 5. link targets
+  const lEn = linkTargets(parts.en.body, { rel, locale: 'en' });
+  const lVi = linkTargets(parts['zh-CN'].body, { rel, locale: 'zh-CN' });
+  const lt = multisetDiff(lEn.files, lVi.files);
+  if (lt.missing.length || lt.extra.length) {
+    const bits = [];
+    if (lt.missing.length) bits.push(`missing in zh-CN: ${sample(lt.missing)}`);
+    if (lt.extra.length) bits.push(`only in zh-CN: ${sample(lt.extra)}`);
+    add('links', bits.join(' · '));
+  }
+  if (lEn.anchors !== lVi.anchors) {
+    add('links', `en has ${lEn.anchors} in-page anchor link(s), zh-CN has ${lVi.anchors}`);
+  }
+
+  // 6. tables
+  const ts = Object.fromEntries(LOCALES.map((l) => [l, tableShapes(parts[l].body)]));
+  if (ts.en.join(',') !== ts['zh-CN'].join(',')) {
+    add('tables', `row counts en=[${ts.en.join(',')}] zh-CN=[${ts['zh-CN'].join(',')}]`);
+  }
+
+  // 7. front matter on the translated side
+  for (const key of ['translatedFrom', 'sourceHash']) {
+    if (!readKey(parts[targetLocale].fmRaw, key)) {
+      add('front-matter', `docs/${targetLocale}/${rel} has no \`${key}\` — run stamp-pair.mjs`);
+    }
+  }
+
+  // 8. bulk
+  const lenSrc = parts[sourceLocale].body.trim().length;
+  const lenTgt = parts[targetLocale].body.trim().length;
+  if (lenSrc > 400) {
+    const ratio = lenTgt / lenSrc;
+    if (ratio < MIN_RATIO || ratio > MAX_RATIO) {
+      add(
+        'bulk',
+        `target/source length ratio ${ratio.toFixed(2)} outside [${MIN_RATIO}, ${MAX_RATIO}] ` +
+        `(${lenTgt} vs ${lenSrc} chars) — likely dropped or duplicated content`,
+      );
+    }
+  }
+
+  return { rel, sourceLocale, problems };
+}
+
+function walk(dir, onFile) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      if (entry.name === '.i18n' || entry.name === 'node_modules') continue;
+      walk(path.join(dir, entry.name), onFile);
+    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+      onFile(path.join(dir, entry.name));
+    }
+  }
+}
+
+function allRels() {
+  const rels = new Set();
+  for (const locale of LOCALES) {
+    const root = path.join(DOCS_ROOT, locale);
+    if (!fs.existsSync(root)) continue;
+    walk(root, (file) => rels.add(path.relative(root, file).split(path.sep).join('/')));
+  }
+  return [...rels].sort();
+}
+
+// --- CLI ------------------------------------------------------------------
+// Importable (stamp-pair gates on it) but also runnable directly; only the
+// direct run should produce output and set an exit code.
+const invokedDirectly = process.argv[1] && path.resolve(process.argv[1]).endsWith('check-parity.mjs');
+
+if (invokedDirectly) {
+  const targets = RELS.length > 0 ? RELS : allRels();
+  const results = targets.map(checkPair);
+  const failed = results.filter((r) => r.problems.length > 0);
+  const skipped = results.filter((r) => r.skipped);
+  const total = failed.reduce((n, r) => n + r.problems.length, 0);
+
+  if (AS_JSON) {
+    console.log(
+      JSON.stringify(
+        {
+          pairs: results.length - skipped.length,
+          singleSided: skipped.length,
+          missing: Object.fromEntries(LOCALES.map((l) => [l, skipped.filter((r) => r.missing === l).map((r) => r.rel)])),
+          problems: total,
+          results: failed,
+        },
+        null,
+        2,
+      ),
+    );
+  } else {
+    console.log(
+      `[check-parity] pairs=${results.length - skipped.length} single-sided=${skipped.length} ` +
+      `problems=${total} in ${failed.length} pair(s)`,
+    );
+    for (const r of failed) {
+      console.log(`\n  ${r.rel}`);
+      for (const p of r.problems) console.log(`    [${p.check}] ${p.detail}`);
+    }
+    if (total === 0) console.log('  every two-sided pair is structurally consistent');
+    // Single-sided docs are not failures, but they are the translation backlog:
+    // list them by the missing language (zh-CN first — it is the source language).
+    for (const locale of LOCALES) {
+      const missing = skipped.filter((r) => r.missing === locale);
+      if (missing.length === 0) continue;
+      console.log(`\n  missing docs/${locale}/ (${missing.length}):`);
+      for (const r of missing) console.log(`    ${r.rel}`);
+    }
+  }
+
+  process.exit(total > 0 ? 1 : 0);
+}

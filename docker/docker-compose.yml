@@ -1,0 +1,250 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+#
+# Minimal deployment (HeoPress P03 task 6.1): PostgreSQL 18 + API + worker,
+# and the public sites' rendering service (P06).
+# Cache, queue, schedules, rate limits, search and vectors all live in
+# PostgreSQL; media is stored on a local volume. Nothing else is required.
+#
+#   docker compose -f docker/docker-compose.yml up -d --build
+#
+# Optional services, each behind a profile (see docs/en/deployment/docker.md):
+#   --profile s3           S3-compatible storage, SeaweedFS (set HEOPRESS_STORAGE=s3)
+#   --profile meilisearch  external search (set MEILISEARCH_HOST)
+#   --profile crawl4ai     self-hosted Crawl4AI crawl service (HeoPress P08 task 3.7)
+#
+# Overrides: docker-compose.prod.yml (published image, secrets, no host
+# ports for the database), docker-compose.dev.yml (hot reload),
+# docker-compose.tls.yml (Caddy), docker-compose.monitoring.yml.
+
+x-cms-env: &cms-env
+  HEOPRESS_RUNTIME: docker
+  DATABASE_URL: ${DATABASE_URL:-postgresql://heopress:heopress_dev@postgres:5432/heopress}
+  HEOPRESS_ENV: ${HEOPRESS_ENV:-development}
+  JWT_SECRET: ${JWT_SECRET:-dev_secret_key}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+  # Vector search needs pgvector, which the database image provides.
+  HEOPRESS_VECTOR_SEARCH: ${HEOPRESS_VECTOR_SEARCH:-false}
+  # Media on the local volume by default; S3_* switch to an S3-compatible store.
+  HEOPRESS_STORAGE: ${HEOPRESS_STORAGE:-local}
+  HEOPRESS_STORAGE_DIR: /app/data/storage
+  S3_ENDPOINT: ${S3_ENDPOINT:-}
+  S3_REGION: ${S3_REGION:-}
+  S3_BUCKET: ${S3_BUCKET:-}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-}
+  # Unset: search runs on PostgreSQL.
+  MEILISEARCH_HOST: ${MEILISEARCH_HOST:-}
+  MEILISEARCH_API_KEY: ${MEILISEARCH_API_KEY:-}
+  # Internal services the CMS may reach as service connections, exact origins
+  # only (docs/en/security/outbound-requests.md), e.g.
+  # http://seaweedfs:8333,http://meilisearch:7700 with the optional profiles.
+  HEOPRESS_TRUSTED_INTERNAL_ENDPOINTS: ${HEOPRESS_TRUSTED_INTERNAL_ENDPOINTS:-}
+  # The self-hosted Crawl4AI of the crawl4ai profile, registered as a trusted internal endpoint for the Crawl4AI
+  # crawl service only (ADR-0014; docs/zh-CN/content/crawl-services.md). Without the profile the name does not
+  # resolve and the service step fails as a network error. Empty: no instance Crawl4AI.
+  HEOPRESS_CRAWL4AI_ENDPOINT: ${HEOPRESS_CRAWL4AI_ENDPOINT-http://crawl4ai:11235}
+  LLM_PROVIDER: ${LLM_PROVIDER:-echo}
+  LLM_MODEL: ${LLM_MODEL:-}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  PORT: "1989"
+
+services:
+  postgres:
+    # PostgreSQL 18 with pgvector and zhparser (docs/en/deployment/database-image.md).
+    image: ${HEOPRESS_DB_IMAGE:-heopress-postgres:18}
+    build:
+      context: ./postgres
+    environment:
+      POSTGRES_DB: heopress
+      POSTGRES_USER: heopress
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-heopress_dev}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heopress -d heopress"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # HTTP API (and the Studio). Runs migrations on start.
+  cms:
+    image: ${HEOPRESS_CMS_IMAGE:-heopress-cms:local}
+    # Everything else in docker/.env (feature flags, AI providers, limits).
+    env_file:
+      - path: .env
+        required: false
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      <<: *cms-env
+      HEOPRESS_PROCESS_ROLE: web
+      # The rendering service (HeoPress P06), for the API process only: its read-only role is created
+      # at startup when this password is set; previews share HEOPRESS_INTERNAL_SECRET with it
+      # (docs/zh-CN/rendering/site-classic.md, docs/zh-CN/rendering/preview.md).
+      HEOPRESS_RENDER_PASSWORD: ${HEOPRESS_RENDER_PASSWORD:-heopress_render_dev}
+      HEOPRESS_PREVIEW_ORIGIN: ${HEOPRESS_PREVIEW_ORIGIN:-}
+      HEOPRESS_INTERNAL_SECRET: ${HEOPRESS_INTERNAL_SECRET:-}
+    ports:
+      - "${CMS_PORT:-1989}:1989"
+    volumes:
+      - storage:/app/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Queue workers and scheduled jobs. Starts after the API has migrated.
+  cms-worker:
+    image: ${HEOPRESS_CMS_IMAGE:-heopress-cms:local}
+    # Everything else in docker/.env (feature flags, AI providers, limits).
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *cms-env
+      HEOPRESS_PROCESS_ROLE: worker
+      HEOPRESS_WORKER_HEALTH_PORT: "1988"
+      SKIP_MIGRATIONS: "true"
+    # The worker fetches: it is the only service on the crawler network as well, where it reaches Crawl4AI.
+    networks:
+      - default
+      - crawler
+    volumes:
+      - storage:/app/data/storage
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:1988/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      cms:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # The public sites (HeoPress P06): every site domain, rendered from the public projection by
+  # the read-only rendering role. Internal only — Caddy (docker-compose.domains.yml) sends the
+  # sites' traffic here; no host port.
+  site-classic:
+    image: ${HEOPRESS_SITE_IMAGE:-heopress-site-classic:local}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: site-classic
+    environment:
+      DATABASE_URL: ${HEOPRESS_RENDER_DATABASE_URL:-postgresql://heopress_render:${HEOPRESS_RENDER_PASSWORD:-heopress_render_dev}@postgres:5432/heopress}
+      HEOPRESS_TRUSTED_PROXIES: ${HEOPRESS_TRUSTED_PROXIES:-}
+      HEOPRESS_PREVIEW_ORIGIN: ${HEOPRESS_PREVIEW_ORIGIN:-}
+      HEOPRESS_PREVIEW_MEDIA_ORIGINS: ${HEOPRESS_PREVIEW_MEDIA_ORIGINS:-}
+      HEOPRESS_INTERNAL_SECRET: ${HEOPRESS_INTERNAL_SECRET:-}
+      HEOPRESS_CMS_INTERNAL_URL: http://cms:1989
+      HEOPRESS_PUBLIC_URL: ${HEOPRESS_PUBLIC_URL:-}
+    expose:
+      - "2027"
+    # Nothing to write but temporary files; no privileges to gain.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      # The CMS migrates and creates the rendering role first.
+      cms:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Optional services ──────────────────────────────────────────────────────
+  # S3-compatible object storage (SeaweedFS, Apache-2.0). MinIO images are no
+  # longer freely pullable, so the optional S3 profile uses SeaweedFS; any
+  # S3-compatible store works the same way.
+  #
+  # The S3 gateway accepts only S3_ACCESS_KEY / S3_SECRET_KEY, and only for
+  # S3_BUCKET (without an identity file SeaweedFS accepts any key pair). The
+  # container refuses to start without a key pair.
+  seaweedfs:
+    profiles: ["s3"]
+    image: chrislusf/seaweedfs:3.97
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        if [ -z "$$S3_ACCESS_KEY" ] || [ -z "$$S3_SECRET_KEY" ]; then
+          echo "seaweedfs: set S3_ACCESS_KEY and S3_SECRET_KEY (docker/.env) for the s3 profile" >&2
+          exit 1
+        fi
+        case "$$S3_ACCESS_KEY$$S3_SECRET_KEY$$S3_BUCKET" in
+          *[\"\\]*) echo "seaweedfs: S3 keys and bucket must not contain quotes or backslashes" >&2; exit 1 ;;
+        esac
+        umask 077
+        printf '{"identities":[{"name":"heopress","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Read:%s","Write:%s","List:%s","Tagging:%s"]}]}' \
+          "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" "$$S3_BUCKET" "$$S3_BUCKET" "$$S3_BUCKET" "$$S3_BUCKET" > /tmp/s3.json
+        exec weed server -s3 -s3.config=/tmp/s3.json -dir=/data
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      S3_BUCKET: ${S3_BUCKET:-heopress-media}
+    volumes:
+      - s3data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8333/healthz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  seaweedfs-init:
+    profiles: ["s3"]
+    image: chrislusf/seaweedfs:3.97
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c", "echo \"s3.bucket.create -name $${S3_BUCKET}\" | weed shell -master=seaweedfs:9333"]
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-heopress-media}
+
+  meilisearch:
+    profiles: ["meilisearch"]
+    image: getmeili/meilisearch:v1.16.0
+    environment:
+      MEILI_MASTER_KEY: ${MEILISEARCH_API_KEY:-heopress_dev_key}
+      MEILI_ENV: ${MEILI_ENV:-development}
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilidata:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://127.0.0.1:7700/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Crawl4AI (Apache-2.0), self-hosted crawl service for pages that need a browser (HeoPress P08 task 3.7).
+  # Only on the `crawler` network: it reaches the public internet and the worker, never the database or the API
+  # (they are on `default` only). Target URLs are checked by the worker's outbound boundary before they are sent here.
+  crawl4ai:
+    profiles: ["crawl4ai"]
+    image: ${HEOPRESS_CRAWL4AI_IMAGE:-unclecode/crawl4ai:0.7.4}
+    networks:
+      - crawler
+    expose:
+      - "11235"
+    shm_size: 1g
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+networks:
+  default:
+  # A separate bridge network with outbound internet access, for the crawler and the worker only.
+  crawler:
+
+volumes:
+  pgdata:
+  storage:
+  s3data:
+  meilidata:
