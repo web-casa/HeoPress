@@ -1,0 +1,80 @@
+{
+  "title": "Logs & monitoring",
+  "description": "Service status and the event stream of this site.",
+  "cards": {
+    "site": "Site",
+    "instance": "Instance",
+    "reachability": "Reachability",
+    "audit": "Site audit and link scan",
+    "linkScan": "Link scan",
+    "database": "Database",
+    "migrations": "Migrations",
+    "extensions": "Extensions",
+    "cache": "Cache",
+    "search": "Search",
+    "storage": "Storage",
+    "queue": "Queue",
+    "jobs": "Background jobs",
+    "failedJobs_one": "{{count}} failed in 24 hours",
+    "failedJobs_other": "{{count}} failed in 24 hours",
+    "checked": "Checked",
+    "never": "Never checked",
+    "filtering": "Filtering the stream — click again to clear"
+  },
+  "state": {
+    "ok": "OK",
+    "warn": "Warning",
+    "bad": "Failing",
+    "unknown": "Unknown"
+  },
+  "levels": {
+    "label": "Level",
+    "all": "All",
+    "warnPlus": "Warning and above",
+    "error": "Errors",
+    "success": "Success"
+  },
+  "query": "Search events",
+  "queryHint": "Words in the message or event; use | for either",
+  "histogram": "Events per minute, last 60 minutes",
+  "histogramErrors": "errors",
+  "live": "Live",
+  "paused": "Paused",
+  "pause": "Pause",
+  "resume": "Resume",
+  "newWhilePaused_one": "{{count}} new event waiting",
+  "newWhilePaused_other": "{{count}} new events waiting",
+  "loadFailed": "The events couldn’t be loaded.",
+  "empty": "No event matches.",
+  "more": "Load older",
+  "detail": {
+    "empty": "Select an event to see all its fields.",
+    "fields": "Fields",
+    "copy": "Copy",
+    "copied": "Copied",
+    "openItem": "Open the item",
+    "openAudit": "Open the audit",
+    "openReachability": "Open reachability"
+  },
+  "sources": {
+    "content": "Content",
+    "run": "Runs",
+    "security": "Security",
+    "access": "Members and permissions",
+    "api_key": "API keys",
+    "system": "Instance"
+  },
+  "panel": {
+    "views": "Views",
+    "saved": "Saved filters",
+    "save": "Save current filter",
+    "name": "Name",
+    "noSaved": "No saved filter yet.",
+    "remove": "Remove {{name}}",
+    "tooMany": "At most 20 saved filters.",
+    "earliestBySource": "Events kept, by source, from"
+  },
+  "agents": {
+    "reserved": "The agent view arrives with P10 — today it lists Mission Control as it is."
+  }
+}
