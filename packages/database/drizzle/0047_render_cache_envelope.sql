@@ -1,0 +1,2 @@
+ALTER TABLE "lumibase_render_cache" ADD COLUMN "content_type" text DEFAULT 'text/html; charset=utf-8' NOT NULL;--> statement-breakpoint
+ALTER TABLE "lumibase_render_cache" ADD COLUMN "headers" jsonb DEFAULT '{}'::jsonb NOT NULL;

@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="{{ page.locale }}">
+<head>
+<meta charset="utf-8">
+{% seo_head %}
+</head>
+<body class="heopress-glossary heopress-glossary-index">
+<main>
+<h1>{{ route.title }}</h1>
+{% if list.size > 0 %}<dl class="heopress-glossary-list">{% for c in list %}<dt><a href="{{ c.url | url }}">{{ c.title }}</a></dt>{% if c.excerpt != "" %}<dd>{{ c.excerpt }}</dd>{% endif %}{% endfor %}</dl>{% endif %}
+{% if pagination %}<nav class="heopress-glossary-pages">{% if pagination.prevUrl %}<a href="{{ pagination.prevUrl | url }}" rel="prev">Previous</a>{% endif %}{% if pagination.nextUrl %}<a href="{{ pagination.nextUrl | url }}" rel="next">Next</a>{% endif %}</nav>{% endif %}
+</main>
+</body>
+</html>

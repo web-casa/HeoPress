@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "heopress": {
+      "command": "npx",
+      "args": ["-y", "--package", "@heopress/mcp-server@latest", "heopress-mcp"],
+      "env": {
+        "HEOPRESS_URL": "https://api.<your-site>.heopress.example",
+        "HEOPRESS_SITE_ID": "<your-site-id>",
+        "HEOPRESS_TOKEN": "<your-api-token>"
+      }
+    }
+  }
+}
