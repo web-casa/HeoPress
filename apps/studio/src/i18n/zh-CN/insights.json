@@ -1,0 +1,59 @@
+{
+  "title": "数据洞察",
+  "addPanel": "添加面板",
+  "requestFailed": "请求失败：{{status}}",
+  "list": {
+    "subtitle": "基于站点内容构建的仪表盘。",
+    "new": "新建仪表盘",
+    "namePlaceholder": "仪表盘名称",
+    "create": "创建",
+    "loading": "正在加载仪表盘…",
+    "empty": "还没有仪表盘。",
+    "createFirst": "创建第一个仪表盘"
+  },
+  "dashboard": {
+    "notFound": "找不到该仪表盘。",
+    "back": "← 返回数据洞察",
+    "autoRefresh": "自动刷新",
+    "refresh": {
+      "off": "关闭",
+      "s30": "30 秒",
+      "s60": "60 秒"
+    },
+    "loading": "正在加载面板…",
+    "empty": "还没有面板，添加一个即可开始可视化内容。",
+    "deletePanel": "删除面板"
+  },
+  "editor": {
+    "name": "名称",
+    "type": "类型",
+    "collection": "集合",
+    "aggregate": "聚合方式",
+    "field": "字段",
+    "groupBy": "分组依据（可选）",
+    "select": "请选择…",
+    "none": "无",
+    "preview": "预览",
+    "save": "保存",
+    "cancel": "取消"
+  },
+  "panelTypes": {
+    "metric": "指标",
+    "timeSeries": "时间序列",
+    "bar": "柱状图",
+    "pie": "饼图",
+    "list": "列表",
+    "table": "表格"
+  },
+  "aggregates": {
+    "count": "计数",
+    "sum": "求和",
+    "avg": "平均值",
+    "min": "最小值",
+    "max": "最大值"
+  },
+  "panel": {
+    "noData": "暂无数据",
+    "updated": "{{secs}} 秒前更新"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "title": "AI 流量",
+  "description": "AI 爬虫如何读取你的站点、AI 助手带来多少访客。被读取不等于被引用。明细保留 7 天，不存储访客地址。",
+  "scope": {
+    "current": "当前站点",
+    "all": "全部站点"
+  },
+  "range": {
+    "label": "时间范围",
+    "days": "{{count}} 天"
+  },
+  "metric": {
+    "crawler": "AI 爬虫访问",
+    "referral": "AI 引荐访客"
+  },
+  "purpose": {
+    "training": "训练",
+    "search": "AI 搜索",
+    "userFetch": "用户触发",
+    "referral": "AI 引荐访客"
+  },
+  "chart": "每日{{metric}}",
+  "noData": "这段时间没有记录到 AI 流量。",
+  "byAgent": {
+    "title": "按爬虫与平台",
+    "who": "名称",
+    "operator": "运营方",
+    "purpose": "用途",
+    "count": "次数",
+    "share": "占比",
+    "counts": "次数",
+    "shares": "占比",
+    "blocked": "已阻止",
+    "blockedHint": "已被本站爬虫策略阻止，打开策略"
+  },
+  "topCrawled": {
+    "title": "被 AI 爬虫读取最多",
+    "resource": {
+      "page": "页面",
+      "markdown": "Markdown 副本",
+      "llms": "llms.txt",
+      "robots": "robots.txt",
+      "sitemap": "站点地图",
+      "feed": "订阅源",
+      "other": "文件"
+    }
+  },
+  "topLanding": {
+    "title": "AI 引荐的落地页",
+    "via": "来自 {{sources}}"
+  },
+  "perSite": {
+    "title": "每站合计",
+    "site": "站点",
+    "crawler": "爬虫访问",
+    "referral": "引荐访客"
+  }
+}

@@ -1,0 +1,724 @@
+{
+  "saveAction": {
+    "stay": "Save & stay",
+    "return": "Save & return",
+    "createNew": "Save & create new"
+  },
+  "detail": {
+    "noRead": "You do not have <code>read</code> permission on this collection.",
+    "loadFailed": "Failed to load item.",
+    "loading": "Loading item…",
+    "breadcrumb": "Content",
+    "backToList": "Back to list",
+    "title": "Edit item",
+    "noShare": "You do not have share permission on this collection.",
+    "share": "Share",
+    "noDelete": "You do not have delete permission on this collection.",
+    "delete": "Delete",
+    "noUpdate": "You do not have update permission on this collection.",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "saveOptions": "Save options",
+    "setDefault": "Set “{{action}}” as default",
+    "conflict": "Not saved: someone changed this item since you opened it. Your edits are still here — copy what you need, then",
+    "conflictFields": "Not saved: someone changed this item since you opened it ({{fields}}). Your edits are still here — copy what you need, then",
+    "loadCurrent": "load the current version",
+    "conflictEnd": ".",
+    "saveFailed": "Save failed.",
+    "shareTitle": "Create share link",
+    "shareClose": "Close share dialog",
+    "shareRole": "Share role",
+    "shareRolePick": "Select a read-only role",
+    "sharePassword": "Password",
+    "shareMaxUses": "Max uses",
+    "shareValidUntil": "Valid until",
+    "shareRolesLoading": "Loading eligible roles…",
+    "shareNoRoles": "No read-only share roles are available.",
+    "shareFailed": "Failed to create share link.",
+    "shareCopy": "Copy share link",
+    "shareCreating": "Creating…",
+    "shareCreate": "Create link",
+    "targetLocale": "Target locale",
+    "tabs": {
+      "title": "Tabs",
+      "fields": "Fields",
+      "translation": "Translation",
+      "group": "Translation group",
+      "revisions": "Revisions",
+      "versions": "Versions",
+      "raw": "Raw JSON"
+    },
+    "meta": {
+      "status": "Status",
+      "sort": "Sort",
+      "editorial": "Editorial",
+      "updated": "Updated",
+      "created": "Created"
+    },
+    "scheduling": "Scheduling",
+    "publishAt": "Publish at",
+    "unpublishAt": "Unpublish at"
+  },
+  "fieldsTab": {
+    "empty": "No editable fields.",
+    "pinnedHint": "Pinned by a human edit — agents cannot overwrite this field.",
+    "pinned": "Pinned",
+    "release": "Release pin on {{field}}",
+    "releaseHint": "Release pin — allow agents to write this field again.",
+    "readOnly": "read-only"
+  },
+  "list": {
+    "reviews": "Reviews",
+    "newItem": "New item",
+    "liveMode": "Live Mode",
+    "saveBookmark": "Save current view as bookmark",
+    "filters": "Filters",
+    "editRaw": "Edit raw ({{count}})",
+    "refresh": "Refresh",
+    "loadFailed": "Failed to load items.",
+    "columns": {
+      "id": "id",
+      "status": "status",
+      "updated": "updated"
+    },
+    "empty": "No items match.",
+    "showing": "Showing {{from}}-{{to}} of {{total}}",
+    "none": "0 of {{total}}"
+  },
+  "status": {
+    "published": "published",
+    "draft": "draft",
+    "archived": "archived"
+  },
+  "create": {
+    "failed": "Create failed.",
+    "noCreate": "You do not have create permission on this collection.",
+    "loadingFields": "Loading fields…",
+    "crumbNew": "new",
+    "submit": "Create draft"
+  },
+  "revisions": {
+    "loading": "Loading revisions…",
+    "loadFailed": "Failed to load revisions.",
+    "empty": "No revisions yet.",
+    "by": "by {{who}}",
+    "agent": "agent",
+    "system": "system",
+    "pick": "Select a revision to inspect.",
+    "title": "Revision {{id}}…",
+    "diff": "Diff",
+    "raw": "Raw",
+    "reverting": "Reverting…",
+    "revert": "Revert to this",
+    "reasonPrompt": "This revert changes the sponsor marking of a published item. Why?",
+    "reasonLabel": "Reason for the revert",
+    "reasonSubmit": "Revert with this reason",
+    "revertFailed": "Revert failed.",
+    "showUnchanged": "Show unchanged fields"
+  },
+  "impact": {
+    "verb": {
+      "delete": "Delete anyway",
+      "save": "Save anyway"
+    },
+    "what": {
+      "delete": "Deleting this page",
+      "unpublish": "Unpublishing this page",
+      "move": "Changing this page's address"
+    },
+    "forbidden": "You do not have permission to do this.",
+    "redirectDone": "Redirect added: {{from}} → {{to}}. Links to this page will lead there once it no longer answers.",
+    "updated_one": "Links updated in {{count}} page.",
+    "updated_other": "Links updated in {{count}} pages.",
+    "updatedSkipped_one": "Links updated in {{count}} page; {{skipped}} left as they were ({{reasons}}).",
+    "updatedSkipped_other": "Links updated in {{count}} pages; {{skipped}} left as they were ({{reasons}}).",
+    "title": "Pages that may be affected",
+    "summary_one": "{{what}} may break links to it from {{count}} page and the links below. Links a theme or another site holds are not known here.",
+    "summary_other": "{{what}} may break links to it from {{count}} pages and the links below. Links a theme or another site holds are not known here.",
+    "truncated": " Only the first {{limit}} are listed.",
+    "moveRedirect": " A redirect from the old address to the new one is added when you save.",
+    "linkingPages": "Linking pages",
+    "navigation": "Navigation: {{label}}",
+    "depth2": "(links to a linking page) ",
+    "checkFailed": "The pages linking to this one could not be checked. {{what}} may break links to it; go on only if you are sure.",
+    "address": "Another page's address",
+    "createRedirect": "Create redirect",
+    "updateLinks": "Update links",
+    "failed": "That did not work.",
+    "addressPlaceholder": "https://example.com/another-page/"
+  },
+  "diff": {
+    "empty": "No field changes recorded.",
+    "added": "added",
+    "removed": "removed",
+    "changed": "changed",
+    "unchanged": "unchanged"
+  },
+  "dependents": {
+    "failed": "Failed to resolve.",
+    "title": "Records depend on this item",
+    "intro": "Other records reference this item. Resolve each group before deleting.",
+    "resolved": "Resolved",
+    "onDelete": "onDelete: {{action}}",
+    "setNull": "Clear the reference",
+    "reassign": "Reassign to another item",
+    "delete": "Delete these records",
+    "targetId": "new target id",
+    "apply": "Apply"
+  },
+  "editorial": {
+    "submit_review": "Submit for review",
+    "approve": "Approve",
+    "reject": "Reject",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "failed": "Action failed.",
+    "saveFirst": "Save your changes first.",
+    "state": "Editorial state",
+    "releaseHint": "Release the hold (needs publish permission)",
+    "holdHint": "Hold: this item will not be published by any path",
+    "release": "On hold — release",
+    "hold": "Hold"
+  },
+  "versions": {
+    "requestFailed": "Request failed: {{status}}",
+    "title": "Versions",
+    "new": "New version",
+    "name": "Version name",
+    "create": "Create",
+    "loading": "Loading versions…",
+    "empty": "No versions yet. Create one to draft changes off the live record.",
+    "mainChangedHint": "Main has changed since this version was created",
+    "mainChanged": "main changed",
+    "hide": "Hide",
+    "compare": "Compare",
+    "promoteConfirm": "Promote \"{{name}}\" to main?",
+    "promoteConfirmChanged": "Promote \"{{name}}\" to main? Main has changed since this version was created.",
+    "promote": "Promote",
+    "loadingDiff": "Loading diff…",
+    "delete": "Delete version"
+  },
+  "catalogue": {
+    "groups": {
+      "Text": "Text",
+      "Number": "Number",
+      "Choice": "Choice",
+      "Boolean": "Boolean",
+      "Date": "Date",
+      "Relation": "Relation",
+      "File": "File",
+      "Content": "Content",
+      "Special": "Special"
+    },
+    "interfaces": {
+      "input": {
+        "label": "Input",
+        "description": "Single-line text, uuid, or scalar value."
+      },
+      "input-multiline": {
+        "label": "Textarea",
+        "description": "Multi-line plain text editor."
+      },
+      "wysiwyg": {
+        "label": "WYSIWYG",
+        "description": "Rich HTML editor."
+      },
+      "markdown": {
+        "label": "Markdown",
+        "description": "Markdown editor."
+      },
+      "code": {
+        "label": "Code",
+        "description": "Monospace code editor."
+      },
+      "input-hash": {
+        "label": "Hash",
+        "description": "Secret input hashed on save."
+      },
+      "input-autocomplete-api": {
+        "label": "Autocomplete (API)",
+        "description": "Text input with suggestions fetched from an API."
+      },
+      "slug": {
+        "label": "Slug",
+        "description": "URL-safe text derived from another field."
+      },
+      "color": {
+        "label": "Color",
+        "description": "Color picker."
+      },
+      "input-number": {
+        "label": "Number",
+        "description": "Integer input."
+      },
+      "rating": {
+        "label": "Rating",
+        "description": "Star rating."
+      },
+      "slider": {
+        "label": "Slider",
+        "description": "Range slider with min/max/step."
+      },
+      "select-dropdown": {
+        "label": "Dropdown",
+        "description": "Single choice dropdown."
+      },
+      "select-multiple-dropdown": {
+        "label": "Dropdown (multiple)",
+        "description": "Multi-choice dropdown."
+      },
+      "select-radio": {
+        "label": "Radio buttons",
+        "description": "Single choice via radio buttons."
+      },
+      "select-multiple-checkbox": {
+        "label": "Checkboxes",
+        "description": "Multi-choice checkbox list."
+      },
+      "select-multiple-checkbox-tree": {
+        "label": "Checkboxes (tree)",
+        "description": "Hierarchical multi-choice checkboxes."
+      },
+      "select-icon": {
+        "label": "Icon",
+        "description": "Pick an icon from a curated set."
+      },
+      "tags": {
+        "label": "Tags",
+        "description": "Free-form tag list."
+      },
+      "toggle": {
+        "label": "Toggle",
+        "description": "Boolean switch."
+      },
+      "datetime": {
+        "label": "Date/time",
+        "description": "Date and time picker."
+      },
+      "relation-m2o": {
+        "label": "Many-to-one",
+        "description": "Select one related item."
+      },
+      "relation-o2m": {
+        "label": "One-to-many",
+        "description": "Show many related items through an alias field."
+      },
+      "relation-m2m": {
+        "label": "Many-to-many",
+        "description": "Manage related items through a junction collection."
+      },
+      "relation-m2a": {
+        "label": "Builder (M2A)",
+        "description": "Link to records across multiple collections (many-to-any)."
+      },
+      "collection-item-dropdown": {
+        "label": "Collection item",
+        "description": "Pick a single record from one of several collections."
+      },
+      "relation-o2m-tree-view": {
+        "label": "Tree view",
+        "description": "Self-referencing one-to-many rendered as an expandable tree."
+      },
+      "file": {
+        "label": "File",
+        "description": "Single file upload and picker."
+      },
+      "files": {
+        "label": "Files",
+        "description": "Multiple file upload and picker."
+      },
+      "seo": {
+        "label": "SEO",
+        "description": "Title, description, canonical URL, robots, and social image."
+      },
+      "aio": {
+        "label": "AIO",
+        "description": "AI overview prompts, entity hints, tone, and answer summary."
+      },
+      "json-raw": {
+        "label": "JSON (raw)",
+        "description": "Raw JSON editor."
+      },
+      "repeater": {
+        "label": "Repeater",
+        "description": "Repeat nested field groups."
+      },
+      "map": {
+        "label": "Map",
+        "description": "GeoJSON point / geometry editor."
+      },
+      "presentation-divider": {
+        "label": "Presentation: divider",
+        "description": "Visual divider only."
+      },
+      "presentation-notice": {
+        "label": "Presentation: notice",
+        "description": "Inline editorial notice."
+      },
+      "presentation-header": {
+        "label": "Presentation: header",
+        "description": "Section heading with subtitle."
+      },
+      "presentation-links": {
+        "label": "Presentation: links",
+        "description": "Row of link buttons."
+      },
+      "group-raw": {
+        "label": "Group: raw",
+        "description": "Group fields with no visual chrome."
+      },
+      "group-detail": {
+        "label": "Group: detail",
+        "description": "Group fields inside a bordered fieldset."
+      },
+      "group-accordion": {
+        "label": "Group: accordion",
+        "description": "Collapsible group of fields."
+      }
+    }
+  },
+  "displays": {
+    "catalogue": {
+      "formatted-value": {
+        "label": "Formatted value",
+        "hint": "Generic text with prefix/suffix/case/truncate."
+      },
+      "raw": {
+        "label": "Raw",
+        "hint": "Stringify with no formatting."
+      },
+      "badge": {
+        "label": "Badge",
+        "hint": "Colored pill keyed by value."
+      },
+      "boolean-icon": {
+        "label": "Boolean icon",
+        "hint": "Check / cross icon."
+      },
+      "datetime": {
+        "label": "Datetime",
+        "hint": "Relative / short / ISO date formatting."
+      },
+      "color-swatch": {
+        "label": "Color swatch",
+        "hint": "Inline color square + hex."
+      },
+      "rating-stars": {
+        "label": "Rating stars",
+        "hint": "Star row for numeric ratings."
+      },
+      "tags-pills": {
+        "label": "Tags pills",
+        "hint": "Compact pills for `string[]` values."
+      },
+      "labels": {
+        "label": "Labels",
+        "hint": "Pills with per-value tone mapping."
+      },
+      "image": {
+        "label": "Image",
+        "hint": "Thumbnail for file/url values."
+      },
+      "relation": {
+        "label": "Relation",
+        "hint": "Resolve id → related collection field."
+      },
+      "relation-m2a": {
+        "label": "Relation (M2A)",
+        "hint": "Summarise links across multiple collections."
+      },
+      "mustache-template": {
+        "label": "Mustache template",
+        "hint": "Compose a row template like `{{title}} ({{slug}})`."
+      },
+      "component-template": {
+        "label": "Component template",
+        "hint": "Visual block-based template (Phase F)."
+      }
+    },
+    "invalidDate": "invalid",
+    "invalidTemplate": "Invalid template",
+    "linkedAcross_one": "{{links}} linked across {{count}} collection",
+    "linkedAcross_other": "{{links}} linked across {{count}} collections",
+    "loading": "Loading…",
+    "noTemplate": "No template",
+    "ratingOutOf": "{{current}} out of {{max}}"
+  },
+  "interfaces": {
+    "add": "Add",
+    "addCount": "Add ({{count}})",
+    "addExisting": "Add existing",
+    "addTag": "Add tag…",
+    "aio": {
+      "entities": "Entities",
+      "prompt": "AI prompt",
+      "questions": "Questions",
+      "summary": "Answer summary",
+      "tone": "Tone"
+    },
+    "clear": "Clear",
+    "close": "Close",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "createAndAdd": "Create & add",
+    "createFailed": "Failed to create item.",
+    "createNew": "Create new",
+    "dragToReorder": "Drag to reorder",
+    "file": {
+      "clear": "Clear file",
+      "count": "{{count}}/{{limit}} files",
+      "dropMany": "Drop files or click to browse",
+      "dropOne": "Drop a file or click to browse",
+      "limit_one": "This field allows up to {{count}} file.",
+      "limit_other": "This field allows up to {{count}} files.",
+      "remove": "Remove {{file}}",
+      "storageHint": "Uploads to the site's configured file storage",
+      "tooLarge": "File exceeds max size ({{max}} bytes).",
+      "uploadFailed": "Failed to upload file.",
+      "uploading": "Uploading…"
+    },
+    "hash": {
+      "placeholder": "Enter a secret value…",
+      "reset": "Reset",
+      "set": "Value set (hashed on save)"
+    },
+    "loading": "Loading…",
+    "loadingFields": "Loading fields…",
+    "map": {
+      "invalid": "Invalid GeoJSON.",
+      "lat": "Lat",
+      "lng": "Lng",
+      "placeholder": "{ \"type\": \"Point\", \"coordinates\": [105.8, 21.0] }",
+      "raw": "Raw GeoJSON"
+    },
+    "markdown": {
+      "preview": "Preview",
+      "write": "Write"
+    },
+    "missingOption": "Missing `meta.options.{{option}}` for {{kind}} field.",
+    "noChoices": "No choices configured.",
+    "noLinks": "No links configured.",
+    "noMatches": "No matches.",
+    "noRows": "No rows.",
+    "pickFrom": "Pick from {{collection}}…",
+    "pickIcon": "Pick an icon…",
+    "rate": "Rate {{value}}",
+    "raw": {
+      "gui": "GUI",
+      "guiTitle": "GUI editor",
+      "raw": "Raw",
+      "rawTitle": "Raw JSON",
+      "toGui": "Switch to GUI editor",
+      "toRaw": "Switch to raw JSON"
+    },
+    "removeItem": "Remove {{item}}",
+    "repeater": {
+      "add": "Add entry",
+      "empty": "No entries yet.",
+      "item": "Item {{n}}",
+      "moveDown": "Move down",
+      "moveUp": "Move up",
+      "remove": "Remove"
+    },
+    "requestFailed": "Request failed.",
+    "searchBy": "Search by {{field}}…",
+    "selectPlaceholder": "— select —",
+    "seo": {
+      "canonical": "Canonical URL",
+      "description": "Meta description",
+      "image": "Social image",
+      "noFollow": "No follow",
+      "noIndex": "No index",
+      "title": "SEO title"
+    },
+    "translationFor": "Translation for {{lang}}…",
+    "typeToSearch": "Type to search…"
+  },
+  "blockTemplate": {
+    "literal": "— literal —",
+    "fieldOrLiteral": "$.field or literal",
+    "prop": {
+      "value": "value",
+      "src": "src",
+      "variant": "variant",
+      "muted": "muted",
+      "size": "size",
+      "rounded": "rounded",
+      "sizePx": "size (px)",
+      "direction": "direction",
+      "gap": "gap",
+      "align": "align"
+    },
+    "direction": {
+      "col": "column",
+      "row": "row"
+    },
+    "childrenViaJson": "(children editable via JSON tab)",
+    "ifPlaceholder": "if: $.field",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove block",
+    "childCount_one": "{{count}} child block — edit in JSON tab",
+    "childCount_other": "{{count}} child blocks — edit in JSON tab",
+    "add": "Add block",
+    "empty": "No blocks yet. Add one below.",
+    "kindRequired": "JSON must have \"kind\": \"component-template\"",
+    "invalidJson": "Invalid JSON",
+    "sample": {
+      "full": "Full row",
+      "partial": "Partial row",
+      "empty": "Empty row"
+    },
+    "previewHint": "Preview with 3 sample rows: full, partial, empty.",
+    "noFields": "No fields — sample data is empty. Preview is limited.",
+    "tab": {
+      "visual": "Visual",
+      "json": "JSON",
+      "preview": "Preview"
+    },
+    "emptyTemplate": "Empty template"
+  },
+  "displayTemplate": {
+    "mustacheTitle": "Mustache mode: compose using {{field}} placeholders",
+    "mustache": "Mustache",
+    "blockTitle": "Block builder mode: compose visual components",
+    "block": "Block Builder",
+    "mustacheHint": "Simple text template with {{field}} placeholders",
+    "blockHint": "Visual component DSL — drag-compose blocks",
+    "switchTo": "Switch to {{mode}} mode?",
+    "toBlockWarning": "Your mustache template cannot be automatically converted. Switching will start with a blank block template.",
+    "toMustacheWarning": "Your block template will be cleared. This cannot be undone.",
+    "switchAnyway": "Switch anyway",
+    "cancel": "Cancel",
+    "placeholder": "{{title}} — {{slug}}"
+  },
+  "mustache": {
+    "livePreview": "Live preview",
+    "empty": "empty"
+  },
+  "filter": {
+    "op": {
+      "eq": "equals",
+      "neq": "not equals",
+      "contains": "contains",
+      "startsWith": "starts with",
+      "endsWith": "ends with",
+      "in": "in",
+      "nin": "not in",
+      "gt": ">",
+      "gte": ">=",
+      "lt": "<",
+      "lte": "<=",
+      "null": "is null",
+      "nnull": "is not null",
+      "jsonContains": "JSON contains",
+      "hasKey": "has key",
+      "hasAnyKeys": "has any keys",
+      "hasAllKeys": "has all keys"
+    },
+    "value": "value",
+    "remove": "Remove filter",
+    "add": "Add filter"
+  },
+  "translation": {
+    "changeFailed": "The change failed.",
+    "loadFailed": "The translation group could not be loaded.",
+    "loading": "Loading…",
+    "heading": "Translation group",
+    "statusLabel": "Translation status",
+    "state": {
+      "missing": "missing",
+      "draft": "draft",
+      "in_review": "in review",
+      "published": "published",
+      "stale": "out of date"
+    },
+    "noGroup": "This item is in no translation group.",
+    "startGroup": "Start a group with this item as the source",
+    "members": "Group members",
+    "col": {
+      "language": "Language",
+      "item": "Item",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "siteSuffix": "(site {{site}})",
+    "source": "source",
+    "internalOnly": "internal only",
+    "thisItem": "(this item)",
+    "sharedSync": "shared fields waiting to sync ({{fields}})",
+    "sharedSyncHold": "shared fields waiting to sync ({{fields}}, on hold)",
+    "sharedSyncPermission": "shared fields waiting to sync ({{fields}}, needs an editor of its site)",
+    "applyShared": "Apply shared fields",
+    "makeSource": "Make source",
+    "allowPublishing": "Allow publishing",
+    "setInternalOnly": "Internal only",
+    "removeMember": "Remove the {{locale}} version from the group",
+    "otherSitePublished": "(another site, published)",
+    "itemId": "Item ID",
+    "siteId": "Site ID (another site; optional)",
+    "addToGroup": "Add to group",
+    "newDraft": "New translation draft (language)",
+    "localePlaceholder": "ja",
+    "createDraft": "Create draft",
+    "footer": "Collection {{collection}} · group version {{version}}",
+    "noTranslatable": "This collection has no translatable (multi-locale) fields.",
+    "translating": "Translating",
+    "complete": "{{pct}}% complete",
+    "sourceLocale": "{{locale}} (source)",
+    "targetLocale": "{{locale}} (target)",
+    "sourceAria": "{{field}} source ({{locale}})",
+    "targetAria": "{{field}} target ({{locale}})"
+  },
+  "tm": {
+    "lookingUp": "Looking up translation memory…",
+    "apply": "Apply",
+    "noMatch": "No TM match ≥ {{threshold}}%.",
+    "translating": "Translating…",
+    "autoTranslate": "Auto-translate",
+    "autoTranslateFailed": "Auto-translate failed.",
+    "source": {
+      "human": "human",
+      "mt": "MT",
+      "imported": "imported"
+    }
+  },
+  "provenance": {
+    "byHuman": "Written by a human.",
+    "byAgent": "Written by an agent.",
+    "modelValue": "Model: {{value}}",
+    "runValue": "Run: {{value}}",
+    "constitutionValue": "Constitution: {{value}}",
+    "confidenceValue": "Confidence: {{value}}",
+    "agent": "agent",
+    "human": "human",
+    "model": "Model",
+    "run": "Run",
+    "constitution": "Constitution",
+    "confidence": "Confidence",
+    "heading": "Provenance",
+    "noDetail": "Created by an agent — no further detail recorded."
+  },
+  "rawJson": {
+    "mustBeObject": "Top-level value must be a JSON object.",
+    "valid": "Valid JSON — saves apply via the Save button."
+  },
+  "bulkRaw": {
+    "partialFailure": "{{failed}} of {{total}} item(s) were not saved; the others were.",
+    "conflicts_one": "{{count}} changed since you opened it: reopen the editor to load the current version.",
+    "conflicts_other": "{{count}} changed since you opened them: reopen the editor to load the current versions.",
+    "title": "Bulk raw editor — {{collection}}",
+    "editing_one": "Editing {{count}} row; only changed entries are PATCHed.",
+    "editing_other": "Editing {{count}} rows; only changed entries are PATCHed.",
+    "saving": "Saving…",
+    "save": "Save changes",
+    "close": "Close",
+    "valid": "Valid array of {id, data} entries.",
+    "saveFailed": "Save failed: {{message}}",
+    "loading": "Loading rows…",
+    "mustBeArray": "Top-level value must be an array.",
+    "entryObject": "Each entry must be an object.",
+    "entryId": "Each entry needs a string `id`.",
+    "dataObject": "`data` must be an object."
+  }
+}
