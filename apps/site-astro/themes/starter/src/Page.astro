@@ -1,0 +1,65 @@
+---
+// The official starter theme (HeoPress P11 task 3.1): the Classic Minimal starter's layout, as Astro components.
+// Its data is the `page` prop only (the page data contract); the system's content is placed with the kit.
+import type { PageDataPage } from '@heopress/astro-kit';
+import { safeUrl } from '@heopress/astro-kit';
+import SeoHead from '@heopress/astro-kit/SeoHead.astro';
+import ItemBody from '@heopress/astro-kit/ItemBody.astro';
+import SponsorDisclosure from '@heopress/astro-kit/SponsorDisclosure.astro';
+import Card from '@heopress/astro-kit/Card.astro';
+import './style.css';
+
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const { vm } = page;
+const item = vm.item;
+const day = (iso: string | null) => (iso ? iso.slice(0, 10) : null);
+const description = item && typeof item.fields.description === 'string' ? item.fields.description : '';
+---
+<html lang={vm.page.locale}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<SeoHead page={page} />
+</head>
+<body class="theme-minimal">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<p class="site-name"><a href={safeUrl(vm.site.homeUrl)}>{vm.site.name}</a></p>
+<nav class="site-nav" aria-label="Site">{vm.nav.map((n) => <a href={safeUrl(n.url)}>{n.label}</a>)}</nav>
+{vm.alternates.length > 1 && <nav class="languages" aria-label="Languages">{vm.alternates.map((a) => <a hreflang={a.locale} lang={a.locale} href={safeUrl(a.url)}>{a.locale}</a>)}</nav>}
+</div>
+</header>
+<main id="main" class="wrap">
+{vm.page.type === 'item' && item && (
+  <article class="entry">
+    <header class="entry-header"><h1>{item.title}</h1>{item.publishedAt && <time datetime={item.publishedAt}>{day(item.publishedAt)}</time>}</header>
+    {item.sponsor.sponsored && <SponsorDisclosure page={page} id={item.id} />}
+    <ItemBody page={page} />
+  </article>
+)}
+{(vm.page.type === 'home' || vm.page.type === 'taxonomy') && (
+  <Fragment>
+    <h1 class="page-title">{vm.page.type === 'home' ? vm.site.name : item?.title}</h1>
+    {description && <p class="description">{description}</p>}
+    {vm.list.length > 0 ? (
+      <ul class="cards">
+        {vm.list.map((c) => (
+          <li><Card id={c.id}><article class="line"><a href={safeUrl(c.url)}>{c.title}</a>{c.sponsored && <SponsorDisclosure page={page} id={c.id} />} {c.publishedAt && <time datetime={c.publishedAt}>{day(c.publishedAt)}</time>}</article></Card></li>
+        ))}
+      </ul>
+    ) : <p class="empty">Nothing here yet.</p>}
+  </Fragment>
+)}
+{vm.page.type === 'error' && (
+  <Fragment>
+    <h1 class="page-title">{vm.page.status}</h1>
+    <p>{vm.page.status === 404 ? 'This page does not exist.' : vm.page.status === 410 ? 'This page has been removed.' : 'Something went wrong.'}</p>
+    <p><a href={safeUrl(vm.site.homeUrl)}>Home</a></p>
+  </Fragment>
+)}
+</main>
+<footer class="site-footer"><div class="wrap"><p>{vm.site.name}</p></div></footer>
+</body>
+</html>

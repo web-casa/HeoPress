@@ -1,0 +1,14 @@
+---
+// Every page of the pinned snapshot, rendered by the site's theme (HeoPress P11 task 3.1).
+import data from 'virtual:heopress/page-data';
+import Theme from 'heopress:theme';
+
+export function getStaticPaths() {
+  return data.pages.map((page) => {
+    const path = decodeURI(page.path).replace(/^\/+|\/+$/g, '');
+    return { params: { path: path === '' ? undefined : path }, props: { page } };
+  });
+}
+const { page } = Astro.props;
+---
+<Theme page={page} />
