@@ -1,0 +1,23 @@
+{
+  "name": "@heopress/extension-cli",
+  "version": "1.0.0-rc.4",
+  "private": true,
+  "description": "CLI to generate signing keys, sign HeoPress extension bundles, and migrate plugins across plugin API breaking changes (codemods).",
+  "type": "module",
+  "bin": {
+    "heopress-ext": "./src/cli.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo dist",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "@heopress/contracts": "workspace:*",
+    "typescript": "^5.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "vitest": "^5.0.3"
+  }
+}
