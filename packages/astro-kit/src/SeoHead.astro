@@ -1,0 +1,7 @@
+---
+// The page's head, exactly as the Classic engine writes it (`{% seo_head %}`). Place it once, inside <head>.
+import type { PageDataPage } from '@heopress/contracts/page-data';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+---
+<Fragment set:html={page.headHtml} />
