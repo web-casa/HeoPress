@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "data": {
+    "markdown": "",
+    "rawHtml": "<html><body>Forbidden</body></html>",
+    "metadata": {
+      "sourceURL": "https://news.example.com/harbour",
+      "statusCode": 403,
+      "error": "Forbidden"
+    }
+  }
+}
