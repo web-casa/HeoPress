@@ -1,0 +1,18 @@
+{
+  "backlog": {
+    "title": "Translation backlog",
+    "description": "Published items whose translation is missing, out of date or waiting for review.",
+    "collection": "Collection",
+    "locale": "Language",
+    "columns": {
+      "missing": "Missing",
+      "stale": "Out of date",
+      "in_review": "In review"
+    },
+    "empty": "Nothing here.",
+    "create": "Create translation",
+    "noGroup": "This item has no translation group: create one from the item first.",
+    "truncated": "More items match; the counts cover the items shown.",
+    "failed": "The backlog could not be loaded."
+  }
+}
