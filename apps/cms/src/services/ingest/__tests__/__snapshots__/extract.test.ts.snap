@@ -1,0 +1,200 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`extraction snapshots of ten recorded pages > 01-news-article.html 1`] = `
+{
+  "author": "Jane Doe",
+  "bodyHtml": "<p>By Jane Doe</p>
+<p>City planners in Example Town approved a new cycling network on Tuesday, adding forty kilometres of protected lanes over the next three years.</p>
+<p>The plan, drafted after two years of public consultation, links the railway station with the university campus and the riverside business district.</p>
+<p>Officials said the first segment, along Harbour Road, will open next spring, while the remaining routes depend on a regional grant that is still under review.</p>
+<p>Local shop owners were divided: some welcomed the extra foot traffic, others worried about losing parking spaces in front of their stores.</p>
+<p>The council will publish detailed maps and a construction timetable on its website before the end of the month.</p>
+",
+  "bodyText": "By Jane Doe
+City planners in Example Town approved a new cycling network on Tuesday, adding forty kilometres of protected lanes over the next three years.
+The plan, drafted after two years of public consultation, links the railway station with the university campus and the riverside business district.
+Officials said the first segment, along Harbour Road, will open next spring, while the remaining routes depend on a regional grant that is still under review.
+Local shop owners were divided: some welcomed the extra foot traffic, others worried about losing parking spaces in front of their stores.
+The council will publish detailed maps and a construction timetable on its website before the end of the month.",
+  "canonicalCandidate": "https://news.example.com/2026/09/cycling-network",
+  "hidden": [],
+  "language": "en",
+  "publishedAt": "2026-09-14T08:30:00.000Z",
+  "title": "Council approves cycling network | Example News",
+}
+`;
+
+exports[`extraction snapshots of ten recorded pages > 02-blog-jsonld-zh.html 1`] = `
+{
+  "author": "李明",
+  "bodyHtml": "<h2>示例市公交线路调整方案公布</h2><p>示例市交通局周二公布了新的公交线路调整方案，计划在明年春季前新增六条社区接驳线路，覆盖城市东部的三个新建居民区。</p><p>方案在过去一年中经过多轮公开征求意见，交通局表示，新线路将与地铁站换乘点衔接，平均候车时间预计缩短至八分钟以内。</p><p>部分居民在座谈会上提出，希望夜间线路能够延长运营时间，交通局回应称将根据试运行期间的客流数据再做评估。</p><p>交通局同时提醒市民，调整期间部分站点名称会发生变化，具体信息将在官方网站和车站公告栏同步发布。</p><p>专家认为，社区接驳线路能够有效解决“最后一公里”问题，但需要配套的道路改造与停车管理措施共同推进。</p>",
+  "bodyText": "示例市公交线路调整方案公布
+示例市交通局周二公布了新的公交线路调整方案，计划在明年春季前新增六条社区接驳线路，覆盖城市东部的三个新建居民区。
+方案在过去一年中经过多轮公开征求意见，交通局表示，新线路将与地铁站换乘点衔接，平均候车时间预计缩短至八分钟以内。
+部分居民在座谈会上提出，希望夜间线路能够延长运营时间，交通局回应称将根据试运行期间的客流数据再做评估。
+交通局同时提醒市民，调整期间部分站点名称会发生变化，具体信息将在官方网站和车站公告栏同步发布。
+专家认为，社区接驳线路能够有效解决“最后一公里”问题，但需要配套的道路改造与停车管理措施共同推进。",
+  "canonicalCandidate": null,
+  "hidden": [],
+  "language": "zh-CN",
+  "publishedAt": "2026-08-02T01:00:00.000Z",
+  "title": "示例市公交线路调整方案公布",
+}
+`;
+
+exports[`extraction snapshots of ten recorded pages > 03-xss-payloads.html 1`] = `
+{
+  "author": "Sam Baker",
+  "bodyHtml": "
+
+<p>A simple lemon cake needs flour, sugar, butter, eggs and two unwaxed lemons. Start by creaming the butter and sugar until pale and fluffy, which takes about five minutes with a mixer.</p>
+<p>Beat in the eggs one at a time, then fold in the flour and the zest of both lemons. Click here for the glaze.</p>
+<img src="https://news.example.com/2026/10/x" alt="cake" />
+
+<p>Bake at 180 degrees for forty minutes, or until a skewer inserted into the centre comes out clean. Let the cake cool in the tin for ten minutes before turning it out.</p>
+
+<p>For the glaze, mix icing sugar with the juice of one lemon and pour it over the warm cake so it soaks in. <a href="https://recipes.example.com/glaze" rel="nofollow noopener noreferrer">Glaze variations</a>.</p>
+
+",
+  "bodyText": "A simple lemon cake needs flour, sugar, butter, eggs and two unwaxed lemons. Start by creaming the butter and sugar until pale and fluffy, which takes about five minutes with a mixer.
+Beat in the eggs one at a time, then fold in the flour and the zest of both lemons. Click here for the glaze.
+Bake at 180 degrees for forty minutes, or until a skewer inserted into the centre comes out clean. Let the cake cool in the tin for ten minutes before turning it out.
+For the glaze, mix icing sugar with the juice of one lemon and pour it over the warm cake so it soaks in. Glaze variations.",
+  "canonicalCandidate": null,
+  "hidden": [],
+  "language": "en",
+  "publishedAt": null,
+  "title": "Recipe: lemon cake",
+}
+`;
+
+exports[`extraction snapshots of ten recorded pages > 04-relative-links.html 1`] = `
+{
+  "author": null,
+  "bodyHtml": "<p>Version 4.2 of the Example toolkit improves start-up time by about thirty percent on typical projects and reduces memory use when many plugins are installed.</p><p>The configuration loader now reports the file and line of every invalid option. See <a href="https://news.example.com/docs/config" rel="nofollow noopener noreferrer">the configuration guide</a> and <a href="https://news.example.com/2026/migration/4.2" rel="nofollow noopener noreferrer">the migration notes</a> for details.</p><figure><img src="https://news.example.com/img/startup-chart.png" alt="Start-up time chart" /><figcaption>Start-up time compared with 4.1.</figcaption></figure><p>Deprecated: the legacy command-line flags announced in 3.0 are removed. Scripts that still use them should switch to the long option names described in the reference.</p><p>Thanks to everyone who reported issues and tested the release candidates over the past two months.</p>",
+  "bodyText": "Version 4.2 of the Example toolkit improves start-up time by about thirty percent on typical projects and reduces memory use when many plugins are installed.
+The configuration loader now reports the file and line of every invalid option. See the configuration guide and the migration notes for details.
+Start-up time compared with 4.1.
+Deprecated: the legacy command-line flags announced in 3.0 are removed. Scripts that still use them should switch to the long option names described in the reference.
+Thanks to everyone who reported issues and tested the release candidates over the past two months.",
+  "canonicalCandidate": null,
+  "hidden": [],
+  "language": "en",
+  "publishedAt": "2026-07-01T00:00:00.000Z",
+  "title": "Release notes 4.2 - Example Docs",
+}
+`;
+
+exports[`extraction snapshots of ten recorded pages > 05-hidden-css.html 1`] = `
+{
+  "author": null,
+  "bodyHtml": "<p>A good home router should support current Wi-Fi standards, receive regular security updates from its maker, and let you set a strong administrator password on first use.</p><p>Placement matters as much as the hardware: put the router in a central, open spot, away from thick walls, microwaves and large metal objects.</p><p>If your home is large, a mesh system with two or three units usually gives more even coverage than a single powerful router.</p>",
+  "bodyText": "A good home router should support current Wi-Fi standards, receive regular security updates from its maker, and let you set a strong administrator password on first use.
+Placement matters as much as the hardware: put the router in a central, open spot, away from thick walls, microwaves and large metal objects.
+If your home is large, a mesh system with two or three units usually gives more even coverage than a single powerful router.",
+  "canonicalCandidate": null,
+  "hidden": [
+    "css_hidden",
+    "offscreen",
+    "tiny_font",
+    "same_color",
+    "hidden_attribute",
+    "aria_hidden",
+    "css_hidden",
+  ],
+  "language": "en",
+  "publishedAt": null,
+  "title": "Choosing a home router",
+}
+`;
+
+exports[`extraction snapshots of ten recorded pages > 06-instructions.html 1`] = `
+{
+  "author": "Weather Desk",
+  "bodyHtml": "<p>Saturday starts cloudy with light rain in the north, clearing by the afternoon. Temperatures reach eighteen degrees in the south and fourteen in the hills.</p><p>Sunday looks brighter, with sunny spells everywhere and a light westerly breeze. Evening showers are possible near the coast but should clear before midnight.</p><p>Next week a band of high pressure is expected to settle over the region, bringing several dry and mild days.</p>",
+  "bodyText": "Saturday starts cloudy with light rain in the north, clearing by the afternoon. Temperatures reach eighteen degrees in the south and fourteen in the hills.
+Sunday looks brighter, with sunny spells everywhere and a light westerly breeze. Evening showers are possible near the coast but should clear before midnight.
+Next week a band of high pressure is expected to settle over the region, bringing several dry and mild days.",
+  "canonicalCandidate": null,
+  "hidden": [
+    "comment_instruction",
+    "model_instruction",
+    "model_instruction",
+    "model_instruction",
+  ],
+  "language": "en",
+  "publishedAt": null,
+  "title": "Weekend weather outlook",
+}
+`;
+
+exports[`extraction snapshots of ten recorded pages > 07-invisible-chars.html 1`] = `
+{
+  "author": null,
+  "bodyHtml": "<p>Repot a plant when roots grow through the drainage holes or circle the bottom of the pot. Spring is the best time, because the plant is entering its growing season.</p><p>Choose a new pot only two to five centimetres wider than the old one, with drainage holes. Too large a pot holds extra water and can rot the roots.</p><p>Water the plant a day before, ease it out, loosen the roots gently, and set it at the same depth in fresh potting mix.</p>",
+  "bodyText": "Repot a plant when roots grow through the drainage holes or circle the bottom of the pot. Spring is the best time, because the plant is entering its growing season.
+Choose a new pot only two to five centimetres wider than the old one, with drainage holes. Too large a pot holds extra water and can rot the roots.
+Water the plant a day before, ease it out, loosen the roots gently, and set it at the same depth in fresh potting mix.",
+  "canonicalCandidate": null,
+  "hidden": [
+    "invisible_chars",
+  ],
+  "language": "en",
+  "publishedAt": null,
+  "title": "How to repot a houseplant",
+}
+`;
+
+exports[`extraction snapshots of ten recorded pages > 08-tables-lists.html 1`] = `
+{
+  "author": "Alex Kim",
+  "bodyHtml": "<p>Small teams usually need shared folders, version history and simple access control. The table below compares three typical plans on these points and on price per user.</p><table><thead><tr><th>Plan</th><th>Storage</th><th>History</th></tr></thead><tbody><tr><td>Basic</td><td>100 GB</td><td>30 days</td></tr><tr><td>Team</td><td>1 TB</td><td>180 days</td></tr><tr><td>Business</td><td>5 TB</td><td>1 year</td></tr></tbody></table><ul><li>Basic suits freelancers with few shared files.</li><li>Team adds admin controls and audit logs.</li><li>Business adds retention rules for regulated industries.</li></ul><p>Whatever the plan, check how easy it is to export everything if you ever need to move to another provider.</p>",
+  "bodyText": "Small teams usually need shared folders, version history and simple access control. The table below compares three typical plans on these points and on price per user.
+PlanStorageHistory
+Basic100 GB30 days
+Team1 TB180 days
+Business5 TB1 year
+Basic suits freelancers with few shared files.
+Team adds admin controls and audit logs.
+Business adds retention rules for regulated industries.
+Whatever the plan, check how easy it is to export everything if you ever need to move to another provider.",
+  "canonicalCandidate": null,
+  "hidden": [],
+  "language": "en",
+  "publishedAt": null,
+  "title": "Comparing storage plans for small teams",
+}
+`;
+
+exports[`extraction snapshots of ten recorded pages > 09-sidebar-comments.html 1`] = `
+{
+  "author": "Dr. Rita Patel",
+  "bodyHtml": "<p>Keep a regular schedule: going to bed and waking up at the same time every day, weekends included, helps your body clock settle into a steady rhythm.</p><p>Make the bedroom dark, quiet and cool. Heavy curtains, earplugs or a fan can help, and most people sleep best at around eighteen degrees.</p><p>Limit screens in the hour before bed. Bright light in the evening delays the release of melatonin, the hormone that makes you feel sleepy.</p><p>Watch caffeine and alcohol. Coffee in the afternoon can still affect you at night, and alcohol fragments sleep in the second half of the night.</p><p>Get daylight and exercise during the day, ideally outdoors in the morning, which strengthens the signal that it is daytime.</p>",
+  "bodyText": "Keep a regular schedule: going to bed and waking up at the same time every day, weekends included, helps your body clock settle into a steady rhythm.
+Make the bedroom dark, quiet and cool. Heavy curtains, earplugs or a fan can help, and most people sleep best at around eighteen degrees.
+Limit screens in the hour before bed. Bright light in the evening delays the release of melatonin, the hormone that makes you feel sleepy.
+Watch caffeine and alcohol. Coffee in the afternoon can still affect you at night, and alcohol fragments sleep in the second half of the night.
+Get daylight and exercise during the day, ideally outdoors in the morning, which strengthens the signal that it is daytime.",
+  "canonicalCandidate": null,
+  "hidden": [],
+  "language": "en",
+  "publishedAt": "2026-05-20T04:00:00.000Z",
+  "title": "Five tips for better sleep",
+}
+`;
+
+exports[`extraction snapshots of ten recorded pages > 10-japanese-time.html 1`] = `
+{
+  "author": null,
+  "bodyHtml": "<h2>京都の紅葉、見頃は十一月下旬</h2>2026年10月20日<p>気象情報会社の予測によると、今年の京都の紅葉は例年よりやや遅く、十一月下旬に見頃を迎える見込みです。九月の気温が高かったことが影響しているとみられます。</p><p>嵐山や東福寺などの人気スポットでは、混雑を避けるため早朝の訪問が勧められています。一部の寺院では夜間のライトアップも予定されています。</p><p>観光協会は、公共交通機関の利用と、事前の拝観予約を呼びかけています。最新の色づき状況は公式サイトで毎日更新される予定です。</p>",
+  "bodyText": "京都の紅葉、見頃は十一月下旬
+2026年10月20日気象情報会社の予測によると、今年の京都の紅葉は例年よりやや遅く、十一月下旬に見頃を迎える見込みです。九月の気温が高かったことが影響しているとみられます。
+嵐山や東福寺などの人気スポットでは、混雑を避けるため早朝の訪問が勧められています。一部の寺院では夜間のライトアップも予定されています。
+観光協会は、公共交通機関の利用と、事前の拝観予約を呼びかけています。最新の色づき状況は公式サイトで毎日更新される予定です。",
+  "canonicalCandidate": null,
+  "hidden": [],
+  "language": "ja-JP",
+  "publishedAt": "2026-10-20T01:00:00.000Z",
+  "title": "京都の紅葉、見頃は十一月下旬",
+}
+`;
