@@ -1,0 +1,68 @@
+{
+  "title": "概览",
+  "description": "现在需要你处理的事，覆盖你管理的站点。",
+  "scope": {
+    "label": "范围",
+    "current": "当前站点",
+    "all": "全部站点",
+    "site": "{{name}}",
+    "pick": "其他站点…"
+  },
+  "todo": {
+    "title": "待处理",
+    "empty": "目前没有需要处理的事项。",
+    "nextAudit": "下一次审计检查：{{when}}",
+    "alerts_one": "{{count}} 条服务告警",
+    "alerts_other": "{{count}} 条服务告警",
+    "alertsHint": "查看日志与监控",
+    "reviews_one": "审核稿件 {{count}} 篇",
+    "reviews_other": "审核稿件 {{count}} 篇",
+    "oldest": "最早一篇：“{{title}}”，已等待 {{wait}}",
+    "longestWait": "最长等待 {{wait}}",
+    "acrossSites_one": "涉及 {{count}} 个站点",
+    "acrossSites_other": "涉及 {{count}} 个站点",
+    "auditErrors_one": "{{count}} 个错误级审计问题",
+    "auditErrors_other": "{{count}} 个错误级审计问题",
+    "auditWarnings_one": "{{count}} 个警告级审计问题",
+    "auditWarnings_other": "{{count}} 个警告级审计问题",
+    "domains_one": "{{count}} 个域名需要处理",
+    "domains_other": "{{count}} 个域名需要处理",
+    "domainFailed": "{{host}}：{{detail}}",
+    "domainPending": "{{host}}：超过 24 小时仍未验证",
+    "pickSite": "选择要审稿的站点",
+    "mfa": "需要二次验证",
+    "unavailable": "暂不可用"
+  },
+  "kpi": {
+    "published": "已发布文章",
+    "crawler": "AI 爬虫访问 · 7 天",
+    "referral": "AI 引荐 · 30 天",
+    "attention": "需要关注的站点",
+    "incomplete": "不完整"
+  },
+  "week": {
+    "title": "本周发布",
+    "published": "已发布",
+    "scheduled": "定时",
+    "pending": "待审核",
+    "today": "今天",
+    "empty": "本周没有安排。"
+  },
+  "activity": {
+    "title": "最近动态",
+    "published": "已发布",
+    "submitted": "提交审核",
+    "rejected": "已退回",
+    "empty": "还没有动态。"
+  },
+  "setup": {
+    "title": "开始使用",
+    "domain": "绑定并验证域名",
+    "article": "发布第一篇文章",
+    "crawlers": "设置 AI 爬虫策略",
+    "members": "邀请成员",
+    "hide": "隐藏",
+    "done": "已完成"
+  },
+  "dashboards": "自定义看板"
+}
