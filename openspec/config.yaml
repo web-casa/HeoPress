@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  Language: zh-CN
+  All artifacts must be written in zh-CN.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  项目：HeoPress—— 面向 10–100 个独立域名站群的 AI 原生开源 CMS。
+  底座：硬分叉 LumiBase（Apache-2.0，上游 khuepm/LumiBase，基线见 UPSTREAM.md）。
+  运行环境：仅 VPS / Docker；Node.js 24 LTS + TypeScript + pnpm；PostgreSQL 18 是唯一必需数据库；
+    对象存储（S3 兼容：R2 / S3 / OSS / COS / MinIO）或本地文件系统。不支持 Cloudflare Workers 运行 CMS。
+  渲染：Classic 引擎（Hono + LiquidJS 运行时模板，多域名 SSR）优先；Astro 引擎（按站静态构建）在 P11，
+    静态前台可部署到 VPS（Caddy）、Cloudflare Pages、Vercel、Netlify。
+  AI：确定性流程（Flows）+ 受控 Agent Harness（L0–L4 信任分级、审批、紧急开关）；外部 Agent 通过 MCP 接入（BYOA）。
+  内容：数据库是工作状态的唯一权威来源；Change Feed 驱动缓存失效、重建、Git 发布快照（单向导出）。
+  合规边界：来源授权默认 unknown；自动发布必须同时满足可信来源与质量门禁；不提供"规避 AI 检测"能力；
+    不提供站群之间互相导链的能力。
+  仓库：私有开发仓库 yeagoo/heopress-private（本仓库）→ 白名单清洗后发布到公开仓库 web-casa/HeoPress（ADR-0010）；
+    代码、夹具与文档示例只使用 example.com 等保留域名。
+  决策记录：docs/decisions/；路线图：docs/ROADMAP.md；调研结论：docs/research/SUMMARY.md。
+
+rules:
+  proposal:
+    - 明确写出 Out of scope（不做什么）。
+    - 引用相关 ADR（docs/decisions/ADR-XXXX）。
+  specs:
+    - 每个 capability 路径在所有 change 中唯一；未归档前不要跨 change 使用 MODIFIED。
+    - Requirement 描述只写可观察行为，不写类名、库名和实现步骤。
+  tasks:
+    - 每个任务必须写明验证方式（测试、命令或可观察结果）。
+    - 每个任务组自带它需要的测试；对外行为变化的组在实质任务中注明同步哪份文档。
+    - 不要写只为凑格式的通用任务（"同步本组文档并维护映射""增加正常 / 失败 / 重复执行测试"之类）；需求—场景—测试映射只在 Phase Gate 核对一次。
+    - 每个 phase 的最后一组是 Phase Gate：openspec validate --strict、全量测试、文档、交接记录。
+
+operations:
+  apply:
+    guidance:
+      - 开始前阅读 AGENTS.md、docs/ROADMAP.md 与本 change 的 proposal/design/specs。
+      - 不得声称测试通过，除非本次会话实际运行过并记录了命令与结果。
+  archive:
+    guidance:
+      - 归档前确认 Phase Gate 全部完成，并在 docs/handoffs/ 写入交接记录。

@@ -1,0 +1,68 @@
+{
+  "title": "Overview",
+  "description": "What needs you now, across your sites.",
+  "scope": {
+    "label": "Scope",
+    "current": "This site",
+    "all": "All sites",
+    "site": "{{name}}",
+    "pick": "Another site…"
+  },
+  "todo": {
+    "title": "Needs you",
+    "empty": "Nothing needs you right now.",
+    "nextAudit": "Next audit check: {{when}}",
+    "alerts_one": "{{count}} service alert",
+    "alerts_other": "{{count}} service alerts",
+    "alertsHint": "See Logs & monitoring",
+    "reviews_one": "Review {{count}} item",
+    "reviews_other": "Review {{count}} items",
+    "oldest": "Oldest: “{{title}}”, waiting {{wait}}",
+    "longestWait": "Longest wait {{wait}}",
+    "acrossSites_one": "across {{count}} site",
+    "acrossSites_other": "across {{count}} sites",
+    "auditErrors_one": "{{count}} error-level audit issue",
+    "auditErrors_other": "{{count}} error-level audit issues",
+    "auditWarnings_one": "{{count}} warning-level audit issue",
+    "auditWarnings_other": "{{count}} warning-level audit issues",
+    "domains_one": "{{count}} domain needs attention",
+    "domains_other": "{{count}} domains need attention",
+    "domainFailed": "{{host}}: {{detail}}",
+    "domainPending": "{{host}}: still unverified after 24 hours",
+    "pickSite": "Choose a site to review on",
+    "mfa": "Two-step verification required",
+    "unavailable": "Temporarily unavailable"
+  },
+  "kpi": {
+    "published": "Published articles",
+    "crawler": "AI crawler reads · 7 days",
+    "referral": "AI referrals · 30 days",
+    "attention": "Sites needing attention",
+    "incomplete": "Incomplete"
+  },
+  "week": {
+    "title": "This week",
+    "published": "Published",
+    "scheduled": "Scheduled",
+    "pending": "Waiting for review",
+    "today": "Today",
+    "empty": "Nothing scheduled this week."
+  },
+  "activity": {
+    "title": "Recent activity",
+    "published": "Published",
+    "submitted": "Submitted for review",
+    "rejected": "Sent back",
+    "empty": "No activity yet."
+  },
+  "setup": {
+    "title": "Get started",
+    "domain": "Bind and verify a domain",
+    "article": "Publish the first article",
+    "crawlers": "Set the AI crawler policy",
+    "members": "Invite members",
+    "hide": "Hide",
+    "done": "Done"
+  },
+  "dashboards": "Custom dashboards"
+}
