@@ -1,0 +1,41 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+# Development image with hot-reload via volume mounting
+FROM node:24-trixie-slim
+
+# Native optional dependencies can fall back to local compilation on arm64.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+
+WORKDIR /app
+
+# Copy workspace configuration and package manifests for dependency installation
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+# pnpm.patchedDependencies name files under patches/; --frozen-lockfile needs them.
+COPY patches/ ./patches/
+COPY packages/runtime/package.json ./packages/runtime/
+COPY packages/database/package.json ./packages/database/
+COPY packages/contracts/package.json ./packages/contracts/
+COPY packages/sdk/package.json ./packages/sdk/
+COPY apps/cms/package.json ./apps/cms/
+
+# Install all dependencies (including devDependencies for tsx, typescript, etc.)
+RUN pnpm install --frozen-lockfile
+
+# Source code is NOT copied — it will be mounted as a volume at runtime:
+#   volumes:
+#     - ./apps/cms/src:/app/apps/cms/src
+#     - ./packages:/app/packages
+
+# Default environment
+ENV HEOPRESS_RUNTIME=docker
+ENV NODE_ENV=development
+ENV PORT=1989
+
+EXPOSE 1989
+
+# Use tsx watch for hot-reload of TypeScript source files
+CMD ["pnpm", "--filter", "@heopress/cms", "exec", "tsx", "watch", "src/serve.ts"]
