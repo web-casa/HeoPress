@@ -1,0 +1,2 @@
+ALTER TABLE "lumibase_ai_productions" DROP CONSTRAINT "ai_productions_mode_check";--> statement-breakpoint
+ALTER TABLE "lumibase_ai_productions" ADD CONSTRAINT "ai_productions_mode_check" CHECK ("lumibase_ai_productions"."mode" IN ('translate', 'rewrite', 'write', 'brief', 'retranslate'));
