@@ -1,0 +1,129 @@
+{
+  "readOnly": "Viewing only: changing these settings needs site administrator rights.",
+  "bar": {
+    "label": "Unsaved changes",
+    "count_one": "{{count}} unsaved change",
+    "count_other": "{{count}} unsaved changes",
+    "discard": "Discard",
+    "save": "Save",
+    "saving": "Saving…",
+    "fixFirst_one": "Fix {{count}} error first",
+    "fixFirst_other": "Fix {{count}} errors first",
+    "saved": "Saved. Page heads, robots.txt, sitemaps and llms.txt follow the new settings from the next request; a CDN in front of the site may keep the old copy until its cache expires.",
+    "conflict": "Someone changed these settings meanwhile. Discard to load their version, then make your change again.",
+    "failed": "Not saved: {{reason}}"
+  },
+  "errors": {
+    "tooLong": "At most 200 characters.",
+    "needsTitle": "Include {title}, or leave empty for the default.",
+    "publicationName": "Give the publication name news sitemaps require.",
+    "token": "A crawler token takes letters, digits, “.”, “_” and “-”.",
+    "duplicate": "Two crawlers share a token.",
+    "notBound": "This domain is not bound to this site."
+  },
+  "preview": {
+    "search": "Search result preview",
+    "meaning": "What this means for AI",
+    "sampleTitle": "An example article",
+    "sampleDescription": "The first lines of a published article appear here.",
+    "noDescription": "No description: search engines pick text from the page.",
+    "notIndexed": "Search engines are asked not to index this site.",
+    "cite": {
+      "yes": "AI assistants can read and cite this site's articles.",
+      "partly": "AI assistants can cite this site only in part: one of search and user fetches is blocked.",
+      "no": "AI assistants will not read and cite this site's articles."
+    },
+    "train": {
+      "yes": "AI companies may use the articles to train models.",
+      "no": "AI companies are asked not to train models on the articles."
+    },
+    "notSaved": "A preview: nothing changes on the site until you save."
+  },
+  "appearance": {
+    "title": "Search appearance",
+    "explain": "How the site's pages appear in search results: the title and description templates every page uses unless it sets its own.",
+    "placeholders": "Placeholders: {title} the page title, {site} the site name, {description} the page description.",
+    "titleTemplate": "Title template",
+    "titleHint": "Empty: {title} · {site}.",
+    "descriptionTemplate": "Description template",
+    "descriptionHint": "Empty: the page's own description.",
+    "indexSite": "Let search engines index this site",
+    "indexSiteHint": "Off: every page asks not to be indexed (noindex)."
+  },
+  "crawlers": {
+    "title": "AI crawler policy",
+    "explain": "Which AI crawlers may read the site, by what they read it for. The policy is written into robots.txt; crawlers that follow it stop reading what it blocks.",
+    "presets": "Presets",
+    "preset": {
+      "allowAll": "Allow all",
+      "searchOnly": "Search and citation only",
+      "blockAll": "Block all"
+    },
+    "custom": "Custom policy",
+    "purpose": {
+      "search": "AI search",
+      "user-fetch": "Fetches for a user's question",
+      "training": "Model training"
+    },
+    "purposeHint": {
+      "search": "Crawlers that index pages for AI search answers.",
+      "user-fetch": "An assistant reading a page because someone asked about it.",
+      "training": "Crawlers that collect text to train models."
+    },
+    "allow": "Allow",
+    "disallow": "Block",
+    "contentSignal": "Add a Content-Signal line",
+    "contentSignalHint": "States in robots.txt what the content may be used for.",
+    "more": "Also set: {{overrides}} crawler override(s), {{custom}} site crawler(s)."
+  },
+  "machine": {
+    "title": "Machine-readable output",
+    "explain": "What the site offers to programs besides its pages: summaries for AI, Markdown copies, feeds and change notices to search engines. Structured data is checked on the left.",
+    "llms": "llms.txt and llms-full.txt",
+    "llmsHint": "A map of the site for AI assistants.",
+    "markdown": "Markdown copies",
+    "markdownHint": "Each article also at its address with .md.",
+    "feeds": "Feeds",
+    "feedsHint": "RSS and Atom of the latest articles.",
+    "indexNow": "IndexNow",
+    "indexNowHint": "Tell search engines at once when a page is published or changed.",
+    "news": "News sitemap",
+    "newsHint": "For sites in news search.",
+    "newsName": "Publication name"
+  },
+  "canonical": {
+    "title": "Canonical domain",
+    "explain": "The address search engines should treat as the site's own. The site's other active domains redirect to it, except language entries.",
+    "label": "Canonical domain",
+    "hint": "One of the domains bound to this site.",
+    "none": "No active domain is bound to this site yet: add one under Sites › Domains.",
+    "others": "Other active domains: {{hosts}}",
+    "saved": "Saved. Other domains redirect here from the next request."
+  },
+  "identity": {
+    "title": "Site identity",
+    "explain": "Who the site speaks for. Search engines and AI assistants read it from the structured data of every page."
+  },
+  "rootFiles": {
+    "title": "Root files",
+    "explain": "Files served at the site's root that the system does not write itself, such as ads.txt or verification files."
+  },
+  "redirects": {
+    "title": "Redirects",
+    "explain": "Old addresses and where they go. Import from CSV or another plugin's export; the check shows what would change before anything is written.",
+    "empty": "No redirects yet.",
+    "select": "Select",
+    "selectOne": "Select {{from}}",
+    "from": "From",
+    "to": "To",
+    "status": "Code",
+    "added": "Added",
+    "delete_one": "Delete {{count}} redirect",
+    "delete_other": "Delete {{count}} redirects",
+    "import": "Import",
+    "importHint": "CSV (from,to,code) or an export of Redirection, Yoast or Rank Math.",
+    "check": "Check",
+    "report": "{{import}} new, {{replaced}} replaced, {{conflicts}} conflicts, {{loops}} loops",
+    "run": "Import"
+  }
+}
