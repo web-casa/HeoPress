@@ -1,0 +1,16 @@
+{
+  "name": "email-setup",
+  "version": "1.0.0",
+  "type": "endpoint",
+  "entry": "./dist/index.js",
+  "description": "Demonstrates sending email via HeoPress's core EmailService. The extension owns the trigger/UI; HeoPress owns the transport + templates.",
+  "capabilities": ["ext:endpoints", "secrets:heopress-api-token"],
+  "outboundHosts": ["cms.example.com"],
+  "config": [
+    { "key": "templateKey", "type": "string", "default": "teammate_invite" },
+    { "key": "baseUrl", "type": "string", "default": "https://cms.example.com" },
+    { "key": "siteId", "type": "string", "default": "" }
+  ],
+  "heopress": "^1.0.0-0",
+  "security": { "contact": "security@example.com" }
+}

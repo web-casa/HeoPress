@@ -1,0 +1,74 @@
+{
+  "name": "heopress",
+  "version": "1.0.0-rc.4",
+  "description": "HeoPress in one package — the JS/TS client (re-exports @heopress/sdk) plus the `heopress` CLI: generate TypeScript types from a live schema, check your setup, scaffold a project.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "heopress": "./bin/heopress.js"
+  },
+  "main": "./src/lib.ts",
+  "types": "./src/lib.ts",
+  "exports": {
+    ".": "./src/lib.ts",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/lib.js",
+    "types": "./dist/lib.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/lib.d.ts",
+        "import": "./dist/lib.js"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest --run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo dist"
+  },
+  "dependencies": {
+    "@heopress/sdk": "workspace:*",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsup": "^8.5.1",
+    "typescript": "^5.6.2",
+    "vitest": "^5.0.3"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "heopress",
+    "sdk",
+    "client",
+    "cli",
+    "cms",
+    "headless-cms",
+    "typegen",
+    "codegen",
+    "typescript",
+    "scaffold"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/web-casa/HeoPress.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://docs.heopress.example",
+  "bugs": {
+    "url": "https://github.com/web-casa/HeoPress/issues"
+  }
+}
