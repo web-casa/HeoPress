@@ -1,0 +1,34 @@
+{
+  "sourceSite": "blog-example",
+  "defaultLocale": "en",
+  "locales": ["en", "zh", "id"],
+  "localeAliases": { "zh": "zh-CN" },
+  "localePrefixes": { "zh-CN": "zh" },
+  "trailingSlash": "always",
+  "components": { "Callout": { "as": "blockquote" } },
+  "collections": [
+    {
+      "source": "blog",
+      "collection": "articles",
+      "locale": { "from": "suffix" },
+      "permalink": "/blog/:slug",
+      "fields": { "title": "title", "description": "excerpt", "heroImage": "seo_image", "pubDate": "@publishedAt", "tags": "@tags", "draft": "@draft", "sponsored": "@sponsored", "author": "@author" }
+    },
+    {
+      "source": "docs",
+      "collection": "pages",
+      "locale": { "from": "directory" },
+      "permalink": "/docs/:slug",
+      "fields": { "title": "title" }
+    },
+    {
+      "source": "news",
+      "collection": "articles",
+      "locale": { "from": "field", "field": "lang" },
+      "translationKey": { "from": "field", "field": "key" },
+      "permalink": "/news/:slug",
+      "fields": { "title": "title", "date": "@publishedAt", "summary": "excerpt" }
+    }
+  ],
+  "redirects": { "rules": { "/rss": "/rss.xml" } }
+}
