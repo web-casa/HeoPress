@@ -1,0 +1,9 @@
+---
+// A sponsored item's disclosure (`{% sponsor_disclosure item %}`): nothing when the site has disclosure off.
+import type { PageDataPage } from '@heopress/contracts/page-data';
+import { disclosureOf } from './index';
+interface Props { page: PageDataPage; id: string }
+const { page, id } = Astro.props;
+const text = disclosureOf(page, id);
+---
+{text !== null && <aside class="heopress-disclosure" role="note">{text}</aside>}

@@ -1,0 +1,95 @@
+{
+  "saving": "Saving…",
+  "origin": {
+    "human": "human",
+    "mt": "mt",
+    "imported": "imported"
+  },
+  "strings": {
+    "title": "Translations",
+    "add": "Add",
+    "tab": {
+      "ui": "UI",
+      "field": "Field",
+      "content": "Content"
+    },
+    "key": "Key",
+    "value": "Value",
+    "status": "Status",
+    "actions": "Actions",
+    "empty": "No translations found.",
+    "edit": "Edit",
+    "editTitle": "Edit translation",
+    "newTitle": "New translation",
+    "statusValue": {
+      "draft": "draft",
+      "published": "published",
+      "approved": "approved"
+    }
+  },
+  "add": {
+    "title": "Add entry",
+    "sourceLang": "Source lang",
+    "sourceLangAria": "Entry source lang",
+    "targetLang": "Target lang",
+    "targetLangAria": "Entry target lang",
+    "sourceText": "Source text",
+    "sourceTextAria": "Entry source text",
+    "targetText": "Target text",
+    "targetTextAria": "Entry target text",
+    "saveFailed": "Save failed.",
+    "save": "Save entry"
+  },
+  "lookup": {
+    "title": "Fuzzy lookup",
+    "placeholder": "Text to look up…",
+    "queryAria": "Lookup query",
+    "sourceLangAria": "Lookup source lang",
+    "targetLangAria": "Lookup target lang",
+    "pending": "Looking up…",
+    "submit": "Lookup",
+    "failed": "Lookup failed.",
+    "similarity": "similarity {{value}}%",
+    "noMatch": "No match above threshold."
+  },
+  "translate": {
+    "title": "Translate (TM → glossary → provider)",
+    "placeholder": "Text to translate…",
+    "textAria": "Translate text",
+    "fromAria": "Translate from",
+    "toAria": "Translate to",
+    "pending": "Translating…",
+    "submit": "Translate",
+    "failed": "Translate failed."
+  },
+  "page": {
+    "title": "Translation memory",
+    "subtitle": "Reusable translations feeding the MT pipeline — what agents and editors get when translating content."
+  },
+  "entries": {
+    "title": "Entries",
+    "editTargetAria": "Edit target for {{id}}",
+    "saveAria": "Save TM entry {{id}}",
+    "cancelAria": "Cancel editing {{id}}",
+    "editAria": "Edit TM entry {{id}}",
+    "deleteAria": "Delete TM entry {{id}}",
+    "sourcePlaceholder": "source lang",
+    "targetPlaceholder": "target lang",
+    "filterSourceAria": "Filter source lang",
+    "filterTargetAria": "Filter target lang",
+    "filterOriginAria": "Filter origin",
+    "allOrigins": "all origins",
+    "loading": "Loading entries…",
+    "empty": "No entries for this filter.",
+    "pair": "Pair",
+    "source": "Source",
+    "target": "Target",
+    "quality": "Quality",
+    "origin": "Origin",
+    "actions": "Actions",
+    "pageInfo_one": "{{count}} entry · page {{page}} of {{pages}}",
+    "pageInfo_other": "{{count}} entries · page {{page}} of {{pages}}",
+    "prev": "Prev",
+    "next": "Next"
+  }
+}
