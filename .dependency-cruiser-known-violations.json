@@ -1,0 +1,307 @@
+[
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/data-rights/resolve-user.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/external-auth/adapter.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/git-integration/config.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/git-integration/webhook/handler.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/login-guard/ip-extract.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/notifications/notify-context.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/notifications/security-dispatcher.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/auth/login-session.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/helper/cookie/index.d.ts",
+    "unresolvedTo": "hono/cookie",
+    "dependencyTypes": [
+      "npm",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/auth/login-session.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/governed-capabilities.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/item-service-factory.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/permission-invalidation.ts",
+    "to": "apps/cms/node_modules/hono/dist/types/index.d.ts",
+    "unresolvedTo": "hono",
+    "dependencyTypes": [
+      "npm",
+      "type-only",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-hono"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/audit/logger.ts",
+    "to": "apps/cms/src/routes/metrics.ts",
+    "unresolvedTo": "../../routes/metrics",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-http-or-mcp-transport"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/mfa/rate-limit.ts",
+    "to": "apps/cms/src/middleware/rate-limit-helper.ts",
+    "unresolvedTo": "../../middleware/rate-limit-helper",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-http-or-mcp-transport"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/modules/recovery/rate-limit.ts",
+    "to": "apps/cms/src/middleware/rate-limit-helper.ts",
+    "unresolvedTo": "../../middleware/rate-limit-helper",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-http-or-mcp-transport"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/agent-metrics.ts",
+    "to": "apps/cms/src/routes/metrics.ts",
+    "unresolvedTo": "../routes/metrics",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-http-or-mcp-transport"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/cache-observability.ts",
+    "to": "apps/cms/src/routes/metrics.ts",
+    "unresolvedTo": "../routes/metrics",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-http-or-mcp-transport"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/content-invalidation.ts",
+    "to": "apps/cms/src/routes/metrics.ts",
+    "unresolvedTo": "../routes/metrics",
+    "dependencyTypes": [
+      "local",
+      "dynamic-import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-http-or-mcp-transport"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/deployment/trigger-rate-limit.ts",
+    "to": "apps/cms/src/middleware/rate-limit-helper.ts",
+    "unresolvedTo": "../../middleware/rate-limit-helper",
+    "dependencyTypes": [
+      "local",
+      "import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-http-or-mcp-transport"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/permission-service.ts",
+    "to": "apps/cms/src/routes/metrics.ts",
+    "unresolvedTo": "../routes/metrics",
+    "dependencyTypes": [
+      "local",
+      "dynamic-import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-http-or-mcp-transport"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/cms/src/services/schema-service.ts",
+    "to": "apps/cms/src/routes/metrics.ts",
+    "unresolvedTo": "../routes/metrics",
+    "dependencyTypes": [
+      "local",
+      "dynamic-import"
+    ],
+    "rule": {
+      "severity": "error",
+      "name": "business-no-http-or-mcp-transport"
+    }
+  }
+]
