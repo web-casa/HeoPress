@@ -1,0 +1,486 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useParams } from '@tanstack/react-router';
+import { ArrowDown, ArrowUp, Bookmark, ChevronLeft, ChevronRight, ClipboardCheck, Code2, Filter, Lock, Plus, RefreshCw, Save } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import type { FieldResource } from '@heopress/sdk';
+import { getApiClient } from '@/lib/api';
+import { cn } from '@/lib/cn';
+import { usePermissions } from '@/lib/use-permissions';
+import { useRealtimeSubscription } from '@/hooks/use-realtime';
+import { deleteBookmark, getEffectivePreset, saveUserView, viewDiffers, type ScopedViewPreset } from '@/modules/presets/api';
+import { BookmarkSwitcher } from '@/modules/presets/bookmark-switcher';
+import { SaveBookmarkDialog } from '@/modules/presets/save-bookmark-dialog';
+import { BulkRawEditor } from './bulk-raw-editor';
+import { resolveDisplay } from './displays/registry';
+import { FilterBuilder, compileFilter, type FilterCondition } from './filter-builder';
+import { collectionDisplayName, fieldDisplayName } from './display-name';
+import { PageHeader } from '@/workspace/ui/page-header';
+
+const PAGE_SIZE = 25;
+
+interface SortState {
+  field: string;
+  dir: 'asc' | 'desc';
+}
+
+/**
+ * Content module: tabular items list for a single collection.
+ * Wires filter builder + column-header sort + offset paginate against the
+ * Phase B `/api/v1/items/:collection` endpoints via the typed SDK.
+ */
+export function ItemsListPage() {
+  const { collection } = useParams({ strict: false }) as { collection: string };
+  const client = getApiClient();
+  const perms = usePermissions();
+
+  const [filters, setFilters] = useState<FilterCondition[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [sort, setSort] = useState<SortState>({ field: 'updated_at', dir: 'desc' });
+  const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showBulk, setShowBulk] = useState(false);
+  const [liveMode, setLiveMode] = useState(false);
+  const [activeBookmarkId, setActiveBookmarkId] = useState<string | null>(null);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { t, i18n } = useTranslation('items');
+  const lang = i18n.resolvedLanguage ?? i18n.language;
+
+  useRealtimeSubscription(collection, () => {
+    if (liveMode) {
+      void queryClient.invalidateQueries({ queryKey: ['items', collection] });
+    }
+  });
+
+  const fieldsQuery = useQuery({
+    queryKey: ['fields', collection],
+    queryFn: async () => (await client.schema.listFields(collection)).data,
+  });
+
+  const collectionQuery = useQuery({
+    queryKey: ['collection', collection],
+    queryFn: async () => (await client.schema.getCollection(collection)).data,
+  });
+  const title = collectionDisplayName(collectionQuery.data, collection, lang);
+
+  const filterPayload = useMemo(() => compileFilter(filters), [filters]);
+
+  // ── Effective preset (presets-inheritance) ──────────────────────────────────
+  // Apply the effective default view (user > role-chain > global) on mount, then
+  // debounce-persist the user's default when their view drifts from it.
+  const appliedRef = useRef(false);
+  const effectiveRef = useRef<{ sort?: SortState; filter?: Record<string, unknown> }>({});
+  const effectiveQuery = useQuery({
+    queryKey: ['preset-effective', collection],
+    queryFn: () => getEffectivePreset(collection),
+  });
+
+  useEffect(() => {
+    if (appliedRef.current || effectiveQuery.data === undefined) return;
+    appliedRef.current = true;
+    const p = effectiveQuery.data;
+    if (p) {
+      const savedSort = (p.layoutQuery as { sort?: SortState })?.sort;
+      if (savedSort?.field) setSort(savedSort);
+      effectiveRef.current = { sort: savedSort, filter: p.filter };
+    }
+  }, [effectiveQuery.data]);
+
+  // Debounced save of the user's DEFAULT view when it drifts from effective.
+  // Skipped while a named bookmark is active (that's a transient view, not the
+  // user's default) so switching to a bookmark never overwrites the default.
+  useEffect(() => {
+    if (!appliedRef.current || activeBookmarkId !== null) return;
+    const current = { layoutQuery: { sort }, filter: filterPayload };
+    const baseline = { layoutQuery: { sort: effectiveRef.current.sort }, filter: effectiveRef.current.filter ?? {} };
+    if (!viewDiffers(current, baseline)) return;
+    const timer = setTimeout(() => {
+      void saveUserView({ collection, filter: filterPayload, layoutQuery: { sort } }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [sort, filterPayload, collection, activeBookmarkId]);
+
+  // Apply a bookmark/preset's saved view (sort restored from layoutQuery).
+  const applyPreset = (p: ScopedViewPreset) => {
+    const savedSort = (p.layoutQuery as { sort?: SortState })?.sort;
+    if (savedSort?.field) setSort(savedSort);
+    setPage(0);
+  };
+  // Re-apply the effective default view (used by "Default view").
+  const applyEffective = () => {
+    const savedSort = effectiveRef.current.sort;
+    if (savedSort?.field) setSort(savedSort);
+    setPage(0);
+  };
+  // "Reset to default": drop the user's own default preset (if any), then
+  // re-resolve the effective view (falls back to role/global).
+  const resetToDefault = async () => {
+    setActiveBookmarkId(null);
+    const own = (effectiveQuery.data?.sourceScope === 'user' && effectiveQuery.data) || null;
+    if (own) {
+      await deleteBookmark(own.id).catch(() => {});
+    }
+    appliedRef.current = false;
+    await effectiveQuery.refetch();
+    void queryClient.invalidateQueries({ queryKey: ['preset-bookmarks', collection] });
+  };
+
+  const canRead = perms.can(collection, 'read');
+  const canUpdate = perms.can(collection, 'update');
+  const canCreate = perms.can(collection, 'create');
+
+  const itemsQuery = useQuery({
+    queryKey: ['items', collection, filterPayload, sort, page],
+    queryFn: () =>
+      client.items(collection as never).list({
+        filter: filterPayload,
+        sort: [`${sort.dir === 'desc' ? '-' : ''}${sort.field}`],
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+      }),
+    enabled: !perms.isLoading && canRead,
+  });
+
+  const fields = useMemo(() => fieldsQuery.data ?? [], [fieldsQuery.data]);
+  // Pick at most 5 visible non-hidden fields for the table preview AND drop
+  // fields the principal cannot read (server already strips them, but we hide
+  // the columns proactively so headers/sorts don't promise data we can't show).
+  const visibleFields: FieldResource[] = useMemo(
+    () =>
+      fields
+        .filter((f) => !f.hidden)
+        .filter((f) => perms.fieldAllowed(collection, 'read', f.name))
+        .slice(0, 5),
+    [fields, perms, collection],
+  );
+
+  // Filter builder should only offer fields the user can read.
+  const filterableFields = useMemo(
+    () => fields.filter((f) => perms.fieldAllowed(collection, 'read', f.name)),
+    [fields, perms, collection],
+  );
+
+  const total = itemsQuery.data?.meta?.total ?? 0;
+  const rows = itemsQuery.data?.data ?? [];
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const toggleSort = (field: string) => {
+    setPage(0);
+    setSort((prev) =>
+      prev.field === field
+        ? { field, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+        : { field, dir: 'asc' },
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <nav className="-mb-2 text-[12px] text-dim">
+        <Link to="/content" className="hover:underline">{t('detail.breadcrumb')}</Link>
+        <span className="mx-1">/</span>
+        <span>{title}</span>
+      </nav>
+      <PageHeader
+        title={title}
+        actions={
+        <>
+          <Link
+            to="/content/$collection/reviews"
+            params={{ collection }}
+            className="inline-flex items-center gap-1 rounded-ctl border border-line px-2 py-1 text-xs hover:bg-panel-2"
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" />
+            {t('list.reviews')}
+          </Link>
+          {canCreate && (
+            <Link
+              to="/content/$collection/$id"
+              params={{ collection, id: 'new' }}
+              className="inline-flex items-center gap-1 rounded-ctl bg-brand px-3 py-1 text-xs font-medium text-brand-fg hover:opacity-90"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t('list.newItem')}
+            </Link>
+          )}
+          {/* Live Mode Toggle */}
+          <label className="flex items-center gap-1.5 text-xs text-dim mr-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={liveMode}
+              onChange={(e) => setLiveMode(e.target.checked)}
+              className="accent-brand"
+            />
+            {t('list.liveMode')}
+          </label>
+
+          {/* Preset / bookmark switcher (presets-inheritance) */}
+          <div className="flex items-center gap-1">
+            <BookmarkSwitcher
+              collection={collection}
+              activeBookmarkId={activeBookmarkId}
+              onSelectDefault={() => {
+                setActiveBookmarkId(null);
+                applyEffective();
+              }}
+              onSelectBookmark={(b) => {
+                setActiveBookmarkId(b.id);
+                applyPreset(b);
+              }}
+              onResetToDefault={() => void resetToDefault()}
+            />
+            <button
+              type="button"
+              title={t('list.saveBookmark')}
+              onClick={() => setSaveDialogOpen(true)}
+              className="rounded-ctl border border-line px-2 py-1.5 text-dim hover:bg-panel-2 hover:text-fg"
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowFilters((v) => !v)}
+            className={cn(
+              'inline-flex items-center gap-1 rounded-ctl border border-line px-2 py-1 text-xs',
+              showFilters && 'bg-panel-2',
+            )}
+          >
+            <Filter className="h-3.5 w-3.5" />
+            {t('list.filters')} {filters.length > 0 && <span className="text-brand">({filters.length})</span>}
+          </button>
+          {selected.size > 0 && (
+            <button
+              type="button"
+              onClick={() => canUpdate && setShowBulk(true)}
+              disabled={!canUpdate}
+              title={canUpdate ? undefined : t('detail.noUpdate')}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-ctl border border-line px-2 py-1 text-xs',
+                canUpdate
+                  ? 'border-brand bg-brand-soft text-brand'
+                  : 'cursor-not-allowed border-line text-dim',
+              )}
+            >
+              {canUpdate ? <Code2 className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+              {t('list.editRaw', { count: selected.size })}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => void itemsQuery.refetch()}
+            className="inline-flex items-center gap-1 rounded-ctl border border-line px-2 py-1 text-xs"
+          >
+            <RefreshCw className={cn('h-3.5 w-3.5', itemsQuery.isFetching && 'animate-spin')} />
+            {t('list.refresh')}
+          </button>
+        </>
+        }
+      />
+
+      {showFilters && (
+        <div className="rounded-card border border-line bg-panel-2 p-3">
+          <FilterBuilder
+            fields={filterableFields}
+            value={filters}
+            onChange={(next) => {
+              setFilters(next);
+              setPage(0);
+            }}
+          />
+        </div>
+      )}
+
+      {!perms.isLoading && !canRead && (
+        <div className="flex items-center gap-2 rounded-ctl border border-warn/40 bg-warn-soft p-3 text-sm text-warn">
+          <Lock className="h-4 w-4" />
+          <Trans t={t} i18nKey="detail.noRead" components={{ code: <code className="mx-1 rounded bg-bg px-1 text-xs" /> }} />
+        </div>
+      )}
+
+      {itemsQuery.error && (
+        <div className="rounded-ctl border border-bad/40 bg-bad-soft p-3 text-sm text-bad">
+          {t('list.loadFailed')}
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-card border border-line bg-panel">
+        <table className="w-full text-[13px]">
+          <thead className="bg-panel-2 text-left text-[12px] text-dim">
+            <tr>
+              <th className="w-8 px-3 py-2">
+                <input
+                  type="checkbox"
+                  checked={rows.length > 0 && rows.every((r) => selected.has(r.id))}
+                  onChange={(e) => {
+                    const next = new Set(selected);
+                    if (e.target.checked) rows.forEach((r) => next.add(r.id));
+                    else rows.forEach((r) => next.delete(r.id));
+                    setSelected(next);
+                  }}
+                />
+              </th>
+              <SortableTh label={t('list.columns.id')} field="id" sort={sort} onClick={toggleSort} />
+              <SortableTh label={t('list.columns.status')} field="status" sort={sort} onClick={toggleSort} />
+              {visibleFields.map((f) => (
+                <SortableTh
+                  key={f.id}
+                  label={fieldDisplayName(f, lang)}
+                  field={f.name}
+                  sort={sort}
+                  onClick={toggleSort}
+                />
+              ))}
+              <SortableTh label={t('list.columns.updated')} field="updated_at" sort={sort} onClick={toggleSort} />
+            </tr>
+          </thead>
+          <tbody>
+            {itemsQuery.isLoading && (
+              <tr><td colSpan={visibleFields.length + 4} className="px-4 py-6 text-center text-dim">{t('common:loading')}</td></tr>
+            )}
+            {!itemsQuery.isLoading && rows.length === 0 && (
+              <tr><td colSpan={visibleFields.length + 4} className="px-4 py-6 text-center text-dim">{t('list.empty')}</td></tr>
+            )}
+            {rows.map((row) => (
+              <tr key={row.id} className="border-t border-line hover:bg-panel-2">
+                <td className="px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(row.id)}
+                    onChange={(e) => {
+                      const next = new Set(selected);
+                      if (e.target.checked) next.add(row.id);
+                      else next.delete(row.id);
+                      setSelected(next);
+                    }}
+                  />
+                </td>
+                <td className="px-4 py-2 font-mono text-xs">
+                  <Link
+                    to="/content/$collection/$id"
+                    params={{ collection, id: row.id }}
+                    className="text-brand hover:underline"
+                  >
+                    {row.id.slice(0, 8)}…
+                  </Link>
+                </td>
+                <td className="px-4 py-2"><StatusBadge status={row.status} /></td>
+                {visibleFields.map((f) => {
+                  const Display = resolveDisplay(f);
+                  return (
+                    <td key={f.id} className="px-4 py-2 text-dim">
+                      <Display
+                        field={f}
+                        value={row.data?.[f.name]}
+                        row={row.data as Record<string, unknown> | undefined}
+                      />
+                    </td>
+                  );
+                })}
+                <td className="px-4 py-2 text-xs text-dim">
+                  {new Date(row.updatedAt).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <footer className="flex items-center justify-between text-xs text-dim">
+        <span>
+          {rows.length > 0
+            ? t('list.showing', { from: page * PAGE_SIZE + 1, to: page * PAGE_SIZE + rows.length, total })
+            : t('list.none', { total })}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="rounded-ctl border border-line px-2 py-1 disabled:opacity-40"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <span>{page + 1} / {totalPages}</span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page + 1 >= totalPages}
+            className="rounded-ctl border border-line px-2 py-1 disabled:opacity-40"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </footer>
+
+      {showBulk && (
+        <BulkRawEditor
+          collection={collection}
+          ids={Array.from(selected)}
+          onClose={() => setShowBulk(false)}
+          onSaved={() => {
+            setShowBulk(false);
+            setSelected(new Set());
+            void itemsQuery.refetch();
+          }}
+        />
+      )}
+
+      {saveDialogOpen && (
+        <SaveBookmarkDialog
+          collection={collection}
+          view={{ filter: filterPayload, layoutQuery: { sort } }}
+          canManageShared={perms.isAdmin}
+          onClose={() => setSaveDialogOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function SortableTh({
+  label,
+  field,
+  sort,
+  onClick,
+}: {
+  label: string;
+  field: string;
+  sort: SortState;
+  onClick: (field: string) => void;
+}) {
+  const active = sort.field === field;
+  return (
+    <th className="px-4 py-2 font-medium">
+      <button
+        type="button"
+        onClick={() => onClick(field)}
+        className={cn(
+          'inline-flex items-center gap-1 hover:text-fg',
+          active && 'text-fg',
+        )}
+      >
+        {label}
+        {active && (sort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+      </button>
+    </th>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation('items');
+  const tone =
+    status === 'published'
+      ? 'bg-ok-soft text-ok'
+      : status === 'archived'
+        ? 'bg-warn-soft text-warn'
+        : 'bg-panel-2 text-dim';
+  return (
+    <span className={cn('rounded-full px-2 py-0.5 text-[11.5px]', tone)}>
+      {t(`status.${status}`, { defaultValue: status })}
+    </span>
+  );
+}
+

@@ -1,0 +1,85 @@
+{
+  "overview": {
+    "home": "Overview",
+    "dashboards": "Custom dashboards"
+  },
+  "content": {
+    "workspace": "Review workspace",
+    "views": "Views",
+    "collections": "Content types",
+    "media": "Media",
+    "translations": "Translations",
+    "translationMemory": "Translation memory",
+    "sources": "Sources",
+    "aiReview": "AI review",
+    "workbench": "Prompt workbench",
+    "flowDrafts": "Flow drafts"
+  },
+  "sites": {
+    "topology": "Topology",
+    "list": "Site list",
+    "domains": "Domains & certificates"
+  },
+  "seo": {
+    "settings": "Content rules",
+    "identity": "Site identity",
+    "rootFiles": "Root files",
+    "appearance": "Search appearance",
+    "crawlers": "AI crawlers",
+    "machine": "Machine-readable output",
+    "canonical": "Canonical domain",
+    "redirects": "Redirects"
+  },
+  "aiTraffic": {
+    "report": "Traffic"
+  },
+  "audit": {
+    "issues": "Issues",
+    "links": "Internal links"
+  },
+  "monitoring": {
+    "events": "Event stream",
+    "reachability": "Reachability",
+    "activity": "Activity",
+    "agents": "Agents"
+  },
+  "settings": {
+    "workspace": "Workspace",
+    "general": "General",
+    "appearance": "Appearance",
+    "agentAccess": "Agent access",
+    "members": "Members & permissions",
+    "apiKeys": "API & keys",
+    "notifications": "Notifications",
+    "license": "License",
+    "system": "System",
+    "advanced": "Advanced",
+    "legacy": {
+      "keyboard": "Keyboard shortcuts",
+      "editorial-profile": "Editorial profile",
+      "storage": "Storage",
+      "models": "Models",
+      "uploads": "Uploads",
+      "access": "Roles & policies",
+      "teams": "Teams",
+      "data-model": "Data model",
+      "automation/flows": "Automation",
+      "integrations/git": "Git repositories",
+      "webhooks": "Webhooks",
+      "change-feed": "Change feed",
+      "deployments": "Deployments",
+      "email": "Email",
+      "extensions": "Extensions",
+      "marketplace": "Marketplace",
+      "developer/types": "TypeScript types",
+      "agent-harness": "Agent harness",
+      "materialize": "Materialized views",
+      "security": "Security",
+      "encryption": "Encryption",
+      "updates": "Updates",
+      "branding": "Branding & site address",
+      "users": "All accounts (classic)",
+      "ai-pipeline": "AI pipeline"
+    }
+  }
+}
