@@ -1,0 +1,105 @@
+# What leaves the private repository (ADR-0010, ADR-0018): a whitelist.
+#
+# `include` lists the paths that are exported (a directory ends in `/**`,
+# `*` matches within one path segment). `never` lists paths that are never
+# exported, whatever `include` says — development-process records and
+# anything private. scripts/public-export.mjs reads this file; the public CI
+# mirror (scripts/ci-mirror.mjs) and the release pipeline (P07) both use it.
+#
+# Format: two keys, each a list of `- pattern` lines; `#` starts a comment.
+# `never` has no exceptions. Environment files (a name starting `.env`, but
+# `.env.example`) are never exported either, whatever the lists say.
+
+include:
+  # Code, its tests, tooling and deployment (release/: the export's manifest and reviewed scan findings).
+  - apps/**
+  - release/**
+  - packages/**
+  - scripts/**
+  - examples/**
+  # Official Skills for external agents (P10 task 5.1).
+  - skills/**
+  - docker/**
+  - .github/**
+  - .husky/**
+  # Security scan exceptions (P07 task 8.1): the nightly scans on the public repository read them.
+  - security/**
+  # User and developer documentation (not the development process).
+  - docs/README.md
+  - docs/ROADMAP.md
+  - docs/known-issues.md
+  - docs/llms.txt
+  - docs/openapi.yaml
+  - docs/en/**
+  - docs/zh-CN/**
+  # Operations runbooks (P13: the manual Git history rewrite process, ADR-0013).
+  - docs/ops/**
+  # Upstream LumiBase's own archive (public upstream; Apache-2.0 provenance of the fork; registry and notice
+  # checks read it). It is not HeoPress's development process — that is under `never`.
+  - docs/legacy/**
+  - docs/schemas/**
+  # Upstream LumiBase's UI screen specifications (public upstream).
+  - docs/ui/**
+  # Archived specifications (the system's current behaviour).
+  - openspec/config.yaml
+  - openspec/specs/**
+  # Licences and legal texts (Apache-2.0 §4, ADR-0008). A release requires LICENSE, LICENSE-EXCEPTION.md,
+  # COMMERCIAL-LICENSE.md, CLA.md, LICENSES/Apache-2.0.txt and NOTICE, final (ADR-0010 §7). legal/ holds drafts
+  # pending legal review: never public (built in); a reviewed text is published as its root file.
+  - LICENSE
+  - LICENSE-EXCEPTION.md
+  - COMMERCIAL-LICENSE.md
+  - CLA.md
+  - LICENSES/**
+  - NOTICE
+  - THIRD_PARTY_NOTICES.md
+  - UPSTREAM.md
+  # Workspace and repository configuration.
+  - package.json
+  - pnpm-lock.yaml
+  - pnpm-workspace.yaml
+  - turbo.json
+  - tsconfig.base.json
+  - eslint.config.mjs
+  - eslint-suppressions.json
+  - knip.json
+  - knip-baseline.json
+  - license-policy.json
+  - .dependency-cruiser.cjs
+  - .dependency-cruiser-known-violations.json
+  - .gitignore
+  - .dockerignore
+  - .nvmrc
+  - .env.example
+  # Project entry points.
+  - README.md
+  - CHANGELOG.md
+  - SECURITY.md
+  - AGENTS.md
+  - CLAUDE.md
+
+never:
+  # Development process records (ADR-0010 §2).
+  - docs/handoffs/**
+  - docs/research/**
+  - docs/reviews/**
+  - docs/review-agent/**
+  - docs/decisions/**
+  - docs/backlog/**
+  - docs/benchmarks/**
+  # Requirements in progress; agent tooling for them.
+  - openspec/changes/**
+  - .claude/**
+  - .agents/**
+  # The private word list, the private review records of scan findings, and the private commit behind each
+  # public release.
+  - release/private-terms.txt
+  - release/gitleaks-reviewed
+  - release/opaque-reviewed
+  - release/private-releases.jsonl
+  # Any other private release record (release/private-*, at any depth), and legal drafts pending review.
+  - release/private*
+  - release/private*/**
+  - release/**/private*
+  - release/**/private*/**
+  - legal/**
