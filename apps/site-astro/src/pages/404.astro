@@ -1,0 +1,7 @@
+---
+// The site's not-found page, rendered by its theme (HeoPress P11 task 3.1).
+import data from 'virtual:heopress/page-data';
+import Theme from 'heopress:theme';
+const page = data.notFound;
+---
+{page ? <Theme page={page} /> : <html lang={data.defaultLanguage}><head><meta charset="utf-8"><title>404</title><meta name="robots" content="noindex"></head><body><h1>404</h1></body></html>}
