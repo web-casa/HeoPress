@@ -1,0 +1,100 @@
+{
+  "ai": {
+    "title": "AI 助手",
+    "open": "打开 AI 助手",
+    "close": "关闭 AI 助手",
+    "selectConversation": "选择对话",
+    "newConversation": "新建对话",
+    "deleteConversation": "删除对话",
+    "noConversations": "还没有对话。",
+    "emptyHint": "发送一条消息，开始与 AI 助手对话。",
+    "thinking": "思考中…",
+    "messageInput": "消息输入框",
+    "placeholder": "向 AI 提问…",
+    "send": "发送消息",
+    "queuedRun": "请求已排队（运行 {{runId}}）。请轮询 GET /api/v1/flows/runs/{{runId}} 获取结果。",
+    "queued": "请求已排队，将异步处理。",
+    "requestFailed": "请求失败，状态码 {{status}}",
+    "done": "已完成。",
+    "unexpected": "收到了无法识别的响应。",
+    "networkError": "网络错误，请检查连接后重试。",
+    "status": {
+      "executed": "已执行",
+      "pending_approval": "待审批",
+      "denied": "已拒绝"
+    }
+  },
+  "coEdit": {
+    "one": "{{name}} 也正在编辑此条目。",
+    "many_one": "另有 {{count}} 人正在编辑此条目。",
+    "many_other": "另有 {{count}} 人正在编辑此条目。",
+    "namesHere": "{{names}} 也在这里。",
+    "warning": "保存时可能互相覆盖修改，请先协调好再保存。",
+    "listSeparator": "、",
+    "listAnd": "{{head}}和{{last}}"
+  },
+  "notifications": {
+    "title": "通知",
+    "bellUnread_one": "通知（{{count}} 条未读）",
+    "bellUnread_other": "通知（{{count}} 条未读）",
+    "markAllRead": "全部标为已读",
+    "clearAll": "全部清除",
+    "empty": "暂无通知",
+    "open": "打开 →",
+    "item": {
+      "create": "<b>{{collection}}</b> 中的条目 <code>{{id}}</code> 已创建",
+      "update": "<b>{{collection}}</b> 中的条目 <code>{{id}}</code> 已更新",
+      "delete": "<b>{{collection}}</b> 中的条目 <code>{{id}}</code> 已删除"
+    },
+    "dismiss": "关闭"
+  },
+  "presence": {
+    "viewing_one": "{{count}} 人正在查看",
+    "viewing_other": "{{count}} 人正在查看",
+    "more_one": "还有 {{count}} 人",
+    "more_other": "还有 {{count}} 人"
+  },
+  "release": {
+    "available": "有新版本可用：HeoPress {{version}}",
+    "released": "发布于 {{date}}。当前阶段仅通知管理员，Studio 不会在界面中重启服务或执行迁移。",
+    "reviewGuide": "更新前请先阅读升级指南。",
+    "reviewGuideBelow": "从低于 {{version}} 的版本更新前，请先阅读升级指南。",
+    "upgradeGuide": "升级指南",
+    "changelog": "更新日志",
+    "checkError": "已开启版本更新检查，但 Studio 无法读取发布清单：{{error}}",
+    "checking": "正在检查 HeoPress 更新…",
+    "upToDate": "公开发布清单中没有更新的 HeoPress 版本。",
+    "checkNow": "立即检查",
+    "manifestUnreadable": "无法读取发布清单。"
+  },
+  "connect": {
+    "title": "连接到 HeoPress",
+    "subtitle": "输入你的 HeoPress 服务器地址即可开始。",
+    "urlLabel": "服务器地址",
+    "urlPlaceholder": "https://cms.example.com",
+    "connecting": "正在连接…",
+    "connect": "连接",
+    "urlRequired": "请输入 HeoPress 服务器地址。",
+    "unreachable": "无法访问 {{origin}}。请检查地址是否正确，以及服务器是否在运行。"
+  },
+  "version": {
+    "aria": "构建与发布信息",
+    "studio": "Studio v{{version}}",
+    "git": "Git {{sha}}",
+    "built": "构建于 {{time}}",
+    "channel": "渠道 {{channel}}",
+    "backend": "后端 {{value}}",
+    "checking": "检查中…",
+    "unavailable": "不可用",
+    "mismatch": "前后端版本不一致。",
+    "noUpdates": "客户端不会执行任何下载或更新。",
+    "reportBug": "报告问题",
+    "releaseNotes": "发布说明"
+  },
+  "siteSwitcher": {
+    "mfa": "二次验证",
+    "signInThere": "前往登录",
+    "idPlaceholder": "my-site",
+    "languagePlaceholder": "zh-CN"
+  }
+}
