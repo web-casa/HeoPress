@@ -1,0 +1,3 @@
+-- HeoPress P07 task 2.8 (Codex review of batch 12): the items indexed by their own setting, newest first per collection —
+-- the only candidates of a collection not indexed by default (`lumibase_robots_own_index`, migration 0090).
+CREATE INDEX "public_items_site_collection_own_index_c" ON "lumibase_public_items" USING btree ("site_id","collection","published_at","item_id" COLLATE "C") WHERE public.lumibase_robots_own_index("lumibase_public_items"."seo_robots");

@@ -1,0 +1,19 @@
+---
+// Every page of the pinned snapshot, rendered by the site's theme (HeoPress P11 task 3.1). A plugin route page
+// (P12 task 2.3) renders with its template: the theme's override, else the plugin's default.
+import data from 'virtual:heopress/page-data';
+import extensionTemplates from 'virtual:heopress/ext-templates';
+import Theme from 'heopress:theme';
+
+export function getStaticPaths() {
+  return data.pages.map((page) => {
+    const path = decodeURI(page.path).replace(/^\/+|\/+$/g, '');
+    return { params: { path: path === '' ? undefined : path }, props: { page } };
+  });
+}
+const { page } = Astro.props;
+const route = page.vm.route;
+const Template = route ? extensionTemplates[`${route.namespace}/${route.template}`] : null;
+if (route && !Template) throw new Error(`no template for plugin route ${route.namespace}/${route.id}`);
+---
+{Template ? <Template page={page} /> : <Theme page={page} />}
