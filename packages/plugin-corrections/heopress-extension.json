@@ -1,0 +1,291 @@
+{
+  "name": "heopress-corrections",
+  "version": "1.0.0",
+  "type": "hook",
+  "entry": "./dist/index.js",
+  "displayName": "Corrections",
+  "description": "A public correction form, a moderation queue, public correction records with structured data, and a correction block on the corrected article.",
+  "capabilities": [
+    "ext:collections",
+    "ext:routes",
+    "ext:endpoints",
+    "ext:events",
+    "ext:gate-checks",
+    "ext:admin-panels",
+    "items:read:articles",
+    "items:write:articles",
+    "items:publish:articles",
+    "items:read:heopress_corrections__reports",
+    "items:write:heopress_corrections__reports",
+    "items:read:heopress_corrections__notices",
+    "items:write:heopress_corrections__notices",
+    "cdc:subscribe:heopress_corrections__reports",
+    "cdc:subscribe:heopress_corrections__notices",
+    "seo:structured-data"
+  ],
+  "heopress": "^1.0.0-0",
+  "extensionPoints": {
+    "collections": "^1.0.0",
+    "routes": "^1.0.0",
+    "endpoints": "^1.0.0",
+    "events": "^1.0.0",
+    "gate-checks": "^1.0.0",
+    "admin-panels": "^1.0.0",
+    "context": "^1.0.0"
+  },
+  "security": {
+    "contact": "https://github.com/web-casa/HeoPress/security/advisories/new"
+  },
+  "collections": [
+    {
+      "name": "reports",
+      "label": "Correction reports — moderation queue · 纠错报告（审核队列）",
+      "fields": [
+        {
+          "name": "status",
+          "type": "string",
+          "interface": "input",
+          "label": "Moderation status: pending / accepted / rejected · 审核状态",
+          "required": true
+        },
+        {
+          "name": "page_path",
+          "type": "string",
+          "interface": "input",
+          "label": "Reported page path · 被纠错页面路径",
+          "required": true
+        },
+        {
+          "name": "excerpt",
+          "type": "text",
+          "interface": "textarea",
+          "label": "Quoted passage · 引用原文",
+          "required": true
+        },
+        {
+          "name": "correction",
+          "type": "text",
+          "interface": "textarea",
+          "label": "Suggested correction · 建议更正",
+          "required": true
+        },
+        {
+          "name": "comment",
+          "type": "text",
+          "interface": "textarea",
+          "label": "Reporter's comment (never public) · 报告者留言（不公开）",
+          "hidden": true
+        },
+        {
+          "name": "reporter_name",
+          "type": "string",
+          "interface": "input",
+          "label": "Reporter's name (never public) · 报告者姓名（不公开）",
+          "hidden": true
+        },
+        {
+          "name": "reporter_email",
+          "type": "string",
+          "interface": "input",
+          "label": "Reporter's e-mail (never public) · 报告者邮箱（不公开）",
+          "hidden": true
+        },
+        {
+          "name": "submitted_at",
+          "type": "datetime",
+          "interface": "datetime",
+          "label": "Submitted at · 提交时间"
+        }
+      ]
+    },
+    {
+      "name": "notices",
+      "label": "Correction notices · 更正记录",
+      "fields": [
+        {
+          "name": "title",
+          "type": "string",
+          "interface": "input",
+          "label": "Notice title · 更正标题",
+          "required": true
+        },
+        {
+          "name": "slug",
+          "type": "string",
+          "interface": "slug",
+          "label": "Slug · 地址别名",
+          "required": true
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "interface": "input",
+          "label": "Language · 语言"
+        },
+        {
+          "name": "page_path",
+          "type": "string",
+          "interface": "input",
+          "label": "Corrected page path · 更正页面路径",
+          "required": true
+        },
+        {
+          "name": "excerpt",
+          "type": "text",
+          "interface": "textarea",
+          "label": "Quoted passage · 引用原文"
+        },
+        {
+          "name": "correction",
+          "type": "text",
+          "interface": "textarea",
+          "label": "Correction · 更正内容",
+          "required": true
+        },
+        {
+          "name": "corrected_on",
+          "type": "datetime",
+          "interface": "datetime",
+          "label": "Corrected on · 更正日期"
+        },
+        {
+          "name": "report_id",
+          "type": "string",
+          "interface": "input",
+          "label": "Report (internal) · 报告（内部）",
+          "hidden": true
+        },
+        {
+          "name": "article_id",
+          "type": "string",
+          "interface": "input",
+          "label": "Article (internal) · 文章（内部）",
+          "hidden": true
+        },
+        {
+          "name": "body",
+          "type": "text",
+          "interface": "wysiwyg",
+          "label": "Explanation · 补充说明"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "id": "notice",
+      "kind": "item",
+      "path": "/corrections/:slug",
+      "collection": "notices",
+      "template": "notice"
+    },
+    {
+      "id": "index",
+      "kind": "list",
+      "path": "/corrections",
+      "collection": "notices",
+      "template": "index",
+      "title": "Corrections",
+      "pageSize": 50
+    }
+  ],
+  "structuredData": [
+    {
+      "key": "notice",
+      "scope": "item",
+      "collections": [
+        "heopress_corrections__notices"
+      ],
+      "node": {
+        "@type": "CorrectionComment",
+        "text": {
+          "$field": "correction"
+        },
+        "about": {
+          "@type": "WebPage",
+          "url": {
+            "$field": "page_path"
+          }
+        },
+        "dateCreated": {
+          "$field": "corrected_on"
+        }
+      }
+    }
+  ],
+  "gateChecks": [
+    {
+      "id": "notice-links",
+      "label": "Correction blocks point at a published notice · 更正块指向已发布的更正记录",
+      "description": "An article whose correction block points at a missing or unpublished notice must not pass the quality gate.",
+      "collections": [
+        "articles"
+      ]
+    }
+  ],
+  "storage": {
+    "decisions": {
+      "indexes": [
+        [
+          "report"
+        ],
+        [
+          "notice"
+        ]
+      ]
+    }
+  },
+  "admin": {
+    "pages": [
+      {
+        "id": "decisions",
+        "title": "Correction moderation log · 更正审核记录",
+        "type": "table",
+        "storage": "decisions",
+        "columns": [
+          "report",
+          "notice",
+          "article",
+          "state"
+        ]
+      },
+      {
+        "id": "settings",
+        "title": "Corrections settings · 纠错设置",
+        "type": "settings"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "decisions",
+        "title": "Correction decisions · 更正决定",
+        "type": "count",
+        "storage": "decisions"
+      }
+    ],
+    "settings": [
+      {
+        "key": "write_body",
+        "type": "boolean",
+        "label": "Write the correction block into the article body · 在文章正文写入更正块",
+        "default": true
+      },
+      {
+        "key": "marker_label",
+        "type": "string",
+        "label": "Label of the correction block · 更正块标签",
+        "default": "Correction"
+      }
+    ]
+  },
+  "templates": {
+    "classic": {
+      "notice": "<!doctype html>\n<html lang=\"{{ page.locale }}\">\n<head>\n<meta charset=\"utf-8\">\n{% seo_head %}\n</head>\n<body class=\"heopress-corrections heopress-corrections-notice\">\n<main>\n<article>\n<h1>{{ item.title }}</h1>\n{% if item.fields.page_path and item.fields.page_path != \"\" %}<p class=\"heopress-corrections-page\">Corrected page: <a href=\"{{ item.fields.page_path | url }}\">{{ item.fields.page_path }}</a></p>{% endif %}\n{% if item.fields.corrected_on and item.fields.corrected_on != \"\" %}<p class=\"heopress-corrections-date\"><time datetime=\"{{ item.fields.corrected_on }}\">{{ item.fields.corrected_on | slice: 0, 10 }}</time></p>{% endif %}\n{% if item.fields.excerpt and item.fields.excerpt != \"\" %}<blockquote class=\"heopress-corrections-quote\"><p>{{ item.fields.excerpt }}</p></blockquote>{% endif %}\n{% if item.fields.correction and item.fields.correction != \"\" %}<p class=\"heopress-corrections-correction\">{{ item.fields.correction }}</p>{% endif %}\n{% item_body %}\n</article>\n</main>\n</body>\n</html>\n",
+      "index": "<!doctype html>\n<html lang=\"{{ page.locale }}\">\n<head>\n<meta charset=\"utf-8\">\n{% seo_head %}\n</head>\n<body class=\"heopress-corrections heopress-corrections-index\">\n<main>\n<h1>{{ route.title }}</h1>\n{% if list.size > 0 %}<ul class=\"heopress-corrections-list\">{% for c in list %}<li><a href=\"{{ c.url | url }}\">{{ c.title }}</a>{% if c.excerpt != \"\" %}<p>{{ c.excerpt }}</p>{% endif %}</li>{% endfor %}</ul>{% endif %}\n{% if pagination %}<nav class=\"heopress-corrections-pages\">{% if pagination.prevUrl %}<a href=\"{{ pagination.prevUrl | url }}\" rel=\"prev\">Previous</a>{% endif %}{% if pagination.nextUrl %}<a href=\"{{ pagination.nextUrl | url }}\" rel=\"next\">Next</a>{% endif %}</nav>{% endif %}\n</main>\n</body>\n</html>\n"
+    },
+    "astro": {
+      "notice": "---\nimport type { PageDataPage } from '@heopress/astro-kit';\nimport { safeUrl } from '@heopress/astro-kit';\nimport SeoHead from '@heopress/astro-kit/SeoHead.astro';\nimport ItemBody from '@heopress/astro-kit/ItemBody.astro';\ninterface Props { page: PageDataPage }\nconst { page } = Astro.props;\nconst { vm } = page;\nconst item = vm.item;\nconst text = (value: unknown): string => (typeof value === 'string' ? value : '');\nconst pagePath = text(item?.fields.page_path);\nconst excerpt = text(item?.fields.excerpt);\nconst correction = text(item?.fields.correction);\nconst correctedOn = text(item?.fields.corrected_on);\n---\n<html lang={vm.page.locale}>\n<head>\n<meta charset=\"utf-8\">\n<SeoHead page={page} />\n</head>\n<body class=\"heopress-corrections heopress-corrections-notice\">\n<main>\n<article>\n<h1>{item?.title}</h1>\n{pagePath !== '' && <p class=\"heopress-corrections-page\">Corrected page: <a href={safeUrl(pagePath)}>{pagePath}</a></p>}\n{correctedOn !== '' && <p class=\"heopress-corrections-date\"><time datetime={correctedOn}>{correctedOn.slice(0, 10)}</time></p>}\n{excerpt !== '' && <blockquote class=\"heopress-corrections-quote\"><p>{excerpt}</p></blockquote>}\n{correction !== '' && <p class=\"heopress-corrections-correction\">{correction}</p>}\n<ItemBody page={page} />\n</article>\n</main>\n</body>\n</html>\n",
+      "index": "---\nimport type { PageDataPage } from '@heopress/astro-kit';\nimport { safeUrl } from '@heopress/astro-kit';\nimport SeoHead from '@heopress/astro-kit/SeoHead.astro';\ninterface Props { page: PageDataPage }\nconst { page } = Astro.props;\nconst { vm } = page;\n---\n<html lang={vm.page.locale}>\n<head>\n<meta charset=\"utf-8\">\n<SeoHead page={page} />\n</head>\n<body class=\"heopress-corrections heopress-corrections-index\">\n<main>\n<h1>{vm.route?.title}</h1>\n{vm.list.length > 0 && <ul class=\"heopress-corrections-list\">{vm.list.map((c) => <li><a href={safeUrl(c.url)}>{c.title}</a>{c.excerpt !== '' && <p>{c.excerpt}</p>}</li>)}</ul>}\n{vm.pagination && <nav class=\"heopress-corrections-pages\">{vm.pagination.prevUrl && <a href={safeUrl(vm.pagination.prevUrl)} rel=\"prev\">Previous</a>}{vm.pagination.nextUrl && <a href={safeUrl(vm.pagination.nextUrl)} rel=\"next\">Next</a>}</nav>}\n</main>\n</body>\n</html>\n"
+    }
+  }
+}
