@@ -1,0 +1,114 @@
+{
+  "title": "Overview",
+  "description": "What needs you now, across your sites.",
+  "scope": {
+    "label": "Scope",
+    "current": "This site",
+    "all": "All sites",
+    "site": "{{name}}",
+    "pick": "Another site…"
+  },
+  "todo": {
+    "alerts_one": "{{count}} service alert",
+    "alerts_other": "{{count}} service alerts",
+    "alertsHint": "See Logs & monitoring",
+    "reviews_one": "Review {{count}} item",
+    "reviews_other": "Review {{count}} items",
+    "oldest": "Oldest: “{{title}}”, waiting {{wait}}",
+    "longestWait": "Longest wait {{wait}}",
+    "acrossSites_one": "across {{count}} site",
+    "acrossSites_other": "across {{count}} sites",
+    "auditErrors_one": "{{count}} error-level audit issue",
+    "auditErrors_other": "{{count}} error-level audit issues",
+    "auditWarnings_one": "{{count}} warning-level audit issue",
+    "auditWarnings_other": "{{count}} warning-level audit issues",
+    "domains_one": "{{count}} domain needs attention",
+    "domains_other": "{{count}} domains need attention",
+    "domainFailed": "{{host}}: {{detail}}",
+    "domainPending": "{{host}}: still unverified after 24 hours",
+    "staleDrafts_one": "{{count}} draft untouched for days",
+    "staleDrafts_other": "{{count}} drafts untouched for days",
+    "staleOldest": "Oldest: “{{title}}”, untouched {{wait}}",
+    "failedJobs_one": "{{count}} failed job in the last 24 hours",
+    "failedJobs_other": "{{count}} failed jobs in the last 24 hours",
+    "pickSite": "Choose a site to review on",
+    "mfa": "Two-step verification required",
+    "unavailable": "Temporarily unavailable"
+  },
+  "briefing": {
+    "needs": {
+      "title": "Needs attention",
+      "empty": "Nothing needs attention right now.",
+      "nextAudit": "Next audit check: {{when}}"
+    },
+    "currentSiteOnly": "Drafts older than a few days and last week's changes are shown for the current site only.",
+    "recent": {
+      "title": "Recent changes",
+      "published_one": "{{count}} publish in the last {{days}} days",
+      "published_other": "{{count}} publishes in the last {{days}} days",
+      "updated_one": "{{count}} change in the last {{days}} days",
+      "updated_other": "{{count}} changes in the last {{days}} days",
+      "empty": "Nothing changed in the last {{days}} days."
+    },
+    "extensions": {
+      "title": "From extensions",
+      "hint": "Sections the plugins enabled on this site contribute.",
+      "plugin": "From {{name}}",
+      "count_one": "{{count}} item",
+      "count_other": "{{count}} items",
+      "more": "Showing the first {{shown}} of {{count}}"
+    },
+    "health": {
+      "title": "Site health",
+      "none": "No site in this scope is readable.",
+      "ok": "All readable sites look healthy.",
+      "warn_one": "{{count}} site needs attention",
+      "warn_other": "{{count}} sites need attention",
+      "bad_one": "{{count}} site has a failure",
+      "bad_other": "{{count}} sites have failures",
+      "unknown": "The sites have not been checked yet.",
+      "unreadable_one": "{{count}} site could not be read",
+      "unreadable_other": "{{count}} sites could not be read",
+      "domain": "{{host}}",
+      "reachability_one": "{{count}} reachability error",
+      "reachability_other": "{{count}} reachability errors",
+      "reachabilityWarnings_one": "{{count}} reachability warning",
+      "reachabilityWarnings_other": "{{count}} reachability warnings",
+      "auditFailed": "The last audit run failed",
+      "noPrimaryDomain": "No primary domain",
+      "audit": "{{errors}} error-level and {{warnings}} warning-level audit issues",
+      "reviewBacklog_one": "{{count}} item waiting for review",
+      "reviewBacklog_other": "{{count}} items waiting for review",
+      "failedJobs_one": "Failed jobs · 24h: {{count}}",
+      "failedJobs_other": "Failed jobs · 24h: {{count}}",
+      "services_one": "Unhealthy services: {{names}}",
+      "services_other": "Unhealthy services: {{names}}",
+      "servicesOk": "All services healthy"
+    }
+  },
+  "kpi": {
+    "published": "Published articles",
+    "crawler": "AI crawler reads · 7 days",
+    "referral": "AI referrals · 30 days",
+    "attention": "Sites needing attention",
+    "incomplete": "Incomplete"
+  },
+  "week": {
+    "title": "This week",
+    "published": "Published",
+    "scheduled": "Scheduled",
+    "pending": "Waiting for review",
+    "today": "Today",
+    "empty": "Nothing scheduled this week."
+  },
+  "setup": {
+    "title": "Get started",
+    "domain": "Bind and verify a domain",
+    "article": "Publish the first article",
+    "crawlers": "Set the AI crawler policy",
+    "members": "Invite members",
+    "hide": "Hide",
+    "done": "Done"
+  },
+  "dashboards": "Custom dashboards"
+}
