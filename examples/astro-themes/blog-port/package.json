@@ -1,0 +1,14 @@
+{
+  "name": "example-astro-theme-blog-port",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Example: a typical Astro blog (base head, header, footer, blog post layout) ported to a HeoPress Astro theme. See docs/zh-CN/rendering/astro-theme-porting.md.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "heopress": {
+    "astroTheme": {
+      "entry": "src/Page.astro",
+      "integrations": []
+    }
+  }
+}
