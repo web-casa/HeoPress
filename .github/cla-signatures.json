@@ -1,0 +1,12 @@
+{
+  "$comment": "Recorded acceptances of CLA.md (HeoPress v1.2). One entry per contributor: the GitHub login (lowercase), the name they gave, the date they accepted (YYYY-MM-DD) and the CLA version they accepted (1.0). scripts/cla-check.mjs refuses a pull request whose author is not listed here; .github/workflows/cla.yml runs it on every pull request. A maintainer adds an entry after the contributor comments that they have read and agree to the HeoPress CLA, and the change is committed like any other — reviewed, never automatic.",
+  "claVersion": "1.0",
+  "signatures": [
+    {
+      "login": "yeagoo",
+      "name": "HeoPress maintainer",
+      "date": "2026-11-11",
+      "claVersion": "1.0"
+    }
+  ]
+}
