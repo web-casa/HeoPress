@@ -1,0 +1,59 @@
+{
+  "back": "返回列表",
+  "outline": "大纲",
+  "noHeadings": "添加二级或三级标题即可生成大纲。",
+  "titlePlaceholder": "标题",
+  "save": "保存",
+  "saveState": {
+    "dirty": "有未保存的修改",
+    "saving": "保存中…",
+    "saved": "已保存",
+    "savedAt": "已保存 {{time}}",
+    "failed": "保存失败：{{reason}}",
+    "retry": "重试"
+  },
+  "submitReview": "提交审核",
+  "publish": "发布",
+  "preview": "预览",
+  "previewOff": "此服务器尚未配置预览。",
+  "leave": "有未保存的修改，仍要离开吗？",
+  "editing": "{{name}} 正在编辑此处",
+  "present": "也在查看：{{names}}",
+  "conflict": {
+    "title": "有人在此期间保存了这篇文章",
+    "changed": "对方修改了：{{fields}}",
+    "merge": "保留双方的修改",
+    "theirs": "使用对方的版本",
+    "hint": "对方对其他字段的修改会被保留，你的修改留在编辑器中。检查后再保存。"
+  },
+  "tabs": {
+    "seo": "SEO",
+    "indexing": "收录与引用",
+    "props": "属性"
+  },
+  "inspector": {
+    "checkedAt": "检查结果对应的保存：",
+    "notSaved": "检查结果随保存更新。",
+    "seoTitle": "SEO 标题",
+    "seoDescription": "描述",
+    "robots": "搜索引擎",
+    "canonical": "Canonical 地址",
+    "serp": "搜索结果预览",
+    "descriptionHint": "{{count}} 字——{{hint}}",
+    "short": "偏短，建议 80 字以上",
+    "long": "偏长，可能被截断",
+    "ok": "长度合适",
+    "markdown": "Markdown 副本",
+    "markdownAt": "发布后为 {{path}}.md",
+    "reviewer": "最近审核人",
+    "author": "作者",
+    "none": "—"
+  },
+  "kind": {
+    "label": "按文章编辑",
+    "hint": "条目在文章编辑器中打开（大纲、SEO、收录）。",
+    "preset": "预设的文章集合始终使用文章编辑器。",
+    "failed": "修改失败。"
+  },
+  "fullForm": "全部字段与操作"
+}

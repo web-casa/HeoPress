@@ -1,0 +1,761 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { aiApprovals, aiConversations, aiMessages } from '@heopress/database';
+import { and, asc, desc, eq } from 'drizzle-orm';
+import { Hono, type Context } from 'hono';
+import type { UnofficialStatusCode } from 'hono/utils/http-status';
+import { z } from 'zod';
+import type { AppEnv } from '../env';
+import { buildAgentNotifier } from '../modules/notifications/notify-context';
+import { AISecureHarness } from '../services/ai-harness';
+import { AccessService } from '../services/access-service';
+import { ConfigService } from '../services/config-service';
+import { ExtensionsService } from '../services/extensions-service';
+import { approvalRequesterFromAuth, principalRefFromAuth, resolveRequestCapabilities } from '../services/governed-capabilities';
+import { IntentService } from '../services/intent-service';
+import { SchemaService } from '../services/schema-service';
+import { itemServiceForRequest, buildRequestPermissionContext } from '../services/item-service-factory';
+import { type LLMMessage } from '../services/llm-provider';
+import { chatProvider, configuredLlm, gatewayFor } from '../services/llm/bindings';
+import {
+  createDecisionProvider,
+  DecisionProviderError,
+  type DecisionErrorCode,
+  type DecisionProviderEnv,
+} from '../services/decision-provider';
+import { formatSafeError } from '@heopress/contracts/utils';
+import { createPendingRun, FLOW_RUNS_QUEUE } from '../services/flow-run-service';
+
+// ---------------------------------------------------------------------------
+// Zod Schemas
+// ---------------------------------------------------------------------------
+
+export const chatSchema = z.object({
+  message: z
+    .string()
+    .max(2000)
+    .transform((s) => s.trim())
+    .pipe(z.string().min(1, 'Message must not be empty after trimming')),
+  conversationId: z.string().optional(),
+});
+
+export const decideSchema = z.object({
+  decision: z.enum(['approved', 'rejected']),
+});
+
+const decisionPayloadSchema = z.union([
+  z.string().min(1).max(20_000),
+  z.record(z.string(), z.unknown()),
+  z.array(z.unknown()),
+]);
+
+const decisionQuestionSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('noul'),
+    instructions: decisionPayloadSchema,
+    criteria: z.object({ true: decisionPayloadSchema, false: decisionPayloadSchema }),
+  }),
+  z.object({
+    type: z.literal('choice'),
+    instructions: decisionPayloadSchema,
+    criteria: z
+      .record(z.string().min(1).max(128), decisionPayloadSchema.nullable())
+      .refine((options) => {
+        const count = Object.keys(options).length;
+        return count >= 2 && count <= 255;
+      }, 'A choice question needs 2-255 options'),
+  }),
+  z.object({
+    type: z.literal('score'),
+    instructions: decisionPayloadSchema,
+    criteria: z.array(decisionPayloadSchema).min(2).max(10),
+  }),
+]);
+
+export const decisionRequestSchema = z.object({
+  // Size is bounded on the whole request (state + questions) by the provider's
+  // input budget, so an oversized payload fails with 413 before any fetch.
+  state: decisionPayloadSchema,
+  questions: z
+    .record(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/, 'Invalid question key'), decisionQuestionSchema)
+    .refine((questions) => {
+      const count = Object.keys(questions).length;
+      return count >= 1 && count <= 32;
+    }, 'Provide 1-32 questions'),
+});
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/** Max messages to load from conversation history as LLM context. */
+const MAX_CONTEXT_MESSAGES = 20;
+
+// ---------------------------------------------------------------------------
+// Router
+// ---------------------------------------------------------------------------
+
+export const aiRouter = new Hono<AppEnv>();
+
+/**
+ * Capabilities for the current principal, resolved from the live RBAC bundle
+ * (#472).
+ *
+ * This used to return `auth.roles` — a role *id* for a normal user, `[]` for an
+ * API key, and the literal `'admin'` only for bootstrap/dev. Compared by exact
+ * string against `items:write` and friends, that made the harness
+ * admin-or-nothing on every transport. Now the same model REST uses decides.
+ */
+async function getUserCapabilities(c: Context<AppEnv>): Promise<string[]> {
+  return (await resolveRequestCapabilities(c)).capabilities;
+}
+
+/**
+ * Builds a harness with every governed service wired, for the paths that
+ * actually execute an approved action.
+ *
+ * Approval decisions are the one place where an unwired dependency is
+ * indistinguishable from a completed side effect, so the decision paths must
+ * not construct a partially-wired harness. Previously `/ai/approvals/:id/decide`
+ * omitted access/intent/config/extensions while `routes/mcp.ts` wired them —
+ * so an approved `access:*`/`intents:*`/`config:*`/`extensions:*` skill (all
+ * forced dangerous, hence all park for approval) resolved with its service
+ * absent. Both decision routes now share this builder.
+ */
+/** The model gateway for this request (the site's providers, ledger and budget). */
+function gatewayForRequest(c: Context<AppEnv>) {
+  return gatewayFor({ db: c.get('db'), keys: c.get('runtime')?.keys, env: c.env as unknown as Record<string, string | undefined> });
+}
+
+export async function buildAuthorizedHarness(c: Context<AppEnv>): Promise<AISecureHarness> {
+  const db = c.get('db');
+  const siteId = c.get('siteId');
+  const auth = c.get('auth');
+  const runtime = c.get('runtime');
+  const llm = await configuredLlm(gatewayForRequest(c), { siteId, taskType: 'generation', origin: { kind: 'ai-approval' } }, ['translation']);
+
+  return new AISecureHarness({
+    db,
+    siteId,
+    schemaService: new SchemaService({ db, siteId, cache: runtime.cache }),
+    // Request-scoped so an executed skill enforces the same row/field RBAC the
+    // caller's own token would.
+    itemService: itemServiceForRequest(c),
+    accessService: new AccessService({ db, siteId, userId: auth.userId ?? null, cache: runtime.cache }),
+    intentService: new IntentService({ db, siteId, userId: auth.userId ?? null, llm }),
+    configService: new ConfigService({ db, siteId }),
+    extensionsService: new ExtensionsService({
+      db, siteId, userId: auth.userId ?? null, cache: runtime.cache, env: c.env,
+      permissionCtx: buildRequestPermissionContext({ auth, siteId, headers: c.req.header(), ip: c.get('ip') ?? null }),
+    }),
+    llm,
+    queue: runtime.queue,
+    notify: buildAgentNotifier(c),
+    // An approved `triggerDeployment` executes here — without the KeyProvider
+    // the approval would resolve into a configuration error.
+    keys: runtime.keys,
+    cache: runtime.cache,
+  });
+}
+
+/**
+ * Admin gate for the legacy approval surface.
+ *
+ * Now asks the resolver rather than looking for the literal role string
+ * `'admin'`, which only a bootstrap or dev principal ever carried — a site admin
+ * holding a real `adminAccess` role was rejected here.
+ */
+async function requireAdmin(c: Context<AppEnv>) {
+  const grant = await resolveRequestCapabilities(c);
+
+  if (!grant.controlPlaneAdmin) {
+    return c.json(
+      {
+        errors: [
+          {
+            code: 'FORBIDDEN',
+            message: 'Admin role required.',
+          },
+        ],
+      },
+      403,
+    );
+  }
+
+  return null;
+}
+
+// ItemService for AI routes is built via the shared `itemServiceForRequest`
+// factory so LLM-driven skills enforce the same row/field RBAC as the normal
+// `/items` API (see item-service-factory.ts).
+
+function prefersAsyncResponse(c: Context<AppEnv>): boolean {
+  const prefer = c.req.header('prefer') ?? '';
+  return prefer.toLowerCase().includes('respond-async');
+}
+
+/**
+ * POST /chat
+ * Receives a natural language message, analyzes intent via LLM (or echo
+ * fallback), and executes via AISecureHarness.
+ * Supports conversation history via `conversationId`.
+ * `Prefer: respond-async` enqueues execution and returns 202 + runId when a
+ * queue worker is available (high-load §10.3; reuses `flow_runs`).
+ */
+aiRouter.post('/chat', async (c) => {
+  // Step 1: Parse and validate input
+  const body = await c.req.json().catch(() => null);
+  const parsed = chatSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        errors: parsed.error.issues.map((issue) => ({
+          code: 'VALIDATION',
+          message: issue.message,
+          path: issue.path.map(String),
+        })),
+      },
+      400,
+    );
+  }
+
+  const { message, conversationId: inputConversationId } = parsed.data;
+
+  try {
+    const db = c.get('db');
+    const siteId = c.get('siteId');
+    const auth = c.get('auth');
+    const runtime = c.get('runtime');
+    const userId = auth.userId ?? null;
+
+    // Step 2: Resolve or create conversation
+    let conversationId = inputConversationId;
+
+    if (conversationId) {
+      // Verify conversation belongs to this site
+      const [conv] = await db
+        .select({ id: aiConversations.id })
+        .from(aiConversations)
+        .where(
+          and(
+            eq(aiConversations.id, conversationId),
+            eq(aiConversations.siteId, siteId),
+          ),
+        );
+      if (!conv) {
+        conversationId = undefined; // Will create new
+      }
+    }
+
+    if (!conversationId) {
+      // Create a new conversation
+      const title =
+        message.length > 60 ? `${message.substring(0, 57)}...` : message;
+      const [newConv] = await db
+        .insert(aiConversations)
+        .values({ siteId, userId, title })
+        .returning();
+      conversationId = newConv!.id;
+    }
+
+    // Step 3: Persist user message
+    await db.insert(aiMessages).values({
+      conversationId,
+      role: 'user',
+      content: message,
+    });
+
+    const userCapabilities = await getUserCapabilities(c);
+
+    // Async path: enqueue LLM + harness on worker; HITL still surfaces via poll.
+    if (prefersAsyncResponse(c) && runtime.queue) {
+      const run = await createPendingRun(db, {
+        siteId,
+        runType: 'ai_chat',
+        input: { conversationId, message },
+      });
+      await runtime.queue.enqueue(FLOW_RUNS_QUEUE, 'ai:chat', {
+        kind: 'ai_chat',
+        siteId,
+        runId: run.id,
+        conversationId,
+        message,
+        // Principal reference, not a capability snapshot (#472) — the worker
+        // re-resolves the grant when it picks the job up.
+        principal: principalRefFromAuth(auth, siteId),
+        userId,
+      });
+      return c.json(
+        {
+          data: {
+            status: 'pending',
+            runId: run.id,
+            conversationId,
+            pollUrl: `/api/v1/flows/runs/${run.id}`,
+          },
+        },
+        202,
+      );
+    }
+
+    // Step 4: Load conversation history for LLM context
+    const historyRows = await db
+      .select({ role: aiMessages.role, content: aiMessages.content })
+      .from(aiMessages)
+      .where(eq(aiMessages.conversationId, conversationId))
+      .orderBy(asc(aiMessages.createdAt))
+      .limit(MAX_CONTEXT_MESSAGES);
+
+    const llmMessages: LLMMessage[] = historyRows.map((row) => ({
+      role: row.role as LLMMessage['role'],
+      content: row.content,
+    }));
+
+    // Step 5: Call LLM (through the model gateway: ledger, failover; the echo stub without a model)
+    const gateway = gatewayForRequest(c);
+    const llmProvider = await chatProvider(gateway, { siteId, taskType: 'chat', origin: { kind: 'ai-chat', id: conversationId } });
+    const llmResponse = await llmProvider.chat(llmMessages);
+
+    // Step 6: Handle response
+    if (llmResponse.toolCalls.length === 0) {
+      const responseText =
+        llmResponse.content ?? 'Could not determine action from your message.';
+
+      // Persist assistant response
+      await db.insert(aiMessages).values({
+        conversationId,
+        role: 'assistant',
+        content: responseText,
+        metadata: { status: 'denied' },
+      });
+
+      // Update conversation timestamp
+      await db
+        .update(aiConversations)
+        .set({ updatedAt: new Date() })
+        .where(eq(aiConversations.id, conversationId));
+
+      return c.json(
+        {
+          data: {
+            status: 'denied' as const,
+            message: responseText,
+            conversationId,
+          },
+        },
+        200,
+      );
+    }
+
+    // Execute the first tool call via AISecureHarness
+    const toolCall = llmResponse.toolCalls[0]!;
+
+    const schemaService = new SchemaService({
+      db,
+      siteId,
+      cache: runtime.cache,
+    });
+    const itemService = itemServiceForRequest(c);
+
+    const harness = new AISecureHarness({
+      db,
+      siteId,
+      schemaService,
+      itemService,
+      llm: await configuredLlm(gateway, { siteId, taskType: 'generation', origin: { kind: 'ai-chat', id: conversationId } }, ['translation']),
+      queue: runtime.queue,
+      notify: buildAgentNotifier(c),
+      // Enables the deployment skills, which decrypt target tokens.
+      keys: runtime.keys,
+      cache: runtime.cache,
+      extensionsService: new ExtensionsService({
+        db, siteId, userId: auth.userId ?? null, cache: runtime.cache, env: c.env,
+        permissionCtx: buildRequestPermissionContext({ auth, siteId, headers: c.req.header(), ip: c.get('ip') ?? null }),
+      }),
+    });
+    const result = await harness.execute(
+      toolCall.name,
+      toolCall.arguments,
+      userCapabilities,
+      message,
+      {
+        // Provenance for anything this call parks (#472). A capability snapshot
+        // would go stale while the approval waits; a reference is re-resolved at
+        // the moment a human approves.
+        requestedByPrincipal: approvalRequesterFromAuth(c.get('auth'), siteId),
+      },
+    );
+
+    const responseMessage =
+      result.message ??
+      (llmResponse.content
+        ? llmResponse.content
+        : result.status === 'executed'
+          ? 'Done.'
+          : result.status);
+
+    // Persist assistant response
+    await db.insert(aiMessages).values({
+      conversationId,
+      role: 'assistant',
+      content: responseMessage,
+      toolCalls: llmResponse.toolCalls,
+      metadata: {
+        status: result.status,
+        approvalId: result.approvalId,
+      },
+    });
+
+    // Update conversation timestamp
+    await db
+      .update(aiConversations)
+      .set({ updatedAt: new Date() })
+      .where(eq(aiConversations.id, conversationId));
+
+    return c.json(
+      {
+        data: {
+          ...result,
+          message: responseMessage,
+          conversationId,
+        },
+      },
+      200,
+    );
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Internal server error';
+    console.error('[ai/chat] execution error', formatSafeError(err));
+    return c.json(
+      {
+        errors: [{ code: 'INTERNAL', message: errorMessage }],
+      },
+      500,
+    );
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Conversation management routes
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /conversations
+ * Lists conversations for the current user/site, most recent first.
+ */
+aiRouter.get('/conversations', async (c) => {
+  const db = c.get('db');
+  const siteId = c.get('siteId');
+  const auth = c.get('auth');
+
+  const rows = await db
+    .select()
+    .from(aiConversations)
+    .where(
+      and(
+        eq(aiConversations.siteId, siteId),
+        ...(auth.userId ? [eq(aiConversations.userId, auth.userId)] : []),
+      ),
+    )
+    .orderBy(desc(aiConversations.updatedAt))
+    .limit(50);
+
+  return c.json({ data: rows });
+});
+
+/**
+ * GET /conversations/:id/messages
+ * Returns all messages in a conversation, oldest first.
+ */
+aiRouter.get('/conversations/:id/messages', async (c) => {
+  const db = c.get('db');
+  const siteId = c.get('siteId');
+  const conversationId = c.req.param('id');
+
+  // Verify conversation belongs to this site
+  const [conv] = await db
+    .select({ id: aiConversations.id })
+    .from(aiConversations)
+    .where(
+      and(
+        eq(aiConversations.id, conversationId),
+        eq(aiConversations.siteId, siteId),
+      ),
+    );
+
+  if (!conv) {
+    return c.json(
+      { errors: [{ code: 'NOT_FOUND', message: 'Conversation not found' }] },
+      404,
+    );
+  }
+
+  const messages = await db
+    .select()
+    .from(aiMessages)
+    .where(eq(aiMessages.conversationId, conversationId))
+    .orderBy(asc(aiMessages.createdAt))
+    .limit(200);
+
+  return c.json({ data: messages });
+});
+
+/**
+ * DELETE /conversations/:id
+ * Deletes a conversation and all its messages.
+ */
+aiRouter.delete('/conversations/:id', async (c) => {
+  const db = c.get('db');
+  const siteId = c.get('siteId');
+  const conversationId = c.req.param('id');
+
+  await db
+    .delete(aiConversations)
+    .where(
+      and(
+        eq(aiConversations.id, conversationId),
+        eq(aiConversations.siteId, siteId),
+      ),
+    );
+
+  return c.body(null, 204);
+});
+
+// ---------------------------------------------------------------------------
+// Decision routes (TypeSafe Jev / equivalent)
+// ---------------------------------------------------------------------------
+
+/** Upstream failures map to gateway-style statuses; the provider key is ours, not the caller's. */
+const DECISION_ERROR_STATUS: Record<DecisionErrorCode, 413 | 422 | 429 | 502 | 503 | 504 | UnofficialStatusCode> = {
+  DECISION_AUTH: 502,
+  DECISION_VALIDATION: 422,
+  DECISION_RATE_LIMITED: 429,
+  DECISION_UNAVAILABLE: 503,
+  DECISION_UPSTREAM: 502,
+  DECISION_PARSE_FAILED: 502,
+  DECISION_TIMEOUT: 504,
+  // Client closed the request; nginx convention. Hono needs the unofficial cast.
+  DECISION_CANCELLED: 499 as UnofficialStatusCode,
+  DECISION_INPUT_TOO_LARGE: 413,
+  DECISION_REFUSED: 503,
+};
+
+const DECISION_ERROR_MESSAGE: Record<DecisionErrorCode, string> = {
+  DECISION_AUTH: 'The decision provider rejected the configured credentials.',
+  DECISION_VALIDATION: 'The decision provider rejected the request.',
+  DECISION_RATE_LIMITED: 'The decision provider rate limit was exceeded. Retry later.',
+  DECISION_UNAVAILABLE: 'The decision provider is temporarily unavailable. Retry later.',
+  DECISION_UPSTREAM: 'The decision provider returned an error.',
+  DECISION_PARSE_FAILED: 'The decision provider returned an unusable answer.',
+  DECISION_TIMEOUT: 'The decision did not complete within its deadline.',
+  DECISION_CANCELLED: 'The decision request was cancelled.',
+  DECISION_INPUT_TOO_LARGE: 'The decision input exceeds the configured size or token budget.',
+  DECISION_REFUSED: 'The decision was not sent: refused by the site’s model ledger (budget, price or currency).',
+};
+
+/**
+ * POST /decisions
+ * Asks the configured decision model (DECISION_PROVIDER) typed questions
+ * about `state`. Read-only: no content is written, so no HITL approval.
+ */
+aiRouter.post('/decisions', async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = decisionRequestSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        errors: parsed.error.issues.map((issue) => ({
+          code: 'VALIDATION',
+          message: issue.message,
+          path: issue.path.map(String),
+        })),
+      },
+      400,
+    );
+  }
+
+  const gateway = gatewayForRequest(c);
+  const env = c.env as unknown as DecisionProviderEnv;
+  const siteId = c.get('siteId');
+  const configured =
+    env.DECISION_PROVIDER === 'llm' && !(await gateway.configured(siteId, 'decision'))
+      ? null
+      : createDecisionProvider(env, { gateway, siteId, origin: { kind: 'decision' } });
+  if (!configured) {
+    return c.json(
+      {
+        errors: [
+          {
+            code: 'DECISION_NOT_CONFIGURED',
+            message: 'Set DECISION_PROVIDER (typesafe | openrouter | llm) and its credentials.',
+          },
+        ],
+      },
+      503,
+    );
+  }
+
+  try {
+    // Client disconnect aborts the upstream call and suppresses retries.
+    const data = await configured.provider.decide(parsed.data, { signal: c.req.raw.signal });
+    return c.json({ data });
+  } catch (err) {
+    console.error('[ai/decisions] provider error', formatSafeError(err));
+    if (err instanceof DecisionProviderError) {
+      // The budget message carries only sizes, never content, so it is safe to return.
+      // These two carry only sizes or our own ledger codes, never content: safe to return.
+      const message = err.code === 'DECISION_INPUT_TOO_LARGE' || err.code === 'DECISION_REFUSED' ? err.message : DECISION_ERROR_MESSAGE[err.code];
+      return c.json({ errors: [{ code: err.code, message }] }, DECISION_ERROR_STATUS[err.code]);
+    }
+    return c.json({ errors: [{ code: 'INTERNAL', message: 'Decision request failed.' }] }, 500);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Approval routes
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /approvals
+ * Returns pending approval records for the current site, sorted by createdAt DESC, max 100.
+ */
+aiRouter.get('/approvals', async (c) => {
+  const forbidden = await requireAdmin(c);
+  if (forbidden) return forbidden;
+
+  const db = c.get('db');
+  const siteId = c.get('siteId');
+  const userCapabilities = await getUserCapabilities(c);
+  const harness = new AISecureHarness({ db, siteId });
+
+  const pendingApprovals = await db
+    .select()
+    .from(aiApprovals)
+    .where(
+      and(
+        eq(aiApprovals.siteId, siteId),
+        eq(aiApprovals.status, 'pending'),
+      ),
+    )
+    .orderBy(desc(aiApprovals.createdAt))
+    .limit(100);
+
+  const data = pendingApprovals.filter((approval) => {
+    const skill = harness.validateSkill(approval.skillName);
+    return Boolean(skill && harness.checkCapabilities(skill, userCapabilities));
+  });
+
+  return c.json({ data });
+});
+
+/**
+ * POST /approvals/:id/decide
+ * Approves or rejects a pending approval record.
+ */
+aiRouter.post('/approvals/:id/decide', async (c) => {
+  const forbidden = await requireAdmin(c);
+  if (forbidden) return forbidden;
+
+  // Step 1: Parse and validate input
+  const body = await c.req.json().catch(() => null);
+  const parsed = decideSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        errors: parsed.error.issues.map((issue) => ({
+          code: 'VALIDATION',
+          message: issue.message,
+          path: issue.path.map(String),
+        })),
+      },
+      400,
+    );
+  }
+
+  const { decision } = parsed.data;
+  const approvalId = c.req.param('id');
+  const db = c.get('db');
+  const siteId = c.get('siteId');
+  const auth = c.get('auth');
+  const runtime = c.get('runtime');
+  const userId = auth.userId ?? auth.externalId ?? 'unknown';
+  const userCapabilities = await getUserCapabilities(c);
+  const harness = new AISecureHarness({ db, siteId });
+
+  const [approval] = await db
+    .select({
+      id: aiApprovals.id,
+      status: aiApprovals.status,
+      skillName: aiApprovals.skillName,
+    })
+    .from(aiApprovals)
+    .where(
+      and(
+        eq(aiApprovals.id, approvalId),
+        eq(aiApprovals.siteId, siteId),
+      ),
+    );
+
+  const skill = approval ? harness.validateSkill(approval.skillName) : undefined;
+  if (!approval || approval.status !== 'pending' || !skill) {
+    return c.json(
+      {
+        errors: [{ code: 'FORBIDDEN', message: 'Approval not found or already processed' }],
+      },
+      403,
+    );
+  }
+
+  if (!harness.checkCapabilities(skill, userCapabilities)) {
+    return c.json(
+      {
+        errors: [{ code: 'FORBIDDEN', message: 'Insufficient capabilities' }],
+      },
+      403,
+    );
+  }
+
+  if (decision === 'approved') {
+    // Wire up real services for skill execution on approval only after authorization.
+    const authorizedHarness = await buildAuthorizedHarness(c);
+    const result = await authorizedHarness.executeApproved(
+      approvalId,
+      userId,
+      userCapabilities,
+    );
+
+    if (result.status === 'denied') {
+      return c.json(
+        {
+          errors: [
+            {
+              code: 'FORBIDDEN',
+              message: result.message ?? 'Approval not found or already processed',
+            },
+          ],
+        },
+        403,
+      );
+    }
+
+    return c.json({ data: result });
+  }
+
+  // decision === 'rejected'
+  const rejected = await harness.rejectApproval(approvalId, userId);
+  if (!rejected) {
+    return c.json(
+      {
+        errors: [
+          {
+            code: 'CONFLICT',
+            message: 'Approval not found or already processed',
+          },
+        ],
+      },
+      409,
+    );
+  }
+  return c.json({ data: { success: true } });
+});
