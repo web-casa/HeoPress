@@ -1,0 +1,21 @@
+---
+import type { PageDataPage } from '@heopress/astro-kit';
+import { safeUrl } from '@heopress/astro-kit';
+import SeoHead from '@heopress/astro-kit/SeoHead.astro';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const { vm } = page;
+---
+<html lang={vm.page.locale}>
+<head>
+<meta charset="utf-8">
+<SeoHead page={page} />
+</head>
+<body class="heopress-glossary heopress-glossary-index">
+<main>
+<h1>{vm.route?.title}</h1>
+{vm.list.length > 0 && <dl class="heopress-glossary-list">{vm.list.map((c) => <><dt><a href={safeUrl(c.url)}>{c.title}</a></dt>{c.excerpt !== '' && <dd>{c.excerpt}</dd>}</>)}</dl>}
+{vm.pagination && <nav class="heopress-glossary-pages">{vm.pagination.prevUrl && <a href={safeUrl(vm.pagination.prevUrl)} rel="prev">Previous</a>}{vm.pagination.nextUrl && <a href={safeUrl(vm.pagination.nextUrl)} rel="next">Next</a>}</nav>}
+</main>
+</body>
+</html>

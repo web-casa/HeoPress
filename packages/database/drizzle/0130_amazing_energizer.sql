@@ -1,0 +1,3 @@
+ALTER TABLE "lumibase_llm_attempts" ADD COLUMN "billed_characters" integer;--> statement-breakpoint
+ALTER TABLE "lumibase_llm_site_settings" ADD COLUMN "translation_service" text;--> statement-breakpoint
+ALTER TABLE "lumibase_llm_attempts" ADD CONSTRAINT "llm_attempts_billed_characters_check" CHECK ("lumibase_llm_attempts"."billed_characters" IS NULL OR "lumibase_llm_attempts"."billed_characters" >= 0);

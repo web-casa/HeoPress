@@ -1,0 +1,32 @@
+{
+  "name": "heopress-deepl",
+  "version": "1.0.0",
+  "type": "module",
+  "entry": "./dist/index.js",
+  "displayName": "DeepL translation",
+  "description": "Official HeoPress machine-translation provider: DeepL text translation with glossary synchronisation, billed by characters.",
+  "capabilities": [
+    "ext:translation-services",
+    "http:fetch:api.deepl.com",
+    "http:fetch:api-free.deepl.com",
+    "secrets:deepl_api_key",
+    "kv:read",
+    "kv:write"
+  ],
+  "translationServices": [
+    {
+      "id": "deepl",
+      "displayName": "DeepL",
+      "engine": "deepl",
+      "pricePerMillionChars": 27.5
+    }
+  ],
+  "heopress": "^1.0.0-0",
+  "extensionPoints": {
+    "translation-services": "^1.0.0",
+    "context": "^1.0.0"
+  },
+  "security": {
+    "contact": "security@example.com"
+  }
+}
