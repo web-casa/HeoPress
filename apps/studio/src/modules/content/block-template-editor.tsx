@@ -1,0 +1,691 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  Plus,
+  Code2,
+  Eye,
+  Layers,
+  AlertCircle,
+} from 'lucide-react';
+import {
+  BLOCK_TYPES,
+  CONTAINER_TYPES,
+  type BlockNode,
+  type BlockType,
+  type ComponentTemplate,
+  type TemplateBlock,
+  defaultBlock,
+  emptyComponentTemplate,
+  serializeComponentTemplate,
+} from './block-template-types';
+import { BlockTemplateRenderer } from './block-template-renderer';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface FieldOption {
+  name: string;
+  type?: string;
+}
+
+interface BlockTemplateEditorProps {
+  value: ComponentTemplate | null;
+  onChange: (next: ComponentTemplate) => void;
+  fields?: FieldOption[];
+  sample?: Record<string, unknown>;
+}
+
+type EditorTab = 'visual' | 'json' | 'preview';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function cloneTemplate(ct: ComponentTemplate): ComponentTemplate {
+  return JSON.parse(JSON.stringify(ct)) as ComponentTemplate;
+}
+
+function applyToPath(
+  ct: ComponentTemplate,
+  path: number[],
+  updater: (blocks: TemplateBlock[]) => TemplateBlock[],
+): ComponentTemplate {
+  const next = cloneTemplate(ct);
+  if (path.length === 0) {
+    next.template = updater(next.template);
+    return next;
+  }
+  // For now only top-level blocks are editable in the visual editor.
+  // Container children show as nested but are only editable via JSON tab.
+  next.template = updater(next.template);
+  return next;
+}
+
+// ---------------------------------------------------------------------------
+// Block type badge colours
+// ---------------------------------------------------------------------------
+
+const TYPE_COLOUR: Record<BlockType, string> = {
+  Text: 'bg-brand-soft text-brand dark:bg-brand-soft dark:text-brand',
+  Image: 'bg-ok-soft text-ok',
+  Badge: 'bg-panel-2 text-ai dark:bg-panel-2 dark:text-ai',
+  Spacer: 'bg-panel-2 text-dim',
+  Stack: 'bg-warn-soft text-warn',
+  Row: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+};
+
+// ---------------------------------------------------------------------------
+// Inline config panels per block type
+// ---------------------------------------------------------------------------
+
+interface ConfigPanelProps {
+  block: BlockNode;
+  fields: FieldOption[];
+  onChange: (next: BlockNode) => void;
+}
+
+function FieldSelect({
+  label,
+  value,
+  fields,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  fields: FieldOption[];
+  onChange: (v: string) => void;
+}) {
+  const { t } = useTranslation('items');
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <label className="w-14 shrink-0 text-dim">{label}</label>
+      <div className="relative flex-1">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-brand appearance-none pr-6"
+        >
+          <option value="">{t('blockTemplate.literal')}</option>
+          {fields.map((f) => (
+            <option key={f.name} value={`$.${f.name}`}>
+              $.{f.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={t('blockTemplate.fieldOrLiteral')}
+        className="w-28 rounded border border-line bg-bg px-2 py-1 text-xs font-mono outline-none focus:border-brand"
+      />
+    </div>
+  );
+}
+
+function ConfigPanel({ block, fields, onChange }: ConfigPanelProps) {
+  const { t } = useTranslation('items');
+  switch (block.type) {
+    case 'Text':
+      return (
+        <div className="space-y-1.5">
+          <FieldSelect
+            label={t('blockTemplate.prop.value')}
+            value={block.value}
+            fields={fields}
+            onChange={(v) => onChange({ ...block, value: v })}
+          />
+          <div className="flex items-center gap-2 text-xs">
+            <label className="w-14 shrink-0 text-dim">{t('blockTemplate.prop.variant')}</label>
+            <select
+              value={block.variant ?? 'body'}
+              onChange={(e) =>
+                onChange({ ...block, variant: e.target.value as typeof block.variant })
+              }
+              className="rounded border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-brand"
+            >
+              {(['title', 'subtitle', 'body', 'caption', 'mono'] as const).map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+            <label className="flex items-center gap-1 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={block.muted ?? false}
+                onChange={(e) => onChange({ ...block, muted: e.target.checked })}
+                className="accent-brand"
+              />
+              <span className="text-dim">{t('blockTemplate.prop.muted')}</span>
+            </label>
+          </div>
+        </div>
+      );
+
+    case 'Image':
+      return (
+        <div className="space-y-1.5">
+          <FieldSelect
+            label={t('blockTemplate.prop.src')}
+            value={block.src}
+            fields={fields.filter((f) => f.type === 'file' || f.name.includes('image') || f.name.includes('photo') || f.name.includes('avatar'))}
+            onChange={(v) => onChange({ ...block, src: v })}
+          />
+          <div className="flex items-center gap-2 text-xs">
+            <label className="w-14 shrink-0 text-dim">{t('blockTemplate.prop.size')}</label>
+            <select
+              value={typeof block.size === 'number' ? String(block.size) : (block.size ?? 'sm')}
+              onChange={(e) => {
+                const v = e.target.value;
+                const n = Number(v);
+                onChange({ ...block, size: isNaN(n) ? (v as typeof block.size) : n });
+              }}
+              className="rounded border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-brand"
+            >
+              {(['xs', 'sm', 'md', 'lg'] as const).map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <label className="flex items-center gap-1 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={block.rounded ?? false}
+                onChange={(e) => onChange({ ...block, rounded: e.target.checked })}
+                className="accent-brand"
+              />
+              <span className="text-dim">{t('blockTemplate.prop.rounded')}</span>
+            </label>
+          </div>
+        </div>
+      );
+
+    case 'Badge':
+      return (
+        <div className="space-y-1.5">
+          <FieldSelect
+            label={t('blockTemplate.prop.value')}
+            value={block.value}
+            fields={fields}
+            onChange={(v) => onChange({ ...block, value: v })}
+          />
+        </div>
+      );
+
+    case 'Spacer':
+      return (
+        <div className="flex items-center gap-2 text-xs">
+          <label className="w-14 shrink-0 text-dim">{t('blockTemplate.prop.sizePx')}</label>
+          <input
+            type="number"
+            min={0}
+            max={64}
+            value={block.size ?? 8}
+            onChange={(e) => onChange({ ...block, size: Number(e.target.value) })}
+            className="w-20 rounded border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-brand"
+          />
+        </div>
+      );
+
+    case 'Stack':
+      return (
+        <div className="flex items-center gap-2 text-xs flex-wrap">
+          <label className="w-14 shrink-0 text-dim">{t('blockTemplate.prop.direction')}</label>
+          <select
+            value={block.direction ?? 'col'}
+            onChange={(e) =>
+              onChange({ ...block, direction: e.target.value as typeof block.direction })
+            }
+            className="rounded border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-brand"
+          >
+            <option value="col">{t('blockTemplate.direction.col')}</option>
+            <option value="row">{t('blockTemplate.direction.row')}</option>
+          </select>
+          <label className="text-dim">{t('blockTemplate.prop.gap')}</label>
+          <input
+            type="number"
+            min={0}
+            max={32}
+            value={block.gap ?? 4}
+            onChange={(e) => onChange({ ...block, gap: Number(e.target.value) })}
+            className="w-14 rounded border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-brand"
+          />
+          <span className="text-[10px] text-dim italic">{t('blockTemplate.childrenViaJson')}</span>
+        </div>
+      );
+
+    case 'Row':
+      return (
+        <div className="flex items-center gap-2 text-xs flex-wrap">
+          <label className="w-14 shrink-0 text-dim">{t('blockTemplate.prop.align')}</label>
+          <select
+            value={block.align ?? 'center'}
+            onChange={(e) =>
+              onChange({ ...block, align: e.target.value as typeof block.align })
+            }
+            className="rounded border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-brand"
+          >
+            {(['start', 'center', 'end', 'between'] as const).map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+          <label className="text-dim">{t('blockTemplate.prop.gap')}</label>
+          <input
+            type="number"
+            min={0}
+            max={32}
+            value={block.gap ?? 8}
+            onChange={(e) => onChange({ ...block, gap: Number(e.target.value) })}
+            className="w-14 rounded border border-line bg-bg px-2 py-1 text-xs outline-none focus:border-brand"
+          />
+          <span className="text-[10px] text-dim italic">{t('blockTemplate.childrenViaJson')}</span>
+        </div>
+      );
+
+    default:
+      return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Block row
+// ---------------------------------------------------------------------------
+
+interface BlockRowProps {
+  entry: TemplateBlock;
+  index: number;
+  total: number;
+  fields: FieldOption[];
+  onMove: (from: number, to: number) => void;
+  onDelete: (i: number) => void;
+  onUpdate: (i: number, entry: TemplateBlock) => void;
+}
+
+function BlockRow({ entry, index, total, fields, onMove, onDelete, onUpdate }: BlockRowProps) {
+  const [expanded, setExpanded] = useState(true);
+  const { t } = useTranslation('items');
+  const isContainer = CONTAINER_TYPES.includes(entry.render.type as BlockType);
+
+  return (
+    <div className="rounded-card border border-line bg-panel overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-panel-2">
+        {/* Type badge */}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className={`rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold ${TYPE_COLOUR[entry.render.type as BlockType] ?? 'bg-panel-2 text-dim'}`}
+        >
+          {entry.render.type}
+        </button>
+
+        {/* Condition */}
+        <input
+          type="text"
+          value={entry.if ?? ''}
+          onChange={(e) =>
+            onUpdate(index, { ...entry, if: e.target.value || undefined })
+          }
+          placeholder={t('blockTemplate.ifPlaceholder')}
+          className="rounded border border-line bg-bg px-2 py-0.5 text-[10px] font-mono text-dim outline-none focus:border-brand w-28"
+        />
+
+        <div className="flex-1" />
+
+        {/* Move buttons */}
+        <button
+          type="button"
+          onClick={() => onMove(index, index - 1)}
+          disabled={index === 0}
+          className="h-6 w-6 flex items-center justify-center rounded hover:bg-panel-2 disabled:opacity-30"
+          title={t('blockTemplate.moveUp')}
+        >
+          <ChevronUp className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onMove(index, index + 1)}
+          disabled={index === total - 1}
+          className="h-6 w-6 flex items-center justify-center rounded hover:bg-panel-2 disabled:opacity-30"
+          title={t('blockTemplate.moveDown')}
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(index)}
+          className="h-6 w-6 flex items-center justify-center rounded hover:bg-bad-soft text-bad"
+          title={t('blockTemplate.remove')}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Config */}
+      {expanded && (
+        <div className="px-3 py-2.5 space-y-2">
+          <ConfigPanel
+            block={entry.render}
+            fields={fields}
+            onChange={(next) => onUpdate(index, { ...entry, render: next })}
+          />
+          {isContainer && (entry.render as { children?: TemplateBlock[] }).children && (entry.render as { children?: TemplateBlock[] }).children!.length > 0 && (
+            <p className="text-[10px] text-dim italic">
+              {t('blockTemplate.childCount', { count: (entry.render as { children?: TemplateBlock[] }).children!.length })}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Add block toolbar
+// ---------------------------------------------------------------------------
+
+function AddBlockToolbar({ onAdd }: { onAdd: (type: BlockType) => void }) {
+  const { t } = useTranslation('items');
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1.5 rounded-ctl border border-line border-dashed px-3 py-1.5 text-xs text-dim hover:border-brand hover:text-brand transition-colors"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        {t('blockTemplate.add')}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-20 mt-1 w-44 rounded-ctl border border-line bg-panel shadow-md overflow-hidden">
+          {BLOCK_TYPES.map((type) => (
+            <button
+              key={type}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onAdd(type);
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-panel-2"
+            >
+              <span
+                className={`rounded px-1.5 py-0.5 text-[10px] font-mono uppercase font-semibold ${TYPE_COLOUR[type]}`}
+              >
+                {type}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Visual tab
+// ---------------------------------------------------------------------------
+
+function VisualTab({
+  template,
+  fields,
+  onChange,
+}: {
+  template: ComponentTemplate;
+  fields: FieldOption[];
+  onChange: (next: ComponentTemplate) => void;
+}) {
+  const { t } = useTranslation('items');
+  const blocks = template.template;
+
+  const updateBlock = (i: number, entry: TemplateBlock) => {
+    const next = [...blocks];
+    next[i] = entry;
+    onChange({ ...template, template: next });
+  };
+
+  const deleteBlock = (i: number) => {
+    const next = blocks.filter((_, idx) => idx !== i);
+    onChange({ ...template, template: next });
+  };
+
+  const moveBlock = (from: number, to: number) => {
+    if (to < 0 || to >= blocks.length) return;
+    const next = [...blocks];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item!);
+    onChange({ ...template, template: next });
+  };
+
+  const addBlock = (type: BlockType) => {
+    const entry: TemplateBlock = { render: defaultBlock(type) };
+    onChange({ ...template, template: [...blocks, entry] });
+  };
+
+  return (
+    <div className="space-y-2">
+      {blocks.length === 0 && (
+        <div className="rounded-card border border-line border-dashed py-10 text-center text-xs text-dim">
+          {t('blockTemplate.empty')}
+        </div>
+      )}
+      {blocks.map((entry, i) => (
+        <BlockRow
+          key={i}
+          entry={entry}
+          index={i}
+          total={blocks.length}
+          fields={fields}
+          onMove={moveBlock}
+          onDelete={deleteBlock}
+          onUpdate={updateBlock}
+        />
+      ))}
+      <AddBlockToolbar onAdd={addBlock} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// JSON tab
+// ---------------------------------------------------------------------------
+
+function JsonTab({
+  template,
+  onChange,
+}: {
+  template: ComponentTemplate;
+  onChange: (next: ComponentTemplate) => void;
+}) {
+  const { t } = useTranslation('items');
+  const [raw, setRaw] = useState(() => serializeComponentTemplate(template));
+  const [error, setError] = useState<string | null>(null);
+
+  // Sync raw when template changes externally (e.g. visual tab edits)
+  useEffect(() => {
+    const serialized = serializeComponentTemplate(template);
+    setRaw(serialized);
+    setError(null);
+  }, [template]);
+
+  const handleChange = (text: string) => {
+    setRaw(text);
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      if (
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        (parsed as Record<string, unknown>)['kind'] === 'component-template'
+      ) {
+        onChange(parsed as ComponentTemplate);
+        setError(null);
+      } else {
+        setError(t('blockTemplate.kindRequired'));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('blockTemplate.invalidJson'));
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {error && (
+        <div className="flex items-start gap-2 rounded-ctl border border-bad/40 bg-bad-soft px-3 py-2 text-xs text-bad">
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          {error}
+        </div>
+      )}
+      <textarea
+        value={raw}
+        onChange={(e) => handleChange(e.target.value)}
+        rows={18}
+        spellCheck={false}
+        className="w-full rounded-ctl border border-line bg-bg px-3 py-2.5 font-mono text-xs leading-relaxed outline-none focus:border-brand resize-y"
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Preview tab
+// ---------------------------------------------------------------------------
+
+function PreviewTab({
+  template,
+  sample,
+  fields,
+}: {
+  template: ComponentTemplate;
+  sample: Record<string, unknown>;
+  fields: FieldOption[];
+}) {
+  const { t } = useTranslation('items');
+  // Build 3 variants: first (all fields present), partial, empty
+  const fullSample = { ...sample };
+  const partialSample = Object.fromEntries(
+    Object.entries(sample).slice(0, Math.ceil(Object.keys(sample).length / 2)),
+  );
+
+  const specimens: Array<{ label: string; data: Record<string, unknown> }> = [
+    { label: t('blockTemplate.sample.full'), data: fullSample },
+    { label: t('blockTemplate.sample.partial'), data: partialSample },
+    { label: t('blockTemplate.sample.empty'), data: {} },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <p className="text-[11px] text-dim">
+        {t('blockTemplate.previewHint')}
+      </p>
+      <div className="divide-y rounded-card border border-line overflow-hidden">
+        {specimens.map(({ label, data }) => (
+          <div key={label} className="flex items-center gap-4 px-4 py-3">
+            <span className="w-24 shrink-0 text-[10px] text-dim uppercase font-medium">
+              {label}
+            </span>
+            <div className="flex-1">
+              <BlockTemplateRenderer template={template} sample={data} />
+            </div>
+          </div>
+        ))}
+      </div>
+      {fields.length === 0 && (
+        <p className="text-[11px] text-warn">
+          {t('blockTemplate.noFields')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Editor
+// ---------------------------------------------------------------------------
+
+/**
+ * Block Template Editor — Phase F FE.
+ *
+ * Three-tab component: Visual (GUI block list) | JSON (raw DSL textarea) | Preview.
+ *
+ * The Visual tab supports top-level blocks with inline config. Container block
+ * children (Stack/Row nested blocks) are editable through the JSON tab — this
+ * is intentional complexity management for Phase F MVP.
+ */
+export function BlockTemplateEditor({
+  value,
+  onChange,
+  fields = [],
+  sample,
+}: BlockTemplateEditorProps) {
+  const { t } = useTranslation('items');
+  const [tab, setTab] = useState<EditorTab>('visual');
+
+  const template = useMemo(() => value ?? emptyComponentTemplate(), [value]);
+
+  // Build sample from fields if none provided
+  const resolvedSample = useMemo(() => {
+    if (sample) return sample;
+    return Object.fromEntries(
+      fields.map((f) => [
+        f.name,
+        f.type === 'boolean'
+          ? true
+          : f.type === 'integer' || f.type === 'decimal'
+          ? 42
+          : f.type === 'datetime' || f.type === 'date'
+          ? new Date().toISOString()
+          : `<${f.name}>`,
+      ]),
+    );
+  }, [sample, fields]);
+
+  const TABS: Array<{ id: EditorTab; label: string; icon: React.ReactNode }> = [
+    { id: 'visual', label: t('blockTemplate.tab.visual'), icon: <Layers className="h-3.5 w-3.5" /> },
+    { id: 'json', label: t('blockTemplate.tab.json'), icon: <Code2 className="h-3.5 w-3.5" /> },
+    { id: 'preview', label: t('blockTemplate.tab.preview'), icon: <Eye className="h-3.5 w-3.5" /> },
+  ];
+
+  return (
+    <div className="space-y-3">
+      {/* Tab bar */}
+      <div className="flex items-center gap-0.5 rounded-card border border-line bg-panel-2 p-0.5 w-fit">
+        {TABS.map(({ id, label, icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            className={`inline-flex items-center gap-1.5 rounded-ctl px-3 py-1.5 text-xs font-medium transition-colors ${
+              tab === id
+                ? 'bg-bg shadow-sm text-fg'
+                : 'text-dim hover:text-fg'
+            }`}
+          >
+            {icon}
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {tab === 'visual' && (
+        <VisualTab template={template} fields={fields} onChange={onChange} />
+      )}
+      {tab === 'json' && (
+        <JsonTab template={template} onChange={onChange} />
+      )}
+      {tab === 'preview' && (
+        <PreviewTab template={template} sample={resolvedSample} fields={fields} />
+      )}
+    </div>
+  );
+}
