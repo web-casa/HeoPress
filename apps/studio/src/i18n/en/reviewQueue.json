@@ -1,0 +1,16 @@
+{
+  "reviewQueue": {
+    "title": "Review queue",
+    "description": "Everything that needs a human: items an editor marked, items nobody has touched for a long time, and items waiting for review.",
+    "groups": {
+      "manual": "Marked by an editor",
+      "auto": "Stale for a long time",
+      "awaiting_review": "Waiting for review"
+    },
+    "empty": "Nothing here.",
+    "truncated": "More items match; the counts cover the items shown.",
+    "failed": "The review queue could not be loaded.",
+    "due": "Due {{date}}",
+    "updated": "Updated {{date}}"
+  }
+}

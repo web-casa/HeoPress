@@ -1,0 +1,114 @@
+{
+  "title": "概览",
+  "description": "现在需要你处理的事，覆盖你管理的站点。",
+  "scope": {
+    "label": "范围",
+    "current": "当前站点",
+    "all": "全部站点",
+    "site": "{{name}}",
+    "pick": "其他站点…"
+  },
+  "todo": {
+    "alerts_one": "{{count}} 条服务告警",
+    "alerts_other": "{{count}} 条服务告警",
+    "alertsHint": "查看日志与监控",
+    "reviews_one": "审核稿件 {{count}} 篇",
+    "reviews_other": "审核稿件 {{count}} 篇",
+    "oldest": "最早一篇：“{{title}}”，已等待 {{wait}}",
+    "longestWait": "最长等待 {{wait}}",
+    "acrossSites_one": "涉及 {{count}} 个站点",
+    "acrossSites_other": "涉及 {{count}} 个站点",
+    "auditErrors_one": "{{count}} 个错误级审计问题",
+    "auditErrors_other": "{{count}} 个错误级审计问题",
+    "auditWarnings_one": "{{count}} 个警告级审计问题",
+    "auditWarnings_other": "{{count}} 个警告级审计问题",
+    "domains_one": "{{count}} 个域名需要处理",
+    "domains_other": "{{count}} 个域名需要处理",
+    "domainFailed": "{{host}}：{{detail}}",
+    "domainPending": "{{host}}：超过 24 小时仍未验证",
+    "staleDrafts_one": "{{count}} 篇草稿放置多日",
+    "staleDrafts_other": "{{count}} 篇草稿放置多日",
+    "staleOldest": "最早一篇：“{{title}}”，已放置 {{wait}}",
+    "failedJobs_one": "最近 24 小时 {{count}} 个失败任务",
+    "failedJobs_other": "最近 24 小时 {{count}} 个失败任务",
+    "pickSite": "选择要审稿的站点",
+    "mfa": "需要二次验证",
+    "unavailable": "暂不可用"
+  },
+  "briefing": {
+    "needs": {
+      "title": "需要处理",
+      "empty": "目前没有需要处理的事项。",
+      "nextAudit": "下一次审计检查：{{when}}"
+    },
+    "currentSiteOnly": "放置草稿与最近变化仅显示当前站点。",
+    "recent": {
+      "title": "最近变化",
+      "published_one": "最近 {{days}} 天发布 {{count}} 篇",
+      "published_other": "最近 {{days}} 天发布 {{count}} 篇",
+      "updated_one": "最近 {{days}} 天修改 {{count}} 篇",
+      "updated_other": "最近 {{days}} 天修改 {{count}} 篇",
+      "empty": "最近 {{days}} 天没有变化。"
+    },
+    "extensions": {
+      "title": "来自插件",
+      "hint": "本站点已启用的插件贡献的简报分节。",
+      "plugin": "来自 {{name}}",
+      "count_one": "{{count}} 项",
+      "count_other": "{{count}} 项",
+      "more": "显示前 {{shown}} 项，共 {{count}} 项"
+    },
+    "health": {
+      "title": "站点健康",
+      "none": "当前范围内没有可读取的站点。",
+      "ok": "可读取的站点都正常。",
+      "warn_one": "{{count}} 个站点需要关注",
+      "warn_other": "{{count}} 个站点需要关注",
+      "bad_one": "{{count}} 个站点有故障",
+      "bad_other": "{{count}} 个站点有故障",
+      "unknown": "站点尚未检查。",
+      "unreadable_one": "{{count}} 个站点无法读取",
+      "unreadable_other": "{{count}} 个站点无法读取",
+      "domain": "{{host}}",
+      "reachability_one": "{{count}} 个可达性错误",
+      "reachability_other": "{{count}} 个可达性错误",
+      "reachabilityWarnings_one": "{{count}} 个可达性警告",
+      "reachabilityWarnings_other": "{{count}} 个可达性警告",
+      "auditFailed": "上次审计运行失败",
+      "noPrimaryDomain": "没有主域名",
+      "audit": "{{errors}} 个错误级、{{warnings}} 个警告级审计问题",
+      "reviewBacklog_one": "{{count}} 篇待审核",
+      "reviewBacklog_other": "{{count}} 篇待审核",
+      "failedJobs_one": "失败任务 · 24 小时：{{count}}",
+      "failedJobs_other": "失败任务 · 24 小时：{{count}}",
+      "services_one": "异常服务：{{names}}",
+      "services_other": "异常服务：{{names}}",
+      "servicesOk": "所有服务正常"
+    }
+  },
+  "kpi": {
+    "published": "已发布文章",
+    "crawler": "AI 爬虫访问 · 7 天",
+    "referral": "AI 引荐 · 30 天",
+    "attention": "需要关注的站点",
+    "incomplete": "不完整"
+  },
+  "week": {
+    "title": "本周发布",
+    "published": "已发布",
+    "scheduled": "定时",
+    "pending": "待审核",
+    "today": "今天",
+    "empty": "本周没有安排。"
+  },
+  "setup": {
+    "title": "开始使用",
+    "domain": "绑定并验证域名",
+    "article": "发布第一篇文章",
+    "crawlers": "设置 AI 爬虫策略",
+    "members": "邀请成员",
+    "hide": "隐藏",
+    "done": "已完成"
+  },
+  "dashboards": "自定义看板"
+}
