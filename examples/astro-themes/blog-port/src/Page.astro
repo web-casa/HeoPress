@@ -1,0 +1,42 @@
+---
+// The theme's entry: one page of the page data contract (`page`). Was: src/pages/index.astro, src/pages/blog/[...slug].astro.
+import type { PageDataPage } from '@heopress/astro-kit';
+import { safeUrl } from '@heopress/astro-kit';
+import Card from '@heopress/astro-kit/Card.astro';
+import SponsorDisclosure from '@heopress/astro-kit/SponsorDisclosure.astro';
+import BaseHead from './components/BaseHead.astro';
+import Header from './components/Header.astro';
+import Footer from './components/Footer.astro';
+import FormattedDate from './components/FormattedDate.astro';
+import BlogPost from './layouts/BlogPost.astro';
+import './global.css';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const { vm } = page;
+---
+<html lang={vm.page.locale}>
+  <head><BaseHead page={page} /></head>
+  <body>
+    <Header page={page} />
+    <main>
+      {vm.page.type === 'item' && vm.item && <BlogPost page={page} />}
+      {(vm.page.type === 'home' || vm.page.type === 'taxonomy') && (
+        <section>
+          <ul>
+            {vm.list.map((post) => (
+              <li>
+                <Card id={post.id}>
+                  <a href={safeUrl(post.url)}><h4 class="title">{post.title}</h4></a>
+                  {post.sponsored && <SponsorDisclosure page={page} id={post.id} />}
+                  {post.publishedAt && <p class="date"><FormattedDate date={post.publishedAt} /></p>}
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {vm.page.type === 'error' && <h1>{vm.page.status === 404 ? 'Page not found' : 'Something went wrong'}</h1>}
+    </main>
+    <Footer page={page} />
+  </body>
+</html>

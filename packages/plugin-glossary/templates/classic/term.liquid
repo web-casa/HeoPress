@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="{{ page.locale }}">
+<head>
+<meta charset="utf-8">
+{% seo_head %}
+</head>
+<body class="heopress-glossary heopress-glossary-term">
+<main>
+<article>
+<h1>{{ item.title }}</h1>
+{% include 'ext/heopress_glossary/components/tooltip' %}
+{% item_body %}
+{% if item.fields.source_url and item.fields.source_url != "" %}<p class="heopress-glossary-source">Source: <a href="{{ item.fields.source_url | url }}">{% if item.fields.source_title and item.fields.source_title != "" %}{{ item.fields.source_title }}{% else %}{{ item.fields.source_url }}{% endif %}</a></p>{% endif %}
+</article>
+</main>
+</body>
+</html>
