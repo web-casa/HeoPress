@@ -1,0 +1,755 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792129634656,
+      "tag": "0000_heopress_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792138727083,
+      "tag": "0001_runtime_infrastructure",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792140291541,
+      "tag": "0002_schedule_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792140431980,
+      "tag": "0003_cache_entry_version",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792141485736,
+      "tag": "0004_external_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792145539717,
+      "tag": "0005_search_documents",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792145916067,
+      "tag": "0006_schedule_run_lease",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792147111832,
+      "tag": "0007_vector_spaces",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792147116430,
+      "tag": "0008_access_generation_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792177452834,
+      "tag": "0009_item_version_hold",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792182261788,
+      "tag": "0010_event_positions_consumers",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792182262298,
+      "tag": "0011_renumber_event_seq",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792216712379,
+      "tag": "0012_item_idempotency_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792218751040,
+      "tag": "0013_domain_verification",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792219648177,
+      "tag": "0014_cdc_prune_marks",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792227679781,
+      "tag": "0015_storage_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792230487438,
+      "tag": "0016_prune_marks_deleted_until",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792242087241,
+      "tag": "0017_auth_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792243916550,
+      "tag": "0018_auth_sessions_expiry",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792255495090,
+      "tag": "0019_llm_providers",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792256580227,
+      "tag": "0020_llm_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792310821383,
+      "tag": "0021_site_network_model",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792314500773,
+      "tag": "0022_content_routes_redirects",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792333814785,
+      "tag": "0023_site_domains_entry_locale_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792342253545,
+      "tag": "0024_editorial_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792346465148,
+      "tag": "0025_translation_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792349357335,
+      "tag": "0026_translation_group_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1792352843155,
+      "tag": "0027_shared_field_syncs",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1792357464749,
+      "tag": "0028_translation_block_map",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1792379203343,
+      "tag": "0029_public_projection",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1792379203997,
+      "tag": "0030_projection_gate",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792390428200,
+      "tag": "0031_render_redirects_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792420605911,
+      "tag": "0032_themes",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792422571108,
+      "tag": "0033_theme_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1792424394564,
+      "tag": "0034_definer_search_path",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1792426562265,
+      "tag": "0035_function_search_path",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792428319739,
+      "tag": "0036_qualified_functions",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1792430262142,
+      "tag": "0037_render_cache",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1792433834061,
+      "tag": "0038_render_version_sequence",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1792464059595,
+      "tag": "0039_preview_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1792474343559,
+      "tag": "0040_initial_projection_build",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792501221699,
+      "tag": "0041_deleted_site_ids",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1792501990766,
+      "tag": "0042_site_id_hold",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792503167771,
+      "tag": "0043_site_id_reuse_exemption",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1792503172880,
+      "tag": "0044_site_id_hold_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1792503844307,
+      "tag": "0045_site_id_hold_write_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1792504383877,
+      "tag": "0046_hold_guard_owner_oid",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1792505123145,
+      "tag": "0047_render_cache_envelope",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1792505617163,
+      "tag": "0048_site_seo_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1792505617967,
+      "tag": "0049_site_seo_settings_projection",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1792506074973,
+      "tag": "0050_system_paths",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1792509559438,
+      "tag": "0051_public_items_seo_robots",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1792509560324,
+      "tag": "0052_public_items_seo_robots_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1792513517442,
+      "tag": "0053_translation_group_x_default",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1792513578613,
+      "tag": "0054_public_alternates_dedupe",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1792513579559,
+      "tag": "0055_public_alternates_locale_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1792513678884,
+      "tag": "0056_language_switch_refresh",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1792513893558,
+      "tag": "0057_translation_group_x_default_gate",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1792514677828,
+      "tag": "0058_translation_group_x_default_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1792547111155,
+      "tag": "0059_public_content_modified",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1792547112180,
+      "tag": "0060_content_modified_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1792550046694,
+      "tag": "0061_items_settings_share",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1792550986173,
+      "tag": "0062_items_settings_share_moves",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1792556401140,
+      "tag": "0063_site_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1792556402223,
+      "tag": "0064_site_identity_projection",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1792560887199,
+      "tag": "0065_render_themes_no_json_ld",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1792561994826,
+      "tag": "0066_render_themes_checked",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1792572523320,
+      "tag": "0067_render_themes_checker_3",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1792573816512,
+      "tag": "0068_render_themes_checker_4",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1792575587204,
+      "tag": "0069_site_preset_report",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1792581613515,
+      "tag": "0070_public_items_structured",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1792581614606,
+      "tag": "0071_structured_data_refresh",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1792589336942,
+      "tag": "0072_public_sites_structured",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1792589365712,
+      "tag": "0073_extension_structured_data_gate",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1792631662321,
+      "tag": "0074_site_root_files",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1792631673990,
+      "tag": "0075_render_root_files",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1792640688644,
+      "tag": "0076_indexnow",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1792644003012,
+      "tag": "0077_indexnow_lease_token",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1792649685406,
+      "tag": "0078_public_items_recent_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1792650044025,
+      "tag": "0079_link_graph",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1792650660066,
+      "tag": "0080_public_items_recent_c",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1792651362479,
+      "tag": "0081_drop_public_items_site_collection",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1792654026438,
+      "tag": "0082_site_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1792655445953,
+      "tag": "0083_audit_lease_token",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1792663101922,
+      "tag": "0084_ai_traffic",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1792663103289,
+      "tag": "0085_record_crawl_hit",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1792667120679,
+      "tag": "0086_record_crawl_hit_bounds",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1792668906979,
+      "tag": "0087_crawl_daily_paths",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1792668909191,
+      "tag": "0088_record_crawl_hit_known_agents",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1792671802817,
+      "tag": "0089_crawl_traffic_reconcile_errors",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1792681718484,
+      "tag": "0090_robots_tokens",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1792681752139,
+      "tag": "0091_public_items_own_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1792684479096,
+      "tag": "0092_reachability_check",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1792790078025,
+      "tag": "0093_audit_triage",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1792790371722,
+      "tag": "0094_studio_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1792796506615,
+      "tag": "0095_api_key_last4",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1792951340942,
+      "tag": "0096_ingest_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1792954207824,
+      "tag": "0097_ingest_fetch",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1792981358273,
+      "tag": "0098_ingest_discover",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1792983778123,
+      "tag": "0099_ingest_providers",
+      "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1792986461320,
+      "tag": "0100_ingest_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1792997905525,
+      "tag": "0101_p09_cost",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1793000900104,
+      "tag": "0102_p09_pipeline",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1793003445975,
+      "tag": "0103_p09_gate",
+      "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1793005147812,
+      "tag": "0104_p09_publish",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1793027158616,
+      "tag": "0105_p09_studio",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1793036763630,
+      "tag": "0106_p10_notify",
+      "breakpoints": true
+    }
+  ]
+}

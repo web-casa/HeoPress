@@ -1,0 +1,48 @@
+{
+  "title": "Sites",
+  "topologyDescription": "Your sites, their health and the AI platforms that send them visitors.",
+  "listTitle": "Site list",
+  "deployment": "This deployment",
+  "layer": "AI platforms",
+  "layerOn": "Show AI platforms",
+  "groups": {
+    "bad": "Failing",
+    "warn": "Warning",
+    "unknown": "Unknown",
+    "ok": "Healthy",
+    "mfa_required": "Needs two-step verification",
+    "unavailable": "Temporarily unavailable"
+  },
+  "node": "{{name}}, {{state}}",
+  "noEdgesHint": "Sites are never linked to each other here.",
+  "verifyToSee": "Switch and verify to see its AI platforms.",
+  "detail": {
+    "empty": "Select a site to see its details.",
+    "health": "Health",
+    "published": "Published articles",
+    "readableOnly": "readable collections only",
+    "crawler": "AI crawler reads · 7 days",
+    "referral": "AI referrals · 30 days",
+    "platforms": "AI platform share",
+    "attention": "Needs attention",
+    "nothing": "Nothing needs attention.",
+    "role": "Your role",
+    "domain": "Primary domain",
+    "openSite": "Switch to this site",
+    "topPages": "Most read by AI crawlers",
+    "pagesOnSite": "Page details are shown after switching to this site."
+  },
+  "list": {
+    "search": "Search sites",
+    "health": "Health",
+    "all": "All",
+    "sort": "Sort",
+    "byName": "Name",
+    "byHealth": "Health",
+    "name": "Site",
+    "domain": "Primary domain",
+    "role": "Role",
+    "status": "Status",
+    "empty": "No site matches."
+  }
+}
