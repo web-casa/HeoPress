@@ -1,0 +1,1 @@
+CREATE INDEX "translation_groups_x_default" ON "lumibase_translation_groups" USING btree ("x_default_item_id");

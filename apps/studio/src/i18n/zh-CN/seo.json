@@ -1,0 +1,129 @@
+{
+  "readOnly": "仅可查看：修改这些设置需要站点管理员权限。",
+  "bar": {
+    "label": "未保存的修改",
+    "count_one": "{{count}} 处未保存的修改",
+    "count_other": "{{count}} 处未保存的修改",
+    "discard": "放弃",
+    "save": "保存",
+    "saving": "保存中…",
+    "fixFirst_one": "先修正 {{count}} 处错误",
+    "fixFirst_other": "先修正 {{count}} 处错误",
+    "saved": "已保存。页面头部、robots.txt、站点地图与 llms.txt 从下一次请求起按新设置生成；站点前有 CDN 时，旧副本可能保留到缓存过期。",
+    "conflict": "其他人刚修改了这些设置。点“放弃”载入对方的版本，再重新修改。",
+    "failed": "未保存：{{reason}}"
+  },
+  "errors": {
+    "tooLong": "最多 200 个字符。",
+    "needsTitle": "请包含 {title}，或留空使用默认值。",
+    "publicationName": "新闻站点地图需要出版物名称。",
+    "token": "爬虫标识只能包含字母、数字、“.”、“_”和“-”。",
+    "duplicate": "两个爬虫使用了相同的标识。",
+    "notBound": "该域名未绑定到本站"
+  },
+  "preview": {
+    "search": "搜索结果预览",
+    "meaning": "对 AI 的含义",
+    "sampleTitle": "示例文章",
+    "sampleDescription": "这里显示一篇已发布文章的开头。",
+    "noDescription": "没有描述：搜索引擎会从页面中摘取文字。",
+    "notIndexed": "已要求搜索引擎不收录本站。",
+    "cite": {
+      "yes": "AI 助手可以读取并引用本站文章。",
+      "partly": "AI 助手只能部分引用本站：AI 搜索与按用户提问读取中有一项被阻止。",
+      "no": "AI 助手不会读取并引用本站文章"
+    },
+    "train": {
+      "yes": "AI 公司可以用这些文章训练模型。",
+      "no": "已要求 AI 公司不用这些文章训练模型。"
+    },
+    "notSaved": "这是预览：保存之前站点不会有任何变化。"
+  },
+  "appearance": {
+    "title": "搜索结果外观",
+    "explain": "站点页面在搜索结果中的样子：每个页面使用的标题与描述模板，页面自己设置了的除外。",
+    "placeholders": "占位符：{title} 页面标题，{site} 站点名称，{description} 页面描述。",
+    "titleTemplate": "标题模板",
+    "titleHint": "留空：{title} · {site}。",
+    "descriptionTemplate": "描述模板",
+    "descriptionHint": "留空：使用页面自己的描述。",
+    "indexSite": "允许搜索引擎收录本站",
+    "indexSiteHint": "关闭后所有页面都要求不被收录（noindex）。"
+  },
+  "crawlers": {
+    "title": "AI 爬虫策略",
+    "explain": "按用途决定哪些 AI 爬虫可以读取本站。策略写入 robots.txt，遵守它的爬虫不再读取被阻止的内容。",
+    "presets": "预设",
+    "preset": {
+      "allowAll": "全部允许",
+      "searchOnly": "仅搜索与引用",
+      "blockAll": "全部阻止"
+    },
+    "custom": "自定义策略",
+    "purpose": {
+      "search": "AI 搜索",
+      "user-fetch": "按用户提问读取",
+      "training": "模型训练"
+    },
+    "purposeHint": {
+      "search": "为 AI 搜索回答建立索引的爬虫。",
+      "user-fetch": "有人提问时，助手去读取相关页面。",
+      "training": "收集文本用于训练模型的爬虫。"
+    },
+    "allow": "允许",
+    "disallow": "阻止",
+    "contentSignal": "添加 Content-Signal 行",
+    "contentSignalHint": "在 robots.txt 中声明内容可用于哪些用途。",
+    "more": "另有：{{overrides}} 个单独设置的爬虫，{{custom}} 个本站自定义爬虫。"
+  },
+  "machine": {
+    "title": "机器可读输出",
+    "explain": "页面之外提供给程序的内容：给 AI 的摘要、Markdown 副本、订阅源，以及发给搜索引擎的变更通知。结构化数据在左侧检查。",
+    "llms": "llms.txt 与 llms-full.txt",
+    "llmsHint": "给 AI 助手的站点地图。",
+    "markdown": "Markdown 副本",
+    "markdownHint": "每篇文章在其地址加 .md 处另有一份。",
+    "feeds": "订阅源",
+    "feedsHint": "最新文章的 RSS 与 Atom。",
+    "indexNow": "IndexNow",
+    "indexNowHint": "页面发布或修改时立即通知搜索引擎。",
+    "news": "新闻站点地图",
+    "newsHint": "用于进入新闻搜索的站点。",
+    "newsName": "出版物名称"
+  },
+  "canonical": {
+    "title": "规范域名",
+    "explain": "搜索引擎应当视为本站自己的地址。本站其他已启用的域名都重定向到它（语言入口除外）。",
+    "label": "规范域名",
+    "hint": "必须是已绑定到本站的域名。",
+    "none": "本站还没有已启用的域名：请在“站点 › 域名”中添加。",
+    "others": "其他已启用的域名：{{hosts}}",
+    "saved": "已保存。从下一次请求起，其他域名重定向到这里。"
+  },
+  "identity": {
+    "title": "站点身份",
+    "explain": "本站代表谁。搜索引擎与 AI 助手从每个页面的结构化数据中读取。"
+  },
+  "rootFiles": {
+    "title": "根文件",
+    "explain": "放在站点根目录、系统不会自动生成的文件，例如 ads.txt 或验证文件。"
+  },
+  "redirects": {
+    "title": "重定向",
+    "explain": "旧地址及其去向。可从 CSV 或其他插件的导出导入；写入前先检查会有哪些变化。",
+    "empty": "还没有重定向。",
+    "select": "选择",
+    "selectOne": "选择 {{from}}",
+    "from": "原地址",
+    "to": "目标",
+    "status": "状态码",
+    "added": "添加时间",
+    "delete_one": "删除 {{count}} 条重定向",
+    "delete_other": "删除 {{count}} 条重定向",
+    "import": "导入",
+    "importHint": "CSV（原地址,目标,状态码），或 Redirection、Yoast、Rank Math 的导出。",
+    "check": "检查",
+    "report": "新增 {{import}}，替换 {{replaced}}，冲突 {{conflicts}}，循环 {{loops}}",
+    "run": "导入"
+  }
+}

@@ -1,0 +1,6 @@
+---
+// One card of a list (`{% card c %}…{% endcard %}`): links to a sponsored item stay inside its card.
+interface Props { id: string; class?: string }
+const { id, class: className } = Astro.props;
+---
+<article class={className} data-heopress-card={id}><slot /></article>
