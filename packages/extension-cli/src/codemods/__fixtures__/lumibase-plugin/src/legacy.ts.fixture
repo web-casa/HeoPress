@@ -1,0 +1,13 @@
+// Parts no codemod can decide: reported, left as they are.
+import { defineHook } from '@lumibase/extension-sdk';
+import { formatSafeError } from '@lumibase/contracts/utils';
+
+const apiKey = process.env.LUMIBASE_ACME_KEY;
+
+export default defineHook({
+  on: 'items.update',
+  handler: async () => {
+    const variant = apiKey ? 'sdk' : 'extension-sdk';
+    await import(`@lumibase/${variant}`).catch(formatSafeError);
+  },
+});

@@ -1,0 +1,2 @@
+ALTER TABLE "lumibase_translation_groups" ADD COLUMN "x_default_item_id" text;--> statement-breakpoint
+ALTER TABLE "lumibase_translation_groups" ADD CONSTRAINT "lumibase_translation_groups_x_default_item_id_lumibase_items_id_fk" FOREIGN KEY ("x_default_item_id") REFERENCES "public"."lumibase_items"("id") ON DELETE set null ON UPDATE no action;
