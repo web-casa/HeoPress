@@ -1,0 +1,67 @@
+# The CLA check (HeoPress v1.2): a pull request is mergeable only from a contributor whose acceptance of CLA.md is
+# recorded in .github/cla-signatures.json. scripts/cla-check.mjs holds the decision and the message; this workflow
+# gives it a check run GitHub can require on `main`.
+#
+# `pull_request_target`, not `pull_request`: the check must run on a fork's pull request with a token that can read the
+# signatures file of the base branch, and it must never check out or execute the contributor's code. This workflow
+# therefore checks out `main` only and runs a script from it — nothing from the pull request is ever read.
+#
+# No secret is used. `contents: read` is enough to read the file; the comment on a failed pull request needs
+# `pull-requests: write` and is guarded to post once.
+name: CLA
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# Third-party and first-party actions are pinned to full commit SHAs, as in ci.yml. Update them deliberately.
+
+concurrency:
+  group: cla-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  cla:
+    name: CLA signed
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # `main`, never the pull request: `ref` is explicit so a fork cannot influence what runs.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - name: Check the signatures file
+        id: check
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: node scripts/cla-check.mjs
+      # One comment per pull request, only when the check fails: a contributor should not have to read a log to learn
+      # what to do, and a push that fixes it should not stack comments.
+      - name: Explain what to do
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+          existing=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '[.[] | select(.user.login == "github-actions[bot]") | select(.body | contains("I have read and agree to the HeoPress CLA"))] | length')
+          if [ "$existing" != "0" ]; then
+            echo "The explanation is already on the pull request."
+            exit 0
+          fi
+          node scripts/cla-check.mjs > /tmp/cla-message.txt 2>&1 || true
+          {
+            echo '<!-- cla-check -->'
+            cat /tmp/cla-message.txt
+          } > /tmp/comment.md
+          gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@/tmp/comment.md > /dev/null
