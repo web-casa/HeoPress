@@ -1,0 +1,11 @@
+{
+  "success": false,
+  "result": null,
+  "errors": [
+    {
+      "code": 10000,
+      "message": "Authentication error"
+    }
+  ],
+  "messages": []
+}

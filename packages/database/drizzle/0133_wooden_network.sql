@@ -1,0 +1,4 @@
+ALTER TABLE "lumibase_llm_site_settings" ADD COLUMN "translation_draft_provider_id" text;--> statement-breakpoint
+ALTER TABLE "lumibase_llm_site_settings" ADD COLUMN "translation_review_provider_id" text;--> statement-breakpoint
+ALTER TABLE "lumibase_llm_site_settings" ADD CONSTRAINT "llm_site_settings_draft_provider_fk" FOREIGN KEY ("site_id","translation_draft_provider_id") REFERENCES "public"."lumibase_llm_providers"("site_id","id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "lumibase_llm_site_settings" ADD CONSTRAINT "llm_site_settings_review_provider_fk" FOREIGN KEY ("site_id","translation_review_provider_id") REFERENCES "public"."lumibase_llm_providers"("site_id","id") ON DELETE no action ON UPDATE no action;
