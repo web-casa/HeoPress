@@ -1,0 +1,57 @@
+{
+  "name": "@heopress/extension-sdk",
+  "version": "1.0.0-rc.4",
+  "description": "Types + helpers for building HeoPress extensions (hooks, endpoints, UI).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/web-casa/HeoPress.git",
+    "directory": "packages/extension-sdk"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf .turbo dist",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2",
+    "tsup": "^8.5.1"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs"
+      }
+    }
+  },
+  "homepage": "https://docs.heopress.example",
+  "bugs": {
+    "url": "https://github.com/web-casa/HeoPress/issues"
+  },
+  "keywords": [
+    "heopress",
+    "cms",
+    "headless-cms",
+    "extensions",
+    "hooks",
+    "sdk",
+    "typescript"
+  ]
+}
