@@ -1,0 +1,59 @@
+{
+  "title": "Insights",
+  "addPanel": "Add panel",
+  "requestFailed": "Request failed: {{status}}",
+  "list": {
+    "subtitle": "Dashboards built from your content.",
+    "new": "New dashboard",
+    "namePlaceholder": "Dashboard name",
+    "create": "Create",
+    "loading": "Loading dashboards…",
+    "empty": "No dashboards yet.",
+    "createFirst": "Create your first dashboard"
+  },
+  "dashboard": {
+    "notFound": "Dashboard not found.",
+    "back": "← Back to Insights",
+    "autoRefresh": "Auto-refresh",
+    "refresh": {
+      "off": "Off",
+      "s30": "30s",
+      "s60": "60s"
+    },
+    "loading": "Loading panels…",
+    "empty": "No panels yet — add one to start visualizing your content.",
+    "deletePanel": "Delete panel"
+  },
+  "editor": {
+    "name": "Name",
+    "type": "Type",
+    "collection": "Collection",
+    "aggregate": "Aggregate",
+    "field": "Field",
+    "groupBy": "Group by (optional)",
+    "select": "Select…",
+    "none": "None",
+    "preview": "Preview",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "panelTypes": {
+    "metric": "Metric",
+    "timeSeries": "Time series",
+    "bar": "Bar",
+    "pie": "Pie",
+    "list": "List",
+    "table": "Table"
+  },
+  "aggregates": {
+    "count": "Count",
+    "sum": "Sum",
+    "avg": "Average",
+    "min": "Min",
+    "max": "Max"
+  },
+  "panel": {
+    "noData": "No data",
+    "updated": "updated {{secs}}s ago"
+  }
+}
