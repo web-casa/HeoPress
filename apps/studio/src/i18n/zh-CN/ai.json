@@ -1,0 +1,154 @@
+{
+  "loadFailed": "页面加载失败，请刷新重试。",
+  "checkStatus": {
+    "passed": "通过",
+    "warning": "警告",
+    "needs_review": "需人工",
+    "blocked": "拦截",
+    "off": "关闭"
+  },
+  "gateState": {
+    "missing": "未运行",
+    "stale": "已失效",
+    "passed": "通过",
+    "blocked": "拦截",
+    "needs_review": "需人工",
+    "approved": "已批准",
+    "rejected": "已驳回"
+  },
+  "queueStatus": {
+    "review": "待审核",
+    "veto_window": "否决窗口",
+    "queued": "排队中"
+  },
+  "review": {
+    "title": "AI 审核",
+    "description": "流水线不能自动发布的草稿：门禁分数、每项检查的证据与修改建议。可以一次处理多条。",
+    "score": "分数 {{score}}",
+    "mandatory": "强制",
+    "evidence": "证据",
+    "emptyTitle": "没有待审核的内容",
+    "emptyBody": "不满足自动发布条件的草稿，以及否决窗口内的草稿会出现在这里。",
+    "batch": "处理选中的条目",
+    "selected": "已选 {{n}} 条",
+    "selectAll": "全选",
+    "reason": "理由（随每条决定记录）",
+    "reasonRequired": "请先填写理由。",
+    "actions": {
+      "approve": "批准",
+      "reject": "驳回",
+      "dismiss": "关闭",
+      "veto": "否决"
+    },
+    "failed": "处理失败：{{reason}}",
+    "results": "处理结果",
+    "resultOk": "完成",
+    "resultFailed": "未完成",
+    "resultStatus": "{{status}}（{{reason}}）",
+    "select": "选择 {{title}}",
+    "reasonCode": "原因：{{reason}}",
+    "noGate": "无门禁结果",
+    "gateState": "门禁：{{state}}",
+    "hide": "收起",
+    "details": "详情",
+    "fits": "可执行：{{actions}}",
+    "conditions": "未满足的条件：{{list}}",
+    "stale": "门禁结果已失效：{{list}}"
+  },
+  "workbench": {
+    "title": "提示词工作台",
+    "description": "用未保存的提示词与编辑策略试跑样例来源文档。不会写入草稿或内容条目；模型调用计入本站费用。",
+    "defaultPrompt": "将来源改写为本站的一篇文章：贴合读者，保留全部事实，并在每一段用链接引用来源。",
+    "noSourcesTitle": "还没有来源文档",
+    "noSourcesBody": "请先添加信源并完成采集：工作台用真实来源文档试跑提示词。",
+    "source": "样例来源文档",
+    "mode": "模式",
+    "modes": {
+      "rewrite": "改写",
+      "write": "撰写",
+      "translate": "翻译"
+    },
+    "locale": "目标语言",
+    "prompt": "提示词（不保存）",
+    "policy": "编辑策略 JSON（不保存）",
+    "policyInvalid": "编辑策略必须是 JSON 对象。",
+    "unsavedNote": "这里的内容都不会保存；试跑不会创建草稿。",
+    "run": "试跑",
+    "running": "运行中…",
+    "stop": "停止",
+    "output": "产出",
+    "stages": {
+      "source": "读取来源",
+      "model": "等待模型",
+      "diagnostics": "检查中",
+      "done": "完成"
+    },
+    "failed": "试跑失败：{{reason}}",
+    "noOutput": "试跑后在这里查看产出。",
+    "usage": "{{model}} · 输入 {{input}} / 输出 {{output}} · 费用 {{cost}}",
+    "diagnostics": "门禁诊断",
+    "verdict": "门禁结论：{{state}}（分数 {{score}}）",
+    "notRun": "试跑中不运行：{{list}}",
+    "uncited": "缺少引用的段落",
+    "paragraph": "第 {{n}} 段：{{text}}",
+    "sourcePassage": "可能对应来源第 {{n}} 段（重合 {{similarity}}%）：{{text}}",
+    "noSourcePassage": "没有匹配的来源段落。"
+  },
+  "flows": {
+    "title": "流程草稿",
+    "description": "Agent 起草的流程在这里等待人工审批。审批模式：{{mode}}。",
+    "modes": {
+      "solo": "单人（起草者可在二次验证后审批自己的草稿）",
+      "team": "团队（须由他人审批）"
+    },
+    "status": {
+      "pending": "待审批",
+      "approved": "已批准",
+      "rejected": "已驳回"
+    },
+    "via": {
+      "agent": "Agent 起草",
+      "studio": "后台起草"
+    },
+    "trigger": "触发：{{trigger}}",
+    "operations": "操作",
+    "ownTeam": "这是你起草的流程：团队模式下须由他人审批。",
+    "secondFactor": "验证器代码（你起草了此流程）",
+    "reason": "理由",
+    "approve": "批准并启用",
+    "reject": "驳回",
+    "failed": "未完成：{{reason}}",
+    "decided": "决定：{{reason}}",
+    "emptyTitle": "没有流程草稿",
+    "emptyBody": "Agent 通过 draftFlow 工具起草流程后，会出现在这里等待审批。"
+  },
+  "settings": {
+    "title": "AI 流水线",
+    "description": "暂停流水线，设置模型预算与每日加工配额，并调整自动发布的节奏。",
+    "pipeline": "流水线",
+    "running": "运行中。",
+    "paused": "已暂停：{{reasons}}。",
+    "reasons": {
+      "budget": "预算耗尽",
+      "manual": "人工暂停",
+      "incident": "事故",
+      "kill_switch": "紧急开关"
+    },
+    "pause": "暂停",
+    "resume": "恢复（{{reason}}）",
+    "killSwitch": "站点紧急开关已开启：请先在 Agent 页面解除。",
+    "budget": "预算与配额",
+    "monthly": "月度模型预算（{{currency}}）",
+    "daily": "每日模型预算（{{currency}}）",
+    "processingLimit": "每日加工来源文档数",
+    "emptyMeansNone": "留空表示不限制。",
+    "invalid": "请检查数值：只能填写金额或整数。",
+    "save": "保存",
+    "saved": "已保存。",
+    "autoPublish": "自动发布",
+    "vetoWindow": "否决窗口（分钟）",
+    "dailyLimit": "每日自动发布上限（留空不限）",
+    "minInterval": "两次发布最小间隔（分钟）",
+    "sourceMaxAge": "来源时效（天）"
+  }
+}

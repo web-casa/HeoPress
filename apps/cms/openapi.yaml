@@ -1,0 +1,4139 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+openapi: 3.1.0
+info:
+  title: HeoPress CMS API
+  version: 0.1.0
+  description: |
+    Edge-native Headless CMS API. See `docs/api/hono-api-spec.md` for the full
+    surface; this file is the machine-readable contract that ships with the
+    repo. Endpoints land incrementally — Phase 0 covers auth/health only.
+
+servers:
+  - url: https://api.heopress.example/api/v1
+    description: Production
+  - url: http://127.0.0.1:1989/api/v1
+    description: Local development (`pnpm --filter @heopress/cms dev`)
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    SiteHeader:
+      name: X-HeoPress-Site
+      in: header
+      required: true
+      schema: { type: string }
+      description: Active tenant id. Required for every authenticated endpoint.
+  schemas:
+    Error:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required: [code, message]
+            properties:
+              code: { type: string }
+              message: { type: string }
+              path:
+                type: array
+                items: { type: string }
+              trace: { type: object, additionalProperties: true }
+    AuthMe:
+      type: object
+      properties:
+        data:
+          type: object
+          required: [logtoId, siteId, roles]
+          properties:
+            logtoId: { type: string }
+            email: { type: string, format: email, nullable: true }
+            roles:
+              type: array
+              items: { type: string }
+            siteId: { type: string }
+            permissions:
+              nullable: true
+              description: Computed permission matrix. Populated in Phase C.
+              type: object
+              additionalProperties: true
+    Health:
+      type: object
+      properties:
+        status: { type: string, enum: [ok] }
+        env: { type: string }
+        ts: { type: string, format: date-time }
+    Version:
+      type: object
+      properties:
+        name: { type: string }
+        version: { type: string }
+        apiVersion: { type: integer }
+        env: { type: string }
+    BuildMetadata:
+      type: object
+      required: [version, gitSha, buildTime, releaseChannel]
+      properties:
+        version: { type: string }
+        gitSha: { type: string }
+        buildTime: { type: string }
+        releaseChannel: { type: string }
+    Collection:
+      type: object
+      required: [id, siteId, name]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        name: { type: string, pattern: '^[a-z][a-z0-9_]{0,62}$' }
+        label: { type: string, nullable: true }
+        pluralLabel: { type: string, nullable: true }
+        hidden: { type: boolean }
+        system: { type: boolean }
+        singleton: { type: boolean }
+        icon: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        primaryKeyField: { type: string, pattern: '^[a-z][a-z0-9_]{0,62}$' }
+        primaryKeyType: { type: string, enum: [nanoid, uuid, integer, bigInteger, string] }
+        storageMode: { type: string, enum: [jsonb, materialized, physical, external] }
+        displayTemplate: { type: string, nullable: true }
+        sortField: { type: string, nullable: true }
+        archiveField: { type: string, nullable: true }
+        archiveValue: { type: string, nullable: true }
+        unarchiveValue: { type: string, nullable: true }
+        itemDuplicationFields:
+          type: array
+          items: { type: string }
+        translations: { type: object, additionalProperties: true }
+        accountability: { type: string, enum: [all, activity, none] }
+        versioning: { type: boolean }
+        meta: { type: object, additionalProperties: true }
+        systemFields:
+          type: array
+          items: { $ref: '#/components/schemas/Field' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Field:
+      type: object
+      required: [id, name, type, interface]
+      properties:
+        id: { type: string }
+        collectionId: { type: string }
+        name: { type: string, pattern: '^[a-z][a-z0-9_]{0,62}$' }
+        type: { type: string }
+        interface: { type: string }
+        display: { type: string, nullable: true }
+        label: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        defaultValue: {}
+        nullable: { type: boolean }
+        unique: { type: boolean }
+        indexed: { type: boolean }
+        searchable: { type: boolean }
+        length: { type: integer, nullable: true }
+        precision: { type: integer, nullable: true }
+        scale: { type: integer, nullable: true }
+        special:
+          type: array
+          items: { type: string }
+        translations: { type: object, additionalProperties: true }
+        options: { type: object, additionalProperties: true }
+        displayOptions: { type: object, additionalProperties: true }
+        validation: { type: object, additionalProperties: true }
+        conditions:
+          type: array
+          items: { type: object, additionalProperties: true }
+        required: { type: boolean }
+        readonly: { type: boolean }
+        hidden: { type: boolean }
+        encrypted: { type: boolean }
+        versioned: { type: boolean }
+        rawEnabled: { type: boolean }
+        width: { type: string, enum: [half, full, fill] }
+        group: { type: string, nullable: true }
+        sortOrder: { type: integer }
+        system: { type: boolean }
+        locked: { type: boolean }
+        generated: { type: boolean }
+        column: { type: string }
+        renameFrom: { type: string }
+        migrationPlan: { type: object, additionalProperties: true }
+        confirmRiskyChange: { type: boolean }
+    Relation:
+      type: object
+      required: [id, siteId, manyCollection, manyField, oneCollection]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        manyCollection: { type: string }
+        manyField: { type: string }
+        oneCollection: { type: string }
+        oneField: { type: string, nullable: true }
+        junctionCollection: { type: string, nullable: true }
+        type: { type: string }
+        aliasField: { type: string, nullable: true }
+        relatedDisplayTemplate: { type: string, nullable: true }
+        junctionManyField: { type: string, nullable: true }
+        junctionOneField: { type: string, nullable: true }
+        sortField: { type: string, nullable: true }
+        onDelete: { type: string, enum: [restrict, cascade, set null, no action] }
+        meta: { type: object, additionalProperties: true }
+    SchemaApplyInput:
+      type: object
+      properties:
+        name: { type: string, pattern: '^[a-z][a-z0-9_]{0,62}$' }
+        label: { type: string, nullable: true }
+        pluralLabel: { type: string, nullable: true }
+        hidden: { type: boolean }
+        system: { type: boolean }
+        singleton: { type: boolean }
+        icon: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        primaryKeyField: { type: string, pattern: '^[a-z][a-z0-9_]{0,62}$' }
+        primaryKeyType: { type: string, enum: [nanoid, uuid, integer, bigInteger, string] }
+        storageMode: { type: string, enum: [jsonb, materialized, physical, external] }
+        displayTemplate: { type: string, nullable: true }
+        sortField: { type: string, nullable: true }
+        archiveField: { type: string, nullable: true }
+        archiveValue: { type: string, nullable: true }
+        unarchiveValue: { type: string, nullable: true }
+        itemDuplicationFields:
+          type: array
+          items: { type: string }
+        translations: { type: object, additionalProperties: true }
+        accountability: { type: string, enum: [all, activity, none] }
+        versioning: { type: boolean }
+        meta: { type: object, additionalProperties: true }
+        fields:
+          type: array
+          items: { $ref: '#/components/schemas/Field' }
+        relations:
+          type: array
+          items: { $ref: '#/components/schemas/Relation' }
+    LockoutPolicy:
+      type: object
+      description: >-
+        Login-security lockout policy. Every field is required when the object
+        is supplied; omit the whole object at `/setup/complete` to apply the
+        built-in "Standard" preset.
+      required:
+        - userMaxFailedAttempts
+        - userLockoutDurationSeconds
+        - ipMaxFailedAttempts
+        - ipLockoutDurationSeconds
+        - lockoutWindowSeconds
+        - geoAnomalyEnabled
+        - timeAnomalyEnabled
+        - deviceAnomalyEnabled
+        - anomalyScoreThreshold
+        - anomalyAction
+        - notifyChannels
+        - loginStallMs
+      properties:
+        userMaxFailedAttempts: { type: integer, minimum: 3, maximum: 20 }
+        userLockoutDurationSeconds: { type: integer, minimum: 60, maximum: 86400 }
+        ipMaxFailedAttempts: { type: integer, minimum: 5, maximum: 100 }
+        ipLockoutDurationSeconds: { type: integer, minimum: 60, maximum: 86400 }
+        lockoutWindowSeconds: { type: integer, minimum: 60, maximum: 86400 }
+        geoAnomalyEnabled: { type: boolean }
+        timeAnomalyEnabled: { type: boolean }
+        deviceAnomalyEnabled: { type: boolean }
+        anomalyScoreThreshold:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 0..1, stored with up to 2 decimal places.
+        anomalyAction: { type: string, enum: [notify_only, require_mfa, lock] }
+        notifyChannels:
+          type: array
+          maxItems: 2
+          items: { type: string, enum: [email, webhook] }
+        loginStallMs: { type: integer, minimum: 0, maximum: 5000 }
+        webhookUrl: { type: string, format: uri, maxLength: 2048 }
+        webhookSecret: { type: string, minLength: 1, maxLength: 256 }
+    SetupState:
+      type: object
+      required: [state, requiresSetupToken]
+      properties:
+        state: { type: string, enum: [uninitialized, initialized] }
+        requiresSetupToken: { type: boolean }
+    SetupCapabilities:
+      type: object
+      required: [geoip, smtp]
+      properties:
+        geoip:
+          type: object
+          required: [available]
+          properties:
+            available: { type: boolean }
+            source: { type: string, enum: [maxmind] }
+        smtp:
+          type: object
+          required: [available]
+          properties:
+            available: { type: boolean }
+    SetupCompleteInput:
+      type: object
+      required: [account, adminPath]
+      properties:
+        setupToken:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: Required only when the instance was provisioned with a setup token.
+        account:
+          type: object
+          required: [email, password, firstName, lastName]
+          properties:
+            email: { type: string, format: email, maxLength: 254 }
+            password:
+              type: string
+              description: Min 12 chars + complexity (shared with register/recovery).
+            firstName: { type: string, minLength: 1, maxLength: 100 }
+            lastName: { type: string, minLength: 1, maxLength: 100 }
+        adminPath: { type: string, minLength: 1, maxLength: 128 }
+        policy:
+          allOf: [{ $ref: '#/components/schemas/LockoutPolicy' }]
+          description: >-
+            OPTIONAL. When omitted, the "Standard" lockout preset is applied.
+        project:
+          type: object
+          required: [defaultLanguage, siteUrl, displayTitle]
+          properties:
+            defaultLanguage: { type: string, minLength: 2, maxLength: 16 }
+            siteUrl: { type: string, format: uri, maxLength: 2048 }
+            displayTitle: { type: string, minLength: 2, maxLength: 80 }
+            theme: { type: 'null' }
+        invites:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            required: [email]
+            properties:
+              email: { type: string, format: email, maxLength: 254 }
+              role: { type: string, enum: [admin, member], default: member }
+    SetupCompleteResult:
+      type: object
+      required: [user, adminPath, backupCodes, setupToken, invitedCount]
+      properties:
+        user:
+          type: object
+          required: [id, email, firstName, lastName]
+          properties:
+            id: { type: string }
+            email: { type: string }
+            firstName: { type: string, nullable: true }
+            lastName: { type: string, nullable: true }
+        adminPath: { type: string }
+        backupCodes:
+          type: array
+          items: { type: string }
+          description: Plaintext recovery codes, returned exactly once and unrecoverable afterwards.
+        setupToken:
+          type: 'null'
+          description: Always null — the setup token is invalidated during completion.
+        invitedCount:
+          type: integer
+          description: Number of teammates created as `status:'invited'` in this run.
+    SchemaDiffRisk:
+      type: string
+      enum: [low, medium, high]
+    SchemaRuntimeImpact:
+      type: string
+      enum:
+        - cache_invalidation
+        - permission_recompile
+        - typegen_rebuild
+        - data_migration_required
+        - relation_reindex
+        - storage_runtime_change
+    SchemaDiffEntry:
+      type: object
+      properties:
+        name: { type: string }
+        field: { type: string }
+        identity: { type: string }
+        type: { type: string, enum: [m2o, o2m, m2m, m2a] }
+        changes:
+          type: array
+          items: { type: string }
+        risk: { $ref: '#/components/schemas/SchemaDiffRisk' }
+        runtimeImpact:
+          type: array
+          items: { $ref: '#/components/schemas/SchemaRuntimeImpact' }
+    SchemaDiff:
+      type: object
+      properties:
+        risk: { $ref: '#/components/schemas/SchemaDiffRisk' }
+        runtimeImpact:
+          type: array
+          items: { $ref: '#/components/schemas/SchemaRuntimeImpact' }
+        collection:
+          type: object
+          properties:
+            added: { type: array, items: { type: string } }
+            removed: { type: array, items: { type: string } }
+            changed:
+              type: array
+              items: { $ref: '#/components/schemas/SchemaDiffEntry' }
+        fields:
+          type: object
+          properties:
+            added:
+              type: array
+              items: { $ref: '#/components/schemas/SchemaDiffEntry' }
+            removed:
+              type: array
+              items: { $ref: '#/components/schemas/SchemaDiffEntry' }
+            changed:
+              type: array
+              items: { $ref: '#/components/schemas/SchemaDiffEntry' }
+        relations:
+          type: object
+          properties:
+            added:
+              type: array
+              items: { $ref: '#/components/schemas/SchemaDiffEntry' }
+            removed:
+              type: array
+              items: { $ref: '#/components/schemas/SchemaDiffEntry' }
+            changed:
+              type: array
+              items: { $ref: '#/components/schemas/SchemaDiffEntry' }
+    SchemaApplyResult:
+      type: object
+      properties:
+        collection: { $ref: '#/components/schemas/Collection' }
+        diff: { $ref: '#/components/schemas/SchemaDiff' }
+        affectedCollections:
+          type: array
+          items: { type: string }
+        event:
+          type: object
+          properties:
+            type: { type: string, enum: [schema.changed] }
+            siteId: { type: string }
+            collection: { type: string }
+            affectedCollections:
+              type: array
+              items: { type: string }
+            diff: { $ref: '#/components/schemas/SchemaDiff' }
+    Role:
+      type: object
+      required: [id, siteId, name]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        icon: { type: string, nullable: true }
+        adminAccess: { type: boolean }
+        appAccess: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    Policy:
+      type: object
+      required: [id, siteId, name]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        rules: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+    PermissionRow:
+      type: object
+      required: [id, policyId, collection, action]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        policyId: { type: string }
+        collection: { type: string }
+        action: { type: string, enum: [create, read, update, delete, share] }
+        permissions: { type: object, additionalProperties: true }
+        validation: { type: object, additionalProperties: true }
+        presets: { type: object, additionalProperties: true }
+        fields:
+          type: array
+          items: { type: string }
+    PermissionBundle:
+      type: object
+      required: [admin, byKey, roles]
+      properties:
+        admin: { type: boolean }
+        byKey:
+          type: object
+          additionalProperties: { type: object, additionalProperties: true }
+        roles:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+              adminAccess: { type: boolean }
+              appAccess: { type: boolean }
+    PermissionCheckResult:
+      type: object
+      required: [allowed, fields]
+      properties:
+        allowed: { type: boolean }
+        reason: { type: string, nullable: true }
+        fields:
+          type: array
+          items: { type: string }
+        rule: { type: object, nullable: true, additionalProperties: true }
+        presets: { type: object, additionalProperties: true }
+    # --- Access Conflict Check ---
+    AccessConflictCheckRequest:
+      type: object
+      required: [target]
+      properties:
+        target:
+          type: object
+          required: [type, id]
+          properties:
+            type: { type: string, enum: [role, user, api_key] }
+            id: { type: string, minLength: 1 }
+        addPolicies:
+          type: array
+          items: { type: string }
+          default: []
+        removePolicies:
+          type: array
+          items: { type: string }
+          default: []
+    AccessConflict:
+      type: object
+      required: [severity, collection, action, existingPolicy, incomingPolicy, reason]
+      properties:
+        severity: { type: string, enum: [warning, blocking] }
+        collection: { type: string }
+        action: { type: string }
+        existingPolicy: { type: string }
+        incomingPolicy: { type: string }
+        reason: { type: string }
+    AccessConflictReport:
+      type: object
+      required: [ok, conflicts, warnings]
+      properties:
+        ok: { type: boolean }
+        conflicts:
+          type: array
+          items: { $ref: '#/components/schemas/AccessConflict' }
+        warnings:
+          type: array
+          items: { $ref: '#/components/schemas/AccessConflict' }
+    AccessExportManifest:
+      type: object
+      required: [schema, exportedAt, roles, policies, bindings, apiKeys]
+      properties:
+        schema: { type: string, const: heopress.access@v1 }
+        exportedAt: { type: string, format: date-time }
+        roles:
+          type: array
+          items: { type: object, additionalProperties: true }
+        policies:
+          type: array
+          items: { type: object, additionalProperties: true }
+        bindings:
+          type: object
+          additionalProperties: true
+        apiKeys:
+          type: array
+          items: { type: object, additionalProperties: true }
+    AccessImportResult:
+      type: object
+      required: [dryRun, valid, errors, diff, conflicts]
+      properties:
+        dryRun: { type: boolean }
+        valid: { type: boolean }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code: { type: string }
+              message: { type: string }
+              path: { type: string, nullable: true }
+        diff: { type: object, additionalProperties: true }
+        conflicts: { $ref: '#/components/schemas/AccessConflictReport' }
+        mode: { type: string, enum: [merge, replace-managed, replace-all], nullable: true }
+        applied: { type: boolean, nullable: true }
+        audit:
+          type: object
+          nullable: true
+          additionalProperties: true
+    RealmAccessGrant:
+      type: object
+      required: [collection, action, publishedOnly, ownOnly, fields]
+      properties:
+        collection: { type: string }
+        action: { type: string, enum: [read, create, update, delete] }
+        publishedOnly:
+          type: boolean
+          description: Row scope restricting to `status = 'published'`.
+        ownOnly:
+          type: boolean
+          description: >-
+            Row scope restricting to rows the principal created. Never true for
+            `public`, which has no `$CURRENT_USER` to resolve.
+        fields:
+          type: array
+          description: Field whitelist; `["*"]` = all, `["-secret"]` excludes.
+          items: { type: string }
+    RealmAccessDescriptor:
+      type: object
+      required: [key, label, summary, allowedActions, supportsOwnOnly, togglable, enabled, grants]
+      properties:
+        key: { type: string, enum: [public, subscriber] }
+        label: { type: string }
+        summary: { type: string }
+        allowedActions:
+          type: array
+          description: Actions an operator may grant in this realm.
+          items: { type: string, enum: [read, create, update, delete] }
+        supportsOwnOnly: { type: boolean }
+        togglable:
+          type: boolean
+          description: Whether an operator can enable/disable the realm (public only).
+        enabled: { type: boolean }
+        grants:
+          type: array
+          items: { $ref: '#/components/schemas/RealmAccessGrant' }
+    RealmAccessState:
+      type: object
+      required: [collections, realms]
+      properties:
+        collections:
+          type: array
+          description: Grantable collections — non-system and non-hidden.
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              label: { type: string, nullable: true }
+        realms:
+          type: array
+          items: { $ref: '#/components/schemas/RealmAccessDescriptor' }
+    RealmGrantRequest:
+      type: object
+      required: [collection]
+      properties:
+        collection: { type: string, minLength: 1, maxLength: 64 }
+        action:
+          type: string
+          enum: [read, create, update, delete]
+          default: read
+        publishedOnly:
+          type: boolean
+          description: Defaults to true for `read` and false for writes.
+        ownOnly: { type: boolean, default: false }
+        fields:
+          type: array
+          items: { type: string }
+    ApiKeyResource:
+      type: object
+      required: [id, siteId, name, prefix, revokedAt, roles, policies]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        prefix: { type: string }
+        createdBy: { type: string, nullable: true }
+        rotatedAt: { type: string, format: date-time, nullable: true }
+        rotatedBy: { type: string, nullable: true }
+        expiresAt: { type: string, format: date-time, nullable: true }
+        revokedAt: { type: string, format: date-time, nullable: true }
+        revokedBy: { type: string, nullable: true }
+        lastUsedAt: { type: string, format: date-time, nullable: true }
+        lastUsedIp: { type: string, nullable: true }
+        lastUsedUserAgent: { type: string, nullable: true }
+        metadata: { type: object, additionalProperties: true }
+        publishable:
+          type: boolean
+          description: >-
+            True for a client-embeddable `lbk_pub_…` key. Derived from the
+            prefix, so it always matches the token in the wild. A publishable
+            key is NOT a secret — scope it as if it were already public.
+        allowedOrigins:
+          type: array
+          description: >-
+            Browser origins the key may be used from. Empty = no constraint.
+            Enforced only for publishable keys; a request with no Origin or
+            Referer is allowed (non-browser callers send neither).
+          items: { type: string }
+        createdAt: { type: string, format: date-time }
+        roles:
+          type: array
+          items: { $ref: '#/components/schemas/ApiKeyRoleAttachment' }
+        policies:
+          type: array
+          items: { $ref: '#/components/schemas/ApiKeyPolicyAttachment' }
+    ApiKeySecretResult:
+      allOf:
+        - $ref: '#/components/schemas/ApiKeyResource'
+        - type: object
+          required: [token]
+          properties:
+            token:
+              type: string
+              description: Plaintext token returned only on create/rotate.
+    ApiKeyCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 96 }
+        description: { type: string, maxLength: 512 }
+        expiresAt: { type: string, format: date-time, nullable: true }
+        metadata: { type: object, additionalProperties: true }
+        publishable:
+          type: boolean
+          default: false
+          description: Mint a client-embeddable `lbk_pub_…` token instead of a secret one.
+        allowedOrigins:
+          type: array
+          description: Browser origins the key may be used from. Omit for no constraint.
+          items: { type: string }
+    ApiKeyAllowedOriginsRequest:
+      type: object
+      required: [allowedOrigins]
+      properties:
+        allowedOrigins:
+          type: array
+          description: Replaces the existing list. Pass `[]` to remove the constraint.
+          items: { type: string }
+    ApiKeyRotateRequest:
+      type: object
+      properties:
+        expiresAt: { type: string, format: date-time, nullable: true }
+    ApiKeyRoleAttachment:
+      type: object
+      required: [apiKeyId, siteId, roleId, priority]
+      properties:
+        apiKeyId: { type: string }
+        siteId: { type: string }
+        roleId: { type: string }
+        priority: { type: integer }
+        createdAt: { type: string, format: date-time }
+    ApiKeyPolicyAttachment:
+      type: object
+      required: [apiKeyId, siteId, policyId, priority]
+      properties:
+        apiKeyId: { type: string }
+        siteId: { type: string }
+        policyId: { type: string }
+        priority: { type: integer }
+        createdAt: { type: string, format: date-time }
+    ApiKeyAttachRoleRequest:
+      type: object
+      required: [roleId]
+      properties:
+        roleId: { type: string, minLength: 1 }
+        priority: { type: integer }
+        overrideWarnings: { type: boolean }
+    ApiKeyAttachPolicyRequest:
+      type: object
+      required: [policyId]
+      properties:
+        policyId: { type: string, minLength: 1 }
+        priority: { type: integer }
+        overrideWarnings: { type: boolean }
+    ShareResource:
+      type: object
+      required: [id, siteId, collection, itemId, roleId, usedCount]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        collection: { type: string }
+        itemId: { type: string }
+        roleId: { type: string }
+        validFrom: { type: string, format: date-time, nullable: true }
+        validUntil: { type: string, format: date-time, nullable: true }
+        maxUses: { type: integer, nullable: true }
+        usedCount: { type: integer }
+        revokedAt: { type: string, format: date-time, nullable: true }
+        revokedBy: { type: string, nullable: true }
+        createdBy: { type: string, nullable: true }
+        lastUsedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+    ShareSecretResult:
+      allOf:
+        - $ref: '#/components/schemas/ShareResource'
+        - type: object
+          required: [token, url]
+          properties:
+            token:
+              type: string
+              description: Plaintext share token returned only on create.
+            url: { type: string }
+    ShareCreateRequest:
+      type: object
+      required: [collection, itemId, roleId]
+      properties:
+        collection: { type: string, minLength: 1 }
+        itemId: { type: string, minLength: 1 }
+        roleId: { type: string, minLength: 1 }
+        password: { type: string, minLength: 1 }
+        validFrom: { type: string, format: date-time, nullable: true }
+        validUntil: { type: string, format: date-time, nullable: true }
+        maxUses: { type: integer, minimum: 1, nullable: true }
+    # --- AI (POST-GA1) ---
+    AIChatResponse:
+      type: object
+      properties:
+        status: { type: string, enum: [executed, pending_approval, denied] }
+        message: { type: string }
+        conversationId: { type: string }
+        pendingId: { type: string, nullable: true }
+        result: { type: object, additionalProperties: true, nullable: true }
+    AIConversation:
+      type: object
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        userId: { type: string, nullable: true }
+        title: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AIMessage:
+      type: object
+      properties:
+        id: { type: string }
+        conversationId: { type: string }
+        role: { type: string, enum: [user, assistant, system] }
+        content: { type: string }
+        toolCalls:
+          type: array
+          nullable: true
+          items: { type: object, additionalProperties: true }
+        metadata: { type: object, additionalProperties: true, nullable: true }
+        createdAt: { type: string, format: date-time }
+    AIApproval:
+      type: object
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        userId: { type: string, nullable: true }
+        conversationId: { type: string, nullable: true }
+        toolName: { type: string }
+        toolArgs: { type: object, additionalProperties: true }
+        status: { type: string, enum: [pending, approved, rejected] }
+        decidedBy: { type: string, nullable: true }
+        decidedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+    AgentGoal:
+      type: object
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        source: { type: string }
+        assigneeAgent: { type: string }
+        priority: { type: string }
+        status: { type: string }
+        successCriteria: { type: object, additionalProperties: true }
+        metadata: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AgentRun:
+      type: object
+      properties:
+        id: { type: string }
+        goalId: { type: string }
+        siteId: { type: string }
+        agentName: { type: string }
+        provider: { type: string }
+        model: { type: string }
+        status: { type: string }
+        budget: { type: object, additionalProperties: true }
+        risk: { type: string, enum: [safe, review_required, dangerous, blocked] }
+        metrics: { type: object, additionalProperties: true }
+        error: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AgentTool:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        requiredCapabilities:
+          type: array
+          items: { type: string }
+        service: { type: string, enum: [schema, items, ai] }
+        inputSchema: { type: object, additionalProperties: true }
+        outputSchema: { type: object, additionalProperties: true }
+        riskPolicy: { type: object, additionalProperties: true }
+        rateLimit: { type: object, additionalProperties: true }
+        enabled: { type: boolean }
+        owner: { type: string }
+    AgentApproval:
+      type: object
+      properties:
+        id: { type: string }
+        runId: { type: string }
+        siteId: { type: string }
+        legacyApprovalId: { type: string, nullable: true }
+        subjectType: { type: string, enum: [plan, tool_call, artifact, schema_diff] }
+        subjectId: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        approvalPolicy: { type: string }
+        requestedByAgent: { type: string }
+        decisionReason: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        decidedAt: { type: string, format: date-time, nullable: true }
+    AgentArtifact:
+      type: object
+      properties:
+        id: { type: string }
+        runId: { type: string }
+        siteId: { type: string }
+        type: { type: string, enum: [schema_diff, page_spec, component_spec, seed_data, api_spec, prompt, migration] }
+        target: { type: string, nullable: true }
+        title: { type: string }
+        contentRef: { type: string, nullable: true }
+        content: { type: object, additionalProperties: true }
+        hash: { type: string }
+        version: { type: integer }
+        status: { type: string }
+        metadata: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AgentEvaluation:
+      type: object
+      properties:
+        id: { type: string }
+        runId: { type: string }
+        siteId: { type: string }
+        artifactId: { type: string, nullable: true }
+        kind: { type: string }
+        status: { type: string, enum: [pass, warn, fail] }
+        score: { type: integer, nullable: true }
+        summary: { type: string }
+        details: { type: object, additionalProperties: true }
+        artifactHash: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    AgentMemoryContext:
+      type: object
+      properties:
+        siteId: { type: string }
+        memories:
+          type: array
+          items: { type: object, additionalProperties: true }
+        recentRuns:
+          type: array
+          items: { $ref: '#/components/schemas/AgentRun' }
+        approvedArtifacts:
+          type: array
+          items: { $ref: '#/components/schemas/AgentArtifact' }
+    # --- Flows (POST-GA2) ---
+    FlowGraph:
+      type: object
+      properties:
+        entry: { type: string, nullable: true }
+        nodes:
+          type: array
+          items:
+            type: object
+            required: [id, key]
+            properties:
+              id: { type: string }
+              key: { type: string }
+              options: { type: object, additionalProperties: true }
+              next: { type: string, nullable: true }
+              onError: { type: string, nullable: true }
+    FlowResource:
+      type: object
+      required: [name, triggerType]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        status: { type: string, enum: [active, inactive, draft], default: draft }
+        triggerType: { type: string, enum: [webhook, event, schedule, manual] }
+        triggerOptions: { type: object, additionalProperties: true }
+        graph: { $ref: '#/components/schemas/FlowGraph' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    FlowRun:
+      type: object
+      properties:
+        id: { type: string }
+        flowId: { type: string }
+        siteId: { type: string }
+        status: { type: string, enum: [running, success, error] }
+        input: { type: object, additionalProperties: true }
+        steps:
+          type: array
+          items: { type: object, additionalProperties: true }
+        error: { type: string, nullable: true }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time, nullable: true }
+    FlowRunResult:
+      type: object
+      properties:
+        runId: { type: string }
+        status: { type: string, enum: [success, error] }
+        steps:
+          type: array
+          items: { type: object, additionalProperties: true }
+        error: { type: string, nullable: true }
+    # --- Marketplace (POST-GA3) ---
+    MarketplaceExtension:
+      type: object
+      required: [id, slug, marketplaceSlug, name, version, latestVersion, type]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        marketplaceSlug: { type: string }
+        name: { type: string }
+        description: { type: string }
+        readme: { type: string }
+        category: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        publisherName: { type: string }
+        publisher: { type: string }
+        latestVersion: { type: string }
+        version: { type: string }
+        type: { type: string }
+        totalDownloads: { type: integer, default: 0 }
+        rating: { type: number, nullable: true }
+        ratingCount: { type: integer, nullable: true }
+        versions:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              version: { type: string }
+              publishedAt: { type: string, format: date-time, nullable: true }
+              sha256: { type: string, nullable: true }
+        bundleUrl: { type: string, format: uri }
+        bundleSha256: { type: string, nullable: true }
+        signature: { type: string, nullable: true, description: 'Base64-encoded detached signature' }
+        signatureAlg: { type: string, nullable: true, enum: [ed25519, rsa-pss-sha256] }
+        publisherKeyId: { type: string, nullable: true }
+        manifest: { type: object, additionalProperties: true }
+        publishedAt: { type: string, format: date-time, nullable: true }
+        updatedAt: { type: string, format: date-time, nullable: true }
+        repositoryUrl: { type: string, format: uri, nullable: true }
+        documentationUrl: { type: string, format: uri, nullable: true }
+        licenseType: { type: string, nullable: true }
+    # --- Materialized Collections (POST-GA4) ---
+    MaterializedCollection:
+      type: object
+      required: [id, siteId, collection, target]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        collection: { type: string }
+        target: { type: string }
+        refreshStrategy: { type: string, enum: [auto, cron, manual] }
+        refreshCron: { type: string, nullable: true }
+        projection:
+          type: object
+          properties:
+            fields: { type: array, items: { type: string } }
+            orderBy: { type: string, nullable: true }
+        filter: { type: object, additionalProperties: true }
+        lastRefreshedAt: { type: string, format: date-time, nullable: true }
+        rowCount: { type: integer, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    # ── Change Feed (first-party outbox+relay; distinct from the ClickHouse
+    #    CDC pipelines above). Source of truth: packages/contracts/schemas/cdc-feed.ts
+    EventEnvelope:
+      type: object
+      description: Change-feed event (schemaVersion 1). `id` is the idempotency key; `cursor` is this event's keyset token.
+      required: [id, type, schemaVersion, siteId, collection, itemId, operation, occurredAt, actor, source, cursor]
+      properties:
+        id: { type: string, description: Idempotency key (nanoid). }
+        type: { type: string, pattern: '^(items|collections|fields|settings)\.(create|update|delete)$', description: '<plural-resource>.<operation> — items.* (content), collections.*/fields.* (schema), settings.*.' }
+        schemaVersion: { type: integer, minimum: 1 }
+        siteId: { type: string }
+        collection: { type: string }
+        itemId: { type: string }
+        operation: { type: string, enum: [create, update, delete] }
+        occurredAt: { type: string, format: date-time }
+        actor:
+          type: object
+          required: [type]
+          properties:
+            type: { type: string, enum: [user, api_key, agent, system] }
+            id: { type: string }
+        source: { type: string, enum: [api, agent, flow, system] }
+        changedFields:
+          type: array
+          description: Present on update only.
+          items: { type: string }
+        data:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Post-mutation record with pii/phi masked; present only in snapshot payload mode.
+        cursor: { type: string, description: Opaque base64url keyset token for ack/resume. }
+    ChangeFeedSubscription:
+      type: object
+      required: [id, siteId, name, kind, collections, operations, payloadMode, status, consecutiveFailures, lag]
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [pull, webhook, extension] }
+        collections: { type: array, items: { type: string } }
+        operations: { type: array, items: { type: string, enum: [create, update, delete] } }
+        payloadMode: { type: string, enum: [reference, snapshot] }
+        cursor: { type: string, nullable: true, description: Committed checkpoint token, or null before first ack/delivery. }
+        status: { type: string, enum: [active, paused, dead, stale] }
+        webhookId: { type: string, nullable: true }
+        extensionName: { type: string, nullable: true }
+        consecutiveFailures: { type: integer }
+        lastDeliveredAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        lag:
+          type: object
+          description: Backlog between the checkpoint and the feed head (Req 3.5).
+          required: [events, behindMs]
+          properties:
+            events: { type: integer }
+            behindMs: { type: integer, nullable: true }
+    ChangeFeedSubscriptionCreate:
+      type: object
+      required: [name, kind]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 128 }
+        kind: { type: string, enum: [pull, webhook, extension] }
+        collections: { type: array, items: { type: string, minLength: 1 }, default: [] }
+        operations: { type: array, items: { type: string, enum: [create, update, delete] }, default: [] }
+        payload_mode: { type: string, enum: [reference, snapshot], default: reference }
+        webhook_id: { type: string, description: Required when kind=webhook (webhook must have a secret). }
+        extension_name: { type: string, description: Required when kind=extension. }
+    ChangeFeedSubscriptionPatch:
+      type: object
+      description: kind is immutable; status flips only between active/paused here (dead/stale exit via replay).
+      properties:
+        name: { type: string, minLength: 1, maxLength: 128 }
+        collections: { type: array, items: { type: string, minLength: 1 } }
+        operations: { type: array, items: { type: string, enum: [create, update, delete] } }
+        payload_mode: { type: string, enum: [reference, snapshot] }
+        status: { type: string, enum: [active, paused] }
+    ChangeFeedAck:
+      type: object
+      required: [cursor]
+      properties:
+        cursor: { type: string, description: Forward-only checkpoint token. }
+    ChangeFeedReplay:
+      type: object
+      description: Provide exactly one of cursor or occurred_after (within retention).
+      properties:
+        cursor: { type: string }
+        occurred_after: { type: string, format: date-time }
+    ChangeFeedDelivery:
+      type: object
+      required: [id, subscriptionId, eventCount, attempt, status, durationMs, createdAt]
+      properties:
+        id: { type: string }
+        subscriptionId: { type: string }
+        eventIdFrom: { type: string, nullable: true }
+        eventIdTo: { type: string, nullable: true }
+        eventCount: { type: integer }
+        attempt: { type: integer }
+        status: { type: string, enum: [success, failed] }
+        httpStatus: { type: integer, nullable: true }
+        errorMessage: { type: string, nullable: true, description: Masked — never raw consumer output. }
+        durationMs: { type: integer }
+        createdAt: { type: string, format: date-time }
+    DeploymentTarget:
+      type: object
+      description: A configured connection to one project on one provider. The provider token is never returned.
+      properties:
+        id: { type: string }
+        provider: { type: string, enum: [vercel, netlify] }
+        name: { type: string }
+        projectId: { type: string }
+        defaultBranch: { type: string, nullable: true }
+        productionUrl: { type: string, nullable: true }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    DeploymentTargetCreate:
+      type: object
+      required: [provider, name, projectId, token]
+      properties:
+        provider: { type: string, enum: [vercel, netlify] }
+        name: { type: string }
+        projectId: { type: string }
+        token: { type: string, description: Provider API token. Write-only; stored encrypted via the runtime KeyProvider and never returned. }
+        defaultBranch: { type: string, nullable: true }
+        productionUrl: { type: string, nullable: true }
+    Deployment:
+      type: object
+      description: One build/deploy run on a provider, with a HeoPress-normalized status.
+      properties:
+        id: { type: string }
+        siteId: { type: string }
+        targetId: { type: string }
+        provider: { type: string }
+        providerDeploymentId: { type: string, nullable: true }
+        status: { type: string, enum: [queued, building, ready, error, canceled] }
+        branch: { type: string, nullable: true }
+        commitSha: { type: string, nullable: true }
+        commitMessage: { type: string, nullable: true }
+        url: { type: string, nullable: true }
+        triggeredBy: { type: string, nullable: true }
+        triggerSource: { type: string, enum: [manual, auto, agent] }
+        errorMessage: { type: string, nullable: true }
+        logExcerpt: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        completedAt: { type: string, format: date-time, nullable: true }
+    GitIntegration:
+      type: object
+      description: A per-site connection to a GitHub/GitLab repository. Tokens are never returned.
+      properties:
+        id: { type: string }
+        provider: { type: string, enum: [github, gitlab] }
+        repoFullName: { type: string, example: 'acme/website' }
+        displayName: { type: string }
+        authMethod: { type: string, enum: [app, pat] }
+        status: { type: string, enum: [connected, error, disconnected] }
+        statusReason: { type: string, nullable: true }
+        scopes: { type: array, items: { type: string } }
+        hasToken: { type: boolean, description: True when a token/installation is on file (never the value). }
+        webhookUrl: { type: string, description: Operator-facing signed webhook URL (embeds siteId + integrationId). }
+        lastSyncAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    GitIntegrationCreate:
+      type: object
+      required: [provider, repoFullName, displayName, authMethod]
+      properties:
+        provider: { type: string, enum: [github, gitlab] }
+        repoFullName: { type: string, example: 'acme/website' }
+        displayName: { type: string }
+        authMethod: { type: string, enum: [app, pat] }
+        token: { type: string, description: PAT/OAuth token (required when authMethod=pat); stored encrypted. }
+        installationId: { type: string, description: Required when authMethod=app. }
+        scopes: { type: array, items: { type: string } }
+    GitPullRequest:
+      type: object
+      properties:
+        id: { type: string }
+        number: { type: integer }
+        title: { type: string }
+        state: { type: string, enum: [open, closed, merged] }
+        ciStatus: { type: string, enum: [unknown, pending, success, failure] }
+        mergeable: { type: boolean, nullable: true }
+        headSha: { type: string }
+        author: { type: string, nullable: true }
+        previewUrl: { type: string, nullable: true }
+        updatedAt: { type: string, format: date-time }
+    GitCiRun:
+      type: object
+      properties:
+        id: { type: string }
+        providerRunId: { type: string }
+        status: { type: string, enum: [queued, in_progress, success, failure, cancelled] }
+        jobs:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              status: { type: string }
+              startedAt: { type: string, format: date-time, nullable: true }
+              completedAt: { type: string, format: date-time, nullable: true }
+              durationMs: { type: integer, nullable: true }
+        durationMs: { type: integer, nullable: true }
+        hasStoredLog: { type: boolean }
+
+
+paths:
+  /utils/health:
+    get:
+      summary: Liveness probe
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Health' }
+  /utils/version:
+    get:
+      summary: API + runtime version
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Version' }
+  /system/version:
+    get:
+      summary: Build and release metadata
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BuildMetadata' }
+  /collections:
+    get:
+      summary: List collections in the active site
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Collection' }
+    post:
+      summary: Create a collection
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Collection' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Collection' }
+        '409':
+          description: Collection already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /collections/{name}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - name: name
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      summary: Get collection by name
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Collection' }
+    patch:
+      summary: Update collection metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Collection' }
+      responses:
+        '200':
+          description: OK
+    delete:
+      summary: Delete collection (rejected when relations reference it)
+      responses:
+        '204': { description: Deleted }
+  /collections/{name}/fields:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - name: name
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      summary: List fields of a collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Field' }
+  /collections/{name}/fields/{field}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: name, in: path, required: true, schema: { type: string } }
+      - { name: field, in: path, required: true, schema: { type: string } }
+    put:
+      summary: Upsert a field (idempotent by name)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Field' }
+      responses:
+        '200':
+          description: OK
+    delete:
+      summary: Delete a field
+      responses:
+        '204': { description: Deleted }
+  /collections/diff:
+    post:
+      summary: Diff a proposed schema against the current collection
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/SchemaApplyInput'
+                - type: object
+                  required: [name]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/SchemaDiff' }
+  /collections/{name}/schema:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: name, in: path, required: true, schema: { type: string } }
+    put:
+      summary: Apply a full schema to a collection (creates it if missing)
+      description: >-
+        Atomic full-schema apply. If the collection named in the path does not
+        exist yet it is created in the same transaction (site-scoped, honouring
+        the collection name and primary-key/storage-mode compatibility rules)
+        and the provided fields/relations are applied to the fresh collection.
+        If it already exists, its fields and relations are reconciled to match
+        the request. Returns `200` in both cases. Requires the `schema:migrate`
+        capability.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SchemaApplyInput' }
+      responses:
+        '200':
+          description: Schema applied (collection created or updated)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/SchemaApplyResult' }
+        '400':
+          description: Validation error or unsupported change (e.g. collection rename)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: Missing `schema:migrate` capability
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: Reserved collection name (e.g. `lumibase_`/`mat_` prefix)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /collections/{name}/compiled:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: name, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get the cached compiled schema for ItemService
+      responses:
+        '200':
+          description: OK
+  /relations:
+    get:
+      summary: List relations in the active site
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Relation' }
+    post:
+      summary: Create a relation
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Relation' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Relation' }
+  /relations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    delete:
+      summary: Delete a relation
+      responses:
+        '204': { description: Deleted }
+  /typegen/schema:
+    get:
+      summary: Get type generation manifest for the active site
+      parameters:
+        - $ref: '#/components/parameters/SiteHeader'
+        - { name: include, in: query, schema: { type: string }, description: 'Comma-separated collection names to include' }
+        - { name: exclude, in: query, schema: { type: string }, description: 'Comma-separated collection names to exclude' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      version: { type: integer }
+                      site: { type: string }
+                      collections:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name: { type: string }
+                            primaryKey: { type: string }
+                            primaryKeyField: { type: string }
+                            primaryKeyType: { type: string, enum: [nanoid, uuid, integer, bigInteger, string] }
+                            fields:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name: { type: string }
+                                  type: { type: string }
+                                  required: { type: boolean }
+                                  nullable: { type: boolean }
+                                  readonly: { type: boolean }
+                                  generated: { type: boolean }
+                                  system: { type: boolean }
+                                  encrypted: { type: boolean }
+                                  primaryKey: { type: boolean }
+                                  branded: { type: string }
+                                  kind: { type: string, enum: [m2o, o2m, m2m, m2a] }
+                                  target: { type: string }
+                                  enum: { type: array, items: { type: string } }
+                            relations:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  field: { type: string }
+                                  kind: { type: string, enum: [m2o, o2m, m2m, m2a] }
+                                  target: { type: string }
+                                  manyCollection: { type: string }
+                                  manyField: { type: string }
+                                  oneCollection: { type: string }
+                                  oneField: { type: string, nullable: true }
+                                  junctionCollection: { type: string, nullable: true }
+  /auth/me:
+    get:
+      summary: Current authenticated principal for active site
+      parameters:
+        - $ref: '#/components/parameters/SiteHeader'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthMe' }
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '400':
+          description: Missing tenant header
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /setup/state:
+    get:
+      summary: First-run setup state
+      description: >-
+        Public, unauthenticated. Returns whether the instance still needs
+        first-run setup. Once setup is complete every `/setup/*` path responds
+        `404` indistinguishably, so a `200` here implies the instance is not yet
+        initialized. IP rate-limited (`429` with `retry-after` when exceeded).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SetupState' }
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /setup/capabilities:
+    get:
+      summary: Setup environment capabilities
+      description: >-
+        Reports which optional integrations are available to the setup wizard
+        (GeoIP database, SMTP). Returns `404` once the instance is initialized.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SetupCapabilities' }
+        '404':
+          description: Instance already initialized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /setup/complete:
+    post:
+      summary: Complete first-run setup (create the bootstrap admin)
+      description: >-
+        Public, unauthenticated, single-use. Creates the bootstrap administrator
+        (granted an `Administrator` role bound via `user_roles`), the default
+        site, baseline settings, and the login-security policy — all in one
+        transaction. The `policy` field is OPTIONAL: when omitted, the "Standard"
+        lockout preset is applied. Returns backup codes exactly once in the
+        `201` body; they are unrecoverable afterwards. Any subsequent call once
+        initialized responds with a setup error.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetupCompleteInput' }
+      responses:
+        '201':
+          description: Setup completed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SetupCompleteResult' }
+        '400':
+          description: Malformed JSON or validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Already initialized or setup already in progress
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: Admin path predictable/reserved/taken, or invalid token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '503':
+          description: >-
+            `SETUP_TOKEN_NOT_ISSUED` — `HEOPRESS_REQUIRE_SETUP_TOKEN` is on but no
+            setup token has been minted, so no request can succeed. The Node/Docker
+            CMS mints and prints one at startup; Cloudflare Workers have no startup
+            step and do not support the flag. The error `message` says what to do.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /cdc/events:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+    get:
+      summary: Read the change feed (keyset cursor pagination)
+      description: |
+        Pull consumers read change events in feed order (keyset `(occurred_at, id)`)
+        with a 2s safety lag. Requires the `cdc:subscribe` capability (admin implies).
+        A `410 CURSOR_EXPIRED` (with `earliestCursor`) means the cursor fell past retention.
+      parameters:
+        - { name: cursor, in: query, required: false, schema: { type: string }, description: Opaque token from a prior meta.nextCursor. Omit for the first page. }
+        - { name: collections, in: query, required: false, schema: { type: string }, description: CSV collection filter. }
+        - { name: operations, in: query, required: false, schema: { type: string }, description: 'CSV of create,update,delete.' }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+        - { name: wait, in: query, required: false, schema: { type: integer, minimum: 0, maximum: 25, default: 0 }, description: Long-poll budget in seconds; server holds an empty first read until an event appears or the budget elapses. }
+      responses:
+        '200':
+          description: A page of change events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/EventEnvelope' }
+                  meta:
+                    type: object
+                    properties:
+                      nextCursor: { type: string, nullable: true }
+                      hasMore: { type: boolean }
+        '400':
+          description: Malformed cursor or query
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: Requires the cdc:subscribe capability (or frontend-realm token rejected)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '410':
+          description: Cursor expired past retention (body carries earliestCursor)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /cdc/subscriptions:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+    get:
+      summary: List change-feed subscriptions (site admin)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ChangeFeedSubscription' }
+        '403':
+          description: Site admin access required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    post:
+      summary: Create a change-feed subscription (site admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangeFeedSubscriptionCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ChangeFeedSubscription' }
+        '400':
+          description: Validation error or webhook missing a secret
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: Site admin required or subscription limit (50/site) exceeded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Subscription name already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /cdc/subscriptions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get a change-feed subscription (site admin)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ChangeFeedSubscription' }
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    patch:
+      summary: Update a change-feed subscription (site admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangeFeedSubscriptionPatch' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ChangeFeedSubscription' }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Name conflict or invalid status transition
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      summary: Delete a change-feed subscription (site admin)
+      responses:
+        '200':
+          description: Deleted (checkpoint lost; outbox events kept until retention)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean }
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /cdc/subscriptions/{id}/ack:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Commit a pull checkpoint (forward-only)
+      description: Requires the `cdc:subscribe` capability. Rewinding returns 409 ACK_REGRESSION — use replay instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangeFeedAck' }
+      responses:
+        '200':
+          description: Checkpoint committed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ChangeFeedSubscription' }
+        '400':
+          description: Malformed cursor
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Ack regression (cursor rewind)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /cdc/subscriptions/{id}/replay:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Rewind a subscription checkpoint within retention (site admin)
+      description: Resets dead/stale subscriptions to active — the only path out of those states. Audited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangeFeedReplay' }
+      responses:
+        '200':
+          description: Replayed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ChangeFeedSubscription' }
+        '400':
+          description: Out of retention or invalid target (need exactly one of cursor/occurred_after)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /cdc/subscriptions/{id}/dispatch:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Trigger on-demand dispatch for a subscription (site admin)
+      description: The no-queue fallback path (Req 4.7) — flushes pending events to the webhook/extension now.
+      responses:
+        '202':
+          description: Dispatch triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      dispatched: { type: boolean }
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '501':
+          description: On-demand dispatch not available in this runtime
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /cdc/subscriptions/{id}/deliveries:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      - { name: page, in: query, required: false, schema: { type: integer, minimum: 1, default: 1 } }
+    get:
+      summary: Delivery-attempt history for a subscription (site admin, newest first)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ChangeFeedDelivery' }
+                  meta:
+                    type: object
+                    properties:
+                      total: { type: integer }
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /items/{collection}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: collection, in: path, required: true, schema: { type: string } }
+    get:
+      summary: List items in a collection
+      parameters:
+        - { name: fields, in: query, schema: { type: string } }
+        - { name: filter, in: query, schema: { type: string }, description: 'JSON filter DSL' }
+        - { name: sort, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0 } }
+        - { name: status, in: query, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Create an item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                data: { type: object }
+                status: { type: string }
+                sort: { type: integer }
+      responses:
+        '201': { description: Created }
+  /items/{collection}/bulk:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: collection, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Bulk operation (create/update/delete) on items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [op, items]
+              properties:
+                op: { type: string, enum: [create, update, delete] }
+                items:
+                  type: array
+                  items: { type: object }
+      responses:
+        '200': { description: OK }
+  /items/{collection}/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: collection, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get an item
+      responses: { '200': { description: OK } }
+    patch:
+      summary: Patch an item (merge data)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses: { '200': { description: OK } }
+    put:
+      summary: Replace item data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses: { '200': { description: OK } }
+    delete:
+      summary: Soft-delete an item
+      responses: { '204': { description: Deleted } }
+  /items/{collection}/{id}/revisions:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: collection, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: List revisions for an item
+      responses: { '200': { description: OK } }
+  /items/{collection}/{id}/revert/{revisionId}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: collection, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: revisionId, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Revert an item to a previous revision snapshot
+      responses: { '200': { description: OK } }
+  /utils/render-template:
+    post:
+      summary: Render a mustache-style display template against a data object
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [template, data]
+              properties:
+                template: { type: string }
+                data: { type: object }
+      responses: { '200': { description: OK } }
+  /roles:
+    parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+    get:
+      summary: List roles in the active site
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Role' }
+    post:
+      summary: Create a role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Role' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Role' }
+  /roles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get role detail (incl. attached policies + members)
+      responses: { '200': { description: OK } }
+    patch:
+      summary: Update role metadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Role' }
+      responses: { '200': { description: OK } }
+    delete:
+      summary: Delete role
+      responses: { '204': { description: Deleted } }
+  /roles/{id}/policies:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Attach a policy to the role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [policyId]
+              properties:
+                policyId: { type: string }
+                priority: { type: integer }
+      responses: { '201': { description: Attached } }
+  /roles/{id}/policies/{policyId}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: policyId, in: path, required: true, schema: { type: string } }
+    delete:
+      summary: Detach a policy from the role
+      responses: { '204': { description: Detached } }
+  /roles/{id}/users:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Assign role to a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+      responses: { '201': { description: Assigned } }
+  /roles/{id}/users/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: userId, in: path, required: true, schema: { type: string } }
+    delete:
+      summary: Remove role from user
+      responses: { '204': { description: Removed } }
+  /policies:
+    parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+    get:
+      summary: List policies in the active site
+      responses: { '200': { description: OK } }
+    post:
+      summary: Create a policy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Policy' }
+      responses: { '201': { description: Created } }
+  /policies/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get policy detail (incl. permission rows)
+      responses: { '200': { description: OK } }
+    patch:
+      summary: Update policy metadata or guardrails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Policy' }
+      responses: { '200': { description: OK } }
+    delete:
+      summary: Delete policy
+      responses: { '204': { description: Deleted } }
+  /policies/{id}/permissions:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Add a permission row to the policy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PermissionRow' }
+      responses: { '201': { description: Created } }
+  /policies/{id}/permissions/{permId}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: permId, in: path, required: true, schema: { type: string } }
+    patch:
+      summary: Update a permission row
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PermissionRow' }
+      responses: { '200': { description: OK } }
+    delete:
+      summary: Delete a permission row
+      responses: { '204': { description: Deleted } }
+  /policies/{id}/users:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Attach policy directly to a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId: { type: string }
+                priority: { type: integer }
+      responses: { '201': { description: Attached } }
+  /policies/{id}/users/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: userId, in: path, required: true, schema: { type: string } }
+    delete:
+      summary: Detach policy from a user
+      responses: { '204': { description: Detached } }
+  /access/conflicts/check:
+    parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+    post:
+      summary: Check for access conflicts before attaching/removing policies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccessConflictCheckRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AccessConflictReport' }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '501':
+          description: Not implemented (e.g., api_key checks)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /access/grants:
+    parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+    get:
+      summary: Picker state for the non-staff realms (public, subscriber)
+      description: >-
+        Site-admin only. Returns the grantable collections plus, per realm, the
+        actions it may hold, whether a row scope is expressible, whether it can
+        be toggled, and the grants it currently has.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/RealmAccessState' }
+        '403':
+          description: Admin access for the requested site is required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /access/grants/{realm}/enable:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: realm, in: path, required: true, schema: { type: string, enum: [public] } }
+    post:
+      summary: Provision a togglable realm (public only)
+      description: >-
+        Creates the realm's role and policy. Creating the `public` role is what
+        enables anonymous access — until then unauthenticated requests are 401.
+      responses:
+        '200':
+          description: Enabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      enabled: { type: boolean }
+                      roleId: { type: string }
+                      policyId: { type: string }
+        '400':
+          description: Realm cannot be toggled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Unknown realm
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /access/grants/{realm}/disable:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: realm, in: path, required: true, schema: { type: string, enum: [public] } }
+    post:
+      summary: Tear down a togglable realm and every grant on it
+      responses:
+        '200':
+          description: Disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      enabled: { type: boolean }
+                      removed: { type: boolean }
+        '400':
+          description: Realm cannot be toggled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Unknown realm
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /access/grants/{realm}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: realm, in: path, required: true, schema: { type: string, enum: [public, subscriber] } }
+    post:
+      summary: Grant or update one (collection, action) permission for a realm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RealmGrantRequest' }
+      responses:
+        '200':
+          description: Grant applied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/RealmAccessGrant' }
+        '400':
+          description: >-
+            Rejected request body — `VALIDATION`, `COLLECTION_REQUIRED`,
+            `ACTION_NOT_ALLOWED` (e.g. a write on `public`) or
+            `ROW_SCOPE_NOT_SUPPORTED` (`ownOnly` on `public`). All are body
+            errors: an unchanged retry fails identically.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: >-
+            `PUBLIC_ACCESS_DISABLED` — the `public` realm is off for this site,
+            so it cannot be granted anything. Call
+            `POST /access/grants/public/enable` first; enabling the anonymous
+            realm is a deliberate, audited step rather than a side effect of a
+            grant. Not raised for `subscriber`, which has no enable step.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: >-
+            Unknown realm, or `COLLECTION_NOT_GRANTABLE` — the collection must
+            exist on the site and be neither system nor hidden (the set
+            `GET /access/grants` lists).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /access/grants/{realm}/{collection}/{action}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: realm, in: path, required: true, schema: { type: string, enum: [public, subscriber] } }
+      - { name: collection, in: path, required: true, schema: { type: string } }
+      - { name: action, in: path, required: true, schema: { type: string, enum: [read, create, update, delete] } }
+    delete:
+      summary: Revoke one grant
+      responses:
+        '200':
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      realm: { type: string }
+                      collection: { type: string }
+                      action: { type: string }
+                      removed: { type: boolean }
+        '400':
+          description: Unknown action
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Unknown realm or grant not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /access/export:
+    parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+    get:
+      summary: Export access manifest without secrets
+      responses:
+        '200':
+          description: Access manifest
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AccessExportManifest' }
+  /access/import:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - name: dryRun
+        in: query
+        required: false
+        schema: { type: boolean }
+      - name: mode
+        in: query
+        required: false
+        schema: { type: string, enum: [merge, replace-managed, replace-all] }
+    post:
+      summary: Import or dry-run an access manifest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccessExportManifest' }
+      responses:
+        '200':
+          description: Import result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AccessImportResult' }
+        '400':
+          description: Invalid manifest or failed import validation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AccessImportResult' }
+  /api-keys:
+    parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+    get:
+      summary: List API keys for the active site
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ApiKeyResource' }
+    post:
+      summary: Create an API key and return the plaintext token once
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApiKeyCreateRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ApiKeySecretResult' }
+        '403':
+          description: API keys can only be managed by user principals
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api-keys/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get API key metadata and attachments
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ApiKeyResource' }
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api-keys/{id}/allowed-origins:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    patch:
+      summary: Replace a key's browser-origin allowlist without rotating the token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApiKeyAllowedOriginsRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ApiKeyResource' }
+        '400':
+          description: Unparseable origin
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api-keys/{id}/rotate:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Rotate an API key and return the new plaintext token once
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApiKeyRotateRequest' }
+      responses:
+        '200':
+          description: Rotated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ApiKeySecretResult' }
+  /api-keys/{id}/revoke:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Revoke an API key
+      responses:
+        '200':
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ApiKeyResource' }
+  /api-keys/{id}/roles:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Attach a role to an API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApiKeyAttachRoleRequest' }
+      responses:
+        '201':
+          description: Attached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ApiKeyRoleAttachment' }
+        '409':
+          description: Access policy conflict or warning
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api-keys/{id}/roles/{roleId}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: roleId, in: path, required: true, schema: { type: string } }
+    delete:
+      summary: Detach a role from an API key
+      responses: { '204': { description: Detached } }
+  /api-keys/{id}/policies:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Attach a policy to an API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApiKeyAttachPolicyRequest' }
+      responses:
+        '201':
+          description: Attached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ApiKeyPolicyAttachment' }
+        '409':
+          description: Access policy conflict or warning
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api-keys/{id}/policies/{policyId}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: policyId, in: path, required: true, schema: { type: string } }
+    delete:
+      summary: Detach a policy from an API key
+      responses: { '204': { description: Detached } }
+  /shares:
+    parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+    post:
+      summary: Create a public share link for an item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShareCreateRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ShareSecretResult' }
+  /shares/{token}:
+    get:
+      summary: Read a shared item through the share role permission
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-HeoPress-Share-Password
+          in: header
+          required: false
+          schema: { type: string }
+        - name: password
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Shared item payload, field-masked by the share role
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, additionalProperties: true }
+        '401':
+          description: Password required or share expired
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '403':
+          description: Share revoked, not yet valid, max uses reached, or role denied
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /shares/{id}/revoke:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Revoke a share link
+      responses:
+        '200':
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ShareResource' }
+  /permissions/me:
+    parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+    get:
+      summary: Compiled permission bundle for the active principal
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/PermissionBundle' }
+  /permissions/check:
+    parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+    post:
+      summary: Evaluate (collection, action, item) and return the verdict + trace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [collection, action]
+              properties:
+                collection: { type: string }
+                action: { type: string, enum: [create, read, update, delete, share] }
+                item: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/PermissionCheckResult' }
+
+  # ---------------------------------------------------------------------------
+  # AI Copilot (POST-GA1)
+  # ---------------------------------------------------------------------------
+  /ai/chat:
+    post:
+      summary: Send a natural-language message to the AI copilot
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string, maxLength: 2000 }
+                conversationId: { type: string, nullable: true }
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AIChatResponse' }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /ai/conversations:
+    get:
+      summary: List AI conversations for the active site
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AIConversation' }
+
+  /ai/conversations/{conversationId}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: conversationId, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get conversation history (messages)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AIMessage' }
+    delete:
+      summary: Delete a conversation and all messages
+      responses:
+        '204': { description: Deleted }
+
+  /ai/approvals:
+    get:
+      summary: List pending AI action approvals for the site
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AIApproval' }
+
+  /ai/approvals/{id}/decide:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Approve or reject a pending AI action
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [approved, rejected] }
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AIApproval' }
+
+  /ai/decisions:
+    post:
+      summary: Ask the decision model (TypeSafe Jev or equivalent) typed questions
+      description: >
+        Read-only. Each question is `noul` (yes/no), `choice` (2-255 options)
+        or `score` (2-10 rubric levels, lowest first). Answers carry
+        probabilities; `calibrated` is false when DECISION_PROVIDER=llm.
+        Malformed upstream answers fail with 502 DECISION_PARSE_FAILED, never
+        zero-valued defaults. Choice/Score distributions must contain exactly
+        the declared options/levels and sum to 1 within 1e-6. Confidence is
+        required; Score lies in 0..N-1 for N rubric levels.
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state, questions]
+              properties:
+                state:
+                  description: >
+                    String (≤ 20,000 chars), object or array. The whole request
+                    (state + questions) must fit DECISION_MAX_INPUT_BYTES and the
+                    estimated DECISION_MAX_INPUT_TOKENS budget, else 413.
+                  oneOf:
+                    - { type: string, minLength: 1, maxLength: 20000 }
+                    - { type: object, additionalProperties: true }
+                    - { type: array, items: {} }
+                questions:
+                  type: object
+                  minProperties: 1
+                  maxProperties: 32
+                  description: Keys match ^[A-Za-z0-9_-]{1,64}$.
+                  additionalProperties:
+                    type: object
+                    required: [type, instructions, criteria]
+                    properties:
+                      type: { type: string, enum: [noul, choice, score] }
+                      instructions: {}
+                      criteria:
+                        description: >
+                          noul → { true, false }; choice → option key → description
+                          or null; score → ordered array of levels.
+      responses:
+        '200':
+          description: Typed answers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      provider: { type: string, enum: [typesafe, openrouter, llm] }
+                      model: { type: string }
+                      calibrated: { type: boolean }
+                      answers:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          required: [type]
+                          oneOf:
+                            - required: [type, noul]
+                              properties:
+                                type: { type: string, enum: [noul] }
+                            - required: [type, choice, probabilities, confidence]
+                              properties:
+                                type: { type: string, enum: [choice] }
+                            - required: [type, score, legend, probabilities, confidence]
+                              properties:
+                                type: { type: string, enum: [score] }
+                          properties:
+                            type: { type: string, enum: [noul, choice, score] }
+                            noul: { type: number, minimum: 0, maximum: 1 }
+                            choice: { type: string }
+                            score: { type: number, minimum: 0, maximum: 9 }
+                            legend: { type: object, additionalProperties: true }
+                            probabilities:
+                              type: object
+                              additionalProperties: { type: number, minimum: 0, maximum: 1 }
+                            confidence: { type: number, minimum: 0, maximum: 1 }
+                      usage:
+                        type: object
+                        properties:
+                          inputTokens: { type: integer, nullable: true, description: null when the provider did not report it }
+                          outputTokens: { type: integer, nullable: true, description: null when the provider did not report it }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '413':
+          description: Over the input byte or estimated token budget (DECISION_INPUT_TOO_LARGE)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: The decision provider rejected the request (DECISION_VALIDATION)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          description: Decision provider rate limit (DECISION_RATE_LIMITED)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '502':
+          description: DECISION_AUTH, DECISION_UPSTREAM or DECISION_PARSE_FAILED
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '503':
+          description: DECISION_NOT_CONFIGURED or DECISION_UNAVAILABLE
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '504':
+          description: The decision did not complete within DECISION_TIMEOUT_MS (DECISION_TIMEOUT)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '499':
+          description: The client closed the request; the upstream call was aborted (DECISION_CANCELLED)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /ai/suggest-field:
+    post:
+      summary: Suggest field type and interface for a given field name + context
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fieldName]
+              properties:
+                fieldName: { type: string }
+                collectionName: { type: string }
+                existingFields: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Suggestion
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      type: { type: string }
+                      interface: { type: string }
+                      confidence: { type: number, format: float }
+
+  /ai/content-assist:
+    post:
+      summary: Generate or rewrite content for a field value using RAG context
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt, collection, field]
+              properties:
+                prompt: { type: string, maxLength: 1000 }
+                collection: { type: string }
+                field: { type: string }
+                itemId: { type: string, nullable: true }
+                existingValue: { type: string, nullable: true }
+      responses:
+        '200':
+          description: AI-generated content
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      content: { type: string }
+                      tokensUsed: { type: integer }
+
+  # ---------------------------------------------------------------------------
+  # Agent Harness Layer
+  # ---------------------------------------------------------------------------
+  /agent/goals:
+    get:
+      summary: List agent goals
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgentGoal' }
+    post:
+      summary: Create an agent goal
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                source: { type: string, enum: [user, flow, api, schedule] }
+                assigneeAgent: { type: string }
+                priority: { type: string, enum: [low, normal, high, urgent] }
+                successCriteria: { type: object, additionalProperties: true }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AgentGoal' }
+
+  /agent/runs:
+    get:
+      summary: List agent runs
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgentRun' }
+
+  /agent/runs/{id}/retry:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Retry an agent run
+      responses:
+        '201': { description: Retry run created }
+
+  /agent/tools:
+    get:
+      summary: List agent tools
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgentTool' }
+
+  /agent/approvals:
+    get:
+      summary: List generalized agent approvals
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgentApproval' }
+
+  /agent/approvals/{id}/decide:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Decide a generalized agent approval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [approved, rejected] }
+                reason: { type: string }
+      responses:
+        '200': { description: Decision recorded }
+
+  /agent/artifacts:
+    get:
+      summary: List agent artifacts
+      parameters:
+        - $ref: '#/components/parameters/SiteHeader'
+        - { name: runId, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgentArtifact' }
+    post:
+      summary: Create an agent artifact
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [runId, type, title, content]
+              properties:
+                runId: { type: string }
+                type: { type: string }
+                title: { type: string }
+                target: { type: string }
+                content: { type: object, additionalProperties: true }
+      responses:
+        '201': { description: Created }
+
+  /agent/artifacts/{id}/evaluate:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: runId, in: query, required: true, schema: { type: string } }
+    post:
+      summary: Evaluate an agent artifact
+      responses:
+        '200': { description: Evaluation result }
+
+  /agent/artifacts/{id}/publish:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Publish an agent artifact
+      responses:
+        '200': { description: Published artifact }
+
+  /agent/artifacts/{id}/rollback:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Roll back a published agent artifact
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200': { description: Rolled-back artifact }
+
+  /agent/memory:
+    get:
+      summary: Build agent memory context
+      parameters:
+        - $ref: '#/components/parameters/SiteHeader'
+        - { name: scope, in: query, required: false, schema: { type: string } }
+        - { name: scopeId, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AgentMemoryContext' }
+    post:
+      summary: Write agent memory
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '201': { description: Created }
+
+  /agent/generate-app:
+    post:
+      summary: Generate app artifacts from schema
+      description: Creates a run plus page_spec, component_spec, seed_data, and api_spec artifacts, then evaluates each artifact before returning.
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                collections:
+                  type: array
+                  items: { type: string }
+                targetApp: { type: string }
+                constraints: { type: object, additionalProperties: true }
+                budget: { type: object, additionalProperties: true }
+                approvalPolicy: { type: string }
+      responses:
+        '201': { description: Run, artifacts, and evaluations created }
+
+  # ---------------------------------------------------------------------------
+  # Flows Automation (POST-GA2)
+  # ---------------------------------------------------------------------------
+  /flows:
+    get:
+      summary: List flows in the active site
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/FlowResource' }
+    post:
+      summary: Create a flow
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FlowResource' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/FlowResource' }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /flows/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get flow detail (incl. graph)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/FlowResource' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    patch:
+      summary: Update flow (graph, status, metadata)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FlowResource' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/FlowResource' }
+    delete:
+      summary: Delete a flow
+      responses:
+        '204': { description: Deleted }
+
+  /flows/{id}/run:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Trigger a manual flow run
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Optional input data passed to the flow entry node
+              additionalProperties: true
+      responses:
+        '200':
+          description: Run result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/FlowRunResult' }
+
+  /flows/{id}/runs:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: List runs for a flow (latest 100)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/FlowRun' }
+
+  # ---------------------------------------------------------------------------
+  # Marketplace (POST-GA3)
+  # ---------------------------------------------------------------------------
+  /marketplace/extensions:
+    get:
+      summary: List published extensions in the marketplace
+      security: []
+      parameters:
+        - { name: q, in: query, schema: { type: string }, description: 'Search by name, description, publisher, slug, category, or tag' }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: tags, in: query, schema: { type: string }, description: 'Comma-separated tag filter' }
+        - { name: page, in: query, schema: { type: integer, default: 1, minimum: 1 } }
+        - { name: perPage, in: query, schema: { type: integer, default: 12, minimum: 1, maximum: 50 } }
+        - { name: sort, in: query, schema: { type: string, enum: [popular, latest, name], default: latest } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/MarketplaceExtension' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  perPage: { type: integer }
+                  totalPages: { type: integer }
+
+  /marketplace/extensions/{slug}:
+    parameters:
+      - { name: slug, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Get marketplace extension detail (incl. signature)
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/MarketplaceExtension' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /marketplace/extensions/{slug}/install:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: slug, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Install a marketplace extension into the active site
+      responses:
+        '201':
+          description: Installed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ExtensionResource' }
+        '409':
+          description: Already installed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /marketplace/publish:
+    post:
+      summary: Publish an extension to the marketplace
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, version, type, bundleUrl, signature, keyId]
+              properties:
+                name: { type: string }
+                version: { type: string }
+                type: { type: string }
+                bundleUrl: { type: string, format: uri }
+                signature: { type: string, description: 'Base64-encoded Ed25519 signature of SHA-256(bundle)' }
+                keyId: { type: string }
+                manifest: { type: object, additionalProperties: true }
+                capabilities: { type: array, items: { type: string } }
+      responses:
+        '201':
+          description: Published
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/MarketplaceExtension' }
+
+  # ---------------------------------------------------------------------------
+  # Materialized Collections (POST-GA4)
+  # ---------------------------------------------------------------------------
+  /materialize:
+    get:
+      summary: List materialized collections for the active site
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/MaterializedCollection' }
+    post:
+      summary: Register a new materialized collection and create its physical table
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [collection, target]
+              properties:
+                collection: { type: string }
+                target: { type: string, pattern: '^[a-z][a-z0-9_]{0,62}$' }
+                refreshStrategy: { type: string, enum: [auto, cron, manual], default: manual }
+                refreshCron: { type: string, nullable: true }
+                projection:
+                  type: object
+                  properties:
+                    fields: { type: array, items: { type: string }, default: ['*'] }
+                    orderBy: { type: string, nullable: true }
+                filter: { type: object, additionalProperties: true }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/MaterializedCollection' }
+        '404':
+          description: Source collection not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /materialize/{id}/refresh:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      summary: Trigger a physical table refresh (TRUNCATE + re-INSERT)
+      responses:
+        '200':
+          description: Refresh result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      rowsInserted: { type: integer }
+                      refreshedAt: { type: string, format: date-time }
+
+  /materialize/{id}/data:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      summary: Query the physical materialized table directly
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { type: object, additionalProperties: true }
+                  meta:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      limit: { type: integer }
+                      offset: { type: integer }
+
+  /materialize/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SiteHeader'
+      - { name: id, in: path, required: true, schema: { type: string } }
+    delete:
+      summary: Drop the physical table and remove the materialized collection record
+      responses:
+        '204': { description: Dropped }
+
+  /deployments/targets:
+    get:
+      summary: List deployment targets (provider token omitted)
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/DeploymentTarget' }
+    post:
+      summary: Create a deployment target (token encrypted on write)
+      parameters: [{ $ref: '#/components/parameters/SiteHeader' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeploymentTargetCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/DeploymentTarget' }
+  /deployments/targets/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/SiteHeader' }
+      - { name: id, in: path, required: true, schema: { type: string } }
+    patch:
+      summary: Update a deployment target
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeploymentTargetCreate' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/DeploymentTarget' }
+    delete:
+      summary: Delete a deployment target
+      responses:
+        '200':
+          description: Deleted
+  /deployments/targets/{id}/deploy:
+    post:
+      summary: Trigger a build/deploy on a target
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branch: { type: string }
+                reason: { type: string }
+      responses:
+        '200':
+          description: Deployment triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Deployment' }
+        '502':
+          description: Provider rejected the trigger
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /deployments:
+    get:
+      summary: List deployments (filterable)
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: targetId, in: query, required: false, schema: { type: string } }
+        - { name: status, in: query, required: false, schema: { type: string, enum: [queued, building, ready, error, canceled] } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Deployment' }
+  /deployments/{id}:
+    get:
+      summary: Get a single deployment
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Deployment' }
+        '404':
+          description: Deployment not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /deployments/{id}/logs:
+    get:
+      summary: Fetch build logs for a deployment
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      log: { type: string }
+  /deployments/{id}/refresh:
+    post:
+      summary: Force a status sync from the provider
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Deployment' }
+  /deployments/webhook/{provider}:
+    post:
+      summary: Inbound provider status webhook (public, signature-verified)
+      description: |
+        Public, pre-auth endpoint. Authenticated by the provider's request
+        signature over the raw body (Vercel HMAC-SHA1, Netlify JWS/HS256), not a
+        bearer token. The shared secret is the per-site setting
+        `deployment.webhook.<provider>`. Requires the `X-HeoPress-Site` header.
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: provider, in: path, required: true, schema: { type: string, enum: [vercel, netlify] } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Accepted (ref applied or ignored)
+        '401':
+          description: Invalid or missing signature
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /integrations/git:
+    get:
+      tags: [Git Integration]
+      summary: List Git integrations for the site
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/GitIntegration' } }
+    post:
+      tags: [Git Integration]
+      summary: Connect a repository (site-admin)
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GitIntegrationCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/GitIntegration' }
+        '409':
+          description: An integration for this (provider, repo) already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /integrations/git/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/SiteHeader' }
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Git Integration]
+      summary: Get one integration
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/GitIntegration' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    patch:
+      tags: [Git Integration]
+      summary: Update display name / token / status / sync config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/GitIntegration' }
+    delete:
+      tags: [Git Integration]
+      summary: Disconnect (forgets the stored token)
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { id: { type: string } } }
+  /integrations/git/{id}/rotate-secret:
+    post:
+      tags: [Git Integration]
+      summary: Rotate the webhook secret
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/GitIntegration' }
+  /integrations/git/{id}/oauth/authorize:
+    get:
+      tags: [Git Integration]
+      summary: Build the provider OAuth authorize URL (single-use state)
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { authorizeUrl: { type: string } } }
+  /integrations/git/{id}/pull-requests:
+    get:
+      tags: [Git Integration]
+      summary: List cached pull requests
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/GitPullRequest' } }
+                  meta: { type: object }
+  /integrations/git/{id}/pull-requests/refresh:
+    post:
+      tags: [Git Integration]
+      summary: Pull PRs live from the provider (upsert cache)
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/GitPullRequest' } }
+  /integrations/git/{id}/pull-requests/{number}/ci:
+    get:
+      tags: [Git Integration]
+      summary: CI runs for a pull request
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: number, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/GitCiRun' } }
+  /integrations/git/{id}/pull-requests/{number}/validate:
+    post:
+      tags: [Git Integration]
+      summary: Validate content/config and post a heopress/content-validation status
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: number, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      state: { type: string, enum: [success, failure] }
+                      summary: { type: string }
+                      statusPosted: { type: boolean }
+  /integrations/git/{id}/ci-runs/{runId}/logs:
+    get:
+      tags: [Git Integration]
+      summary: Fetch (and cache) the CI log for a run
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: runId, in: path, required: true, schema: { type: string } }
+        - { name: jobId, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { log: { type: string } } }
+  /integrations/git/{id}/gitops/sync:
+    post:
+      tags: [Git Integration]
+      summary: Reconcile heopress/intents.json from the repo into content intents
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: ref, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      found: { type: boolean }
+                      applied: { type: array, items: { type: object } }
+                      errors: { type: array, items: { type: string } }
+                      goalsCreated: { type: integer }
+  /integrations/git/{id}/provenance:
+    get:
+      tags: [Git Integration]
+      summary: Query commit/PR → content provenance
+      parameters:
+        - { $ref: '#/components/parameters/SiteHeader' }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: collection, in: query, required: false, schema: { type: string } }
+        - { name: itemId, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { type: object } }
+  /integrations/git/oauth/{provider}/callback:
+    get:
+      tags: [Git Integration]
+      summary: OAuth callback (public; bound to single-use cache state)
+      security: []
+      parameters:
+        - { name: provider, in: path, required: true, schema: { type: string, enum: [github, gitlab] } }
+        - { name: code, in: query, required: true, schema: { type: string } }
+        - { name: state, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: HTML page (auto-close); token exchanged and stored encrypted
+  /integrations/git/webhook/{provider}/{siteId}/{integrationId}:
+    post:
+      tags: [Git Integration]
+      summary: Inbound provider webhook (public, signature-verified)
+      description: |
+        Public, pre-auth. GitHub verified by HMAC-SHA256 (`X-Hub-Signature-256`),
+        GitLab by shared token (`X-Gitlab-Token`), compared constant-time. siteId +
+        integrationId in the path scope the (un-tenanted) lookup; the per-integration
+        secret signature is the authenticity gate. Idempotent by provider delivery id.
+      security: []
+      parameters:
+        - { name: provider, in: path, required: true, schema: { type: string, enum: [github, gitlab] } }
+        - { name: siteId, in: path, required: true, schema: { type: string } }
+        - { name: integrationId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Received (or duplicate)
+        '401':
+          description: Invalid signature
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
