@@ -1,0 +1,116 @@
+{
+  "name": "heopress-briefing-daily",
+  "version": "1.0.0",
+  "type": "module",
+  "entry": "./dist/index.js",
+  "displayName": "Daily briefing",
+  "description": "Official HeoPress briefing plugin: what the site published today, the drafts nobody has touched this week, and public briefing pages with their own feed.",
+  "capabilities": [
+    "ext:briefing-sections",
+    "ext:collections",
+    "ext:routes",
+    "items:read:articles"
+  ],
+  "briefingSections": [
+    {
+      "id": "today",
+      "title": "Today",
+      "description": "Articles published today (UTC)"
+    },
+    {
+      "id": "week",
+      "title": "This week",
+      "description": "Drafts not updated since Monday (UTC)"
+    }
+  ],
+  "collections": [
+    {
+      "name": "briefings",
+      "label": "Briefings",
+      "fields": [
+        {
+          "name": "title",
+          "type": "string",
+          "interface": "input",
+          "label": "Title",
+          "required": true
+        },
+        {
+          "name": "slug",
+          "type": "string",
+          "interface": "slug",
+          "label": "Slug",
+          "required": true
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "interface": "input",
+          "label": "Language"
+        },
+        {
+          "name": "excerpt",
+          "type": "text",
+          "interface": "textarea",
+          "label": "Summary"
+        },
+        {
+          "name": "body",
+          "type": "text",
+          "interface": "wysiwyg",
+          "label": "Briefing"
+        },
+        {
+          "name": "briefing_date",
+          "type": "datetime",
+          "interface": "datetime",
+          "label": "Briefing date"
+        },
+        {
+          "name": "period",
+          "type": "string",
+          "interface": "input",
+          "label": "Period (daily or weekly)"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "id": "briefing",
+      "kind": "item",
+      "path": "/briefing/:slug",
+      "collection": "briefings",
+      "template": "briefing"
+    },
+    {
+      "id": "briefing-index",
+      "kind": "list",
+      "path": "/briefing",
+      "collection": "briefings",
+      "template": "index",
+      "title": "Briefing",
+      "pageSize": 20
+    }
+  ],
+  "heopress": "^1.0.0-0",
+  "extensionPoints": {
+    "briefing-sections": "^1.0.0",
+    "collections": "^1.0.0",
+    "routes": "^1.0.0",
+    "context": "^1.0.0"
+  },
+  "security": {
+    "contact": "security@example.com"
+  },
+  "templates": {
+    "classic": {
+      "briefing": "<!doctype html>\n<html lang=\"{{ page.locale }}\">\n<head>\n<meta charset=\"utf-8\">\n{% seo_head %}\n</head>\n<body class=\"heopress-briefing heopress-briefing-item\">\n<main>\n<article>\n<h1>{{ item.title }}</h1>\n{% if item.fields.briefing_date and item.fields.briefing_date != \"\" %}<p class=\"heopress-briefing-date\"><time datetime=\"{{ item.fields.briefing_date }}\">{{ item.fields.briefing_date }}</time></p>{% endif %}\n{% if item.fields.period and item.fields.period != \"\" %}<p class=\"heopress-briefing-period\">{{ item.fields.period }}</p>{% endif %}\n{% item_body %}\n</article>\n</main>\n</body>\n</html>\n",
+      "index": "<!doctype html>\n<html lang=\"{{ page.locale }}\">\n<head>\n<meta charset=\"utf-8\">\n{% seo_head %}\n</head>\n<body class=\"heopress-briefing heopress-briefing-index\">\n<main>\n<h1>{{ route.title }}</h1>\n{% if list.size > 0 %}<ul class=\"heopress-briefing-list\">{% for c in list %}<li><a href=\"{{ c.url | url }}\">{{ c.title }}</a>{% if c.excerpt != \"\" %}<p class=\"heopress-briefing-excerpt\">{{ c.excerpt }}</p>{% endif %}</li>{% endfor %}</ul>{% endif %}\n{% if pagination %}<nav class=\"heopress-briefing-pages\">{% if pagination.prevUrl %}<a href=\"{{ pagination.prevUrl | url }}\" rel=\"prev\">Previous</a>{% endif %}{% if pagination.nextUrl %}<a href=\"{{ pagination.nextUrl | url }}\" rel=\"next\">Next</a>{% endif %}</nav>{% endif %}\n</main>\n</body>\n</html>\n"
+    },
+    "astro": {
+      "briefing": "---\nimport type { PageDataPage } from '@heopress/astro-kit';\nimport SeoHead from '@heopress/astro-kit/SeoHead.astro';\nimport ItemBody from '@heopress/astro-kit/ItemBody.astro';\ninterface Props { page: PageDataPage }\nconst { page } = Astro.props;\nconst { vm } = page;\nconst item = vm.item;\nconst date = item && typeof item.fields.briefing_date === 'string' ? item.fields.briefing_date : '';\nconst period = item && typeof item.fields.period === 'string' ? item.fields.period : '';\n---\n<html lang={vm.page.locale}>\n<head>\n<meta charset=\"utf-8\">\n<SeoHead page={page} />\n</head>\n<body class=\"heopress-briefing heopress-briefing-item\">\n<main>\n<article>\n<h1>{item?.title}</h1>\n{date !== '' && <p class=\"heopress-briefing-date\"><time datetime={date}>{date}</time></p>}\n{period !== '' && <p class=\"heopress-briefing-period\">{period}</p>}\n<ItemBody page={page} />\n</article>\n</main>\n</body>\n</html>\n",
+      "index": "---\nimport type { PageDataPage } from '@heopress/astro-kit';\nimport { safeUrl } from '@heopress/astro-kit';\nimport SeoHead from '@heopress/astro-kit/SeoHead.astro';\ninterface Props { page: PageDataPage }\nconst { page } = Astro.props;\nconst { vm } = page;\n---\n<html lang={vm.page.locale}>\n<head>\n<meta charset=\"utf-8\">\n<SeoHead page={page} />\n</head>\n<body class=\"heopress-briefing heopress-briefing-index\">\n<main>\n<h1>{vm.route?.title}</h1>\n{vm.list.length > 0 && <ul class=\"heopress-briefing-list\">{vm.list.map((c) => <li><a href={safeUrl(c.url)}>{c.title}</a>{c.excerpt !== '' && <p class=\"heopress-briefing-excerpt\">{c.excerpt}</p>}</li>)}</ul>}\n{vm.pagination && <nav class=\"heopress-briefing-pages\">{vm.pagination.prevUrl && <a href={safeUrl(vm.pagination.prevUrl)} rel=\"prev\">Previous</a>}{vm.pagination.nextUrl && <a href={safeUrl(vm.pagination.nextUrl)} rel=\"next\">Next</a>}</nav>}\n</main>\n</body>\n</html>\n"
+    }
+  }
+}
