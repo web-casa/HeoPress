@@ -1,0 +1,17 @@
+# Changes to these paths need a review by their owner (P07 task 8.1): an exception to the security scans, the
+# scans themselves, the scanner wrappers and the release and licence gates are not approved by whoever adds them.
+# Takes effect where branch protection requires code-owner reviews.
+/security/                               @yeagoo
+/.github/workflows/                      @yeagoo
+/.github/CODEOWNERS                      @yeagoo
+/scripts/check-security-scan.mjs         @yeagoo
+/scripts/security-scanners.mjs           @yeagoo
+/scripts/release-security-gate.mjs       @yeagoo
+/scripts/release-trust-review.mjs        @yeagoo
+/scripts/pnpm-audit-config.mjs           @yeagoo
+/scripts/ci-mirror.mjs                   @yeagoo
+/scripts/public-export.mjs               @yeagoo
+/scripts/public-release.mjs              @yeagoo
+/scripts/check-licenses.mjs              @yeagoo
+/license-policy.json                     @yeagoo
+/release/                                @yeagoo

@@ -1,0 +1,236 @@
+---
+version: 2
+lastUpdated: 2026-08-02T17:24:38.531Z
+sourceLang: en
+contentHash: 8bdc8a6b72516bd5
+codeVerified: 2026-08-02T17:24:38.531Z
+codeVerifiedHash: 8bdc8a6b72516bd5
+codeVerifiedClaims: 4
+---
+
+# Upgrade Operations
+
+This runbook defines the minimum upgrade path for HeoPress deployments on Cloudflare-hosted and Docker self-hosted environments. Treat every upgrade as a change-management event: choose an explicit version, back up data, run migrations intentionally, verify the running app, and keep a bounded rollback plan.
+
+## Versioning policy: fixed-version
+
+HeoPress uses a **fixed-version** operations policy for production upgrades.
+
+- Pin production deployments to an explicit release channel or immutable version instead of tracking an unreviewed moving target.
+- Record the current app version, target app version, migration identifier, Docker image digest when applicable, and deploy timestamp in the change ticket.
+- Promote versions through environments in order: development, staging, then production.
+- Avoid mixing app binaries and database schema versions outside the compatibility window documented by each release note.
+
+## Release channels
+
+Supported release channels are:
+
+| Channel | Meaning | Recommended use |
+|---------|---------|-----------------|
+| `edge` | Fast-moving preview channel built from the newest accepted changes. | Development and early integration only. |
+| `latest` | Current generally recommended release. | Small non-critical deployments that accept automatic patch adoption after review. |
+| `X.Y` | Minor release line, for example `1.4`. | Production fleets that want patch updates inside one minor line. |
+| `X.Y.Z` | Fully fixed patch release, for example `1.4.2`. | Production environments that require reproducible deploys and explicit change approval. |
+
+Prefer `X.Y.Z` for regulated or high-availability production systems. Use `X.Y` only when the team has an automated staging validation gate for new patch releases.
+
+## Cloudflare-hosted upgrade flow
+
+1. Read the target release notes and identify required environment variable, binding, queue, R2, KV, Hyperdrive, D1/Postgres, and migration changes.
+2. Snapshot configuration and secrets metadata without exposing secret values.
+3. Run the [backup checklist](#backup-checklist).
+4. Deploy the target CMS Worker version to staging first.
+5. Run the [migration checklist](#migration-checklist) against staging.
+6. Verify the app version endpoint:
+
+   ```bash
+   curl -fsS https://<cms-host>/api/v1/system/version
+   ```
+
+7. Smoke test authentication, Studio access, collection reads/writes, file operations, flows/webhooks, and realtime if enabled.
+8. Promote the same fixed release to production using the approved Cloudflare deployment process.
+9. Re-run the version check and production smoke tests.
+10. Keep the previous app deployment available until the rollback window closes.
+
+## Docker self-host upgrade flow
+
+1. Review the target release notes and confirm that your compose file, environment variables, volumes, and database version satisfy the target release requirements.
+2. Run the [backup checklist](#backup-checklist).
+3. Pull the target CMS image:
+
+   ```bash
+   docker compose pull cms
+   ```
+
+4. Start only the CMS service on the new image:
+
+   ```bash
+   docker compose up -d cms
+   ```
+
+5. Run the [migration checklist](#migration-checklist).
+6. Verify the app version endpoint from the host or load balancer:
+
+   ```bash
+   curl -fsS http://localhost:1989/api/v1/system/version
+   ```
+
+7. Check container health and logs:
+
+   ```bash
+   docker compose ps cms
+   docker compose logs --tail=200 cms
+   ```
+
+8. Smoke test authentication, Studio access, collection reads/writes, file operations, flows/webhooks, and realtime if enabled.
+9. Keep the previous image tag or digest available locally until the rollback window closes.
+
+## Backup checklist
+
+Before any upgrade, capture enough state to restore service outside the application rollback path:
+
+- Database logical backup, plus a restore test for production-critical datasets.
+- Object storage backup or versioned snapshot for uploaded files and generated assets.
+- Exported HeoPress configuration for collections, fields, roles, policies, permissions, flows, webhooks, and extensions.
+- Environment variable inventory and platform binding inventory.
+- Current app version and target app version.
+- Current Docker image tag and digest for self-hosted installs.
+- Current Cloudflare Worker deployment ID for Cloudflare-hosted installs.
+- Migration history table contents and pending migration list.
+- Recent application logs and metrics baseline.
+
+## Migration checklist
+
+Run migrations deliberately and verify both schema and application behavior:
+
+- Read release notes for destructive, long-running, or manual migrations.
+- Confirm database backups completed and can be restored.
+- Confirm no unexpected pending migrations exist before starting.
+- Run migrations in staging before production.
+- For production, schedule a maintenance window if the migration changes large tables, indexes, constraints, permissions, or tenant-scoped data.
+- Apply migrations with the same application version that will serve traffic.
+- Verify migration history after completion.
+- Smoke test core reads and writes for at least one representative site tenant.
+- Keep a record of migration IDs applied during the upgrade.
+
+## Upgrading to 1.0
+
+`1.0.0` is the first release that carries a semver stability guarantee (see the [versioning policy](#) in the README). Because it freezes the public surface, the path onto it depends on the version you start from. Read this section end to end before you begin — some source versions upgrade in place, others require an intermediate stop, and one range cannot be migrated forward at all.
+
+### Supported upgrade sources
+
+| From | Path to 1.0.0 | Notes |
+|------|---------------|-------|
+| `0.18.x` – `0.25.x` | Direct. | Table prefix and RBAC model already match 1.0. Run the [migration checklist](#migration-checklist); no manual data step. Every migration in this range is additive — `CREATE TABLE` or `ADD COLUMN IF NOT EXISTS`, plus one `CHECK` constraint in `0012` (see [rollback](#rollback-from-10)) — with no `DROP` or `RENAME`. |
+| `0.6.x` – `0.17.x` | Direct, **with the RBAC backfill below**. | Schema migrations are cumulative and idempotent. The one manual verification is the role→policy backfill (see [RBAC role→policy backfill](#rbac-rolepolicy-backfill)). |
+| Before `0.17.0` (unprefixed tables) | **Not supported as an in-place upgrade.** | The `0.17.x` table-prefix change is fresh-install-only. Instances created before `0.17.0` must export their data (collections, items, files, roles/policies/permissions, flows, webhooks) and re-import into a fresh `1.0.0` install. There is no forward migration for the unprefixed schema. |
+| Before `0.6.0` | Via an intermediate `0.17.x` – `0.25.x` release first. | Upgrade to a recent `0.x` (which applies the RBAC backfill and any prefix handling), verify, then upgrade to `1.0.0`. Do not skip directly. |
+
+Determine your current version from `/api/v1/system/version` before choosing a row.
+
+### RBAC role→policy backfill
+
+`1.0.0` treats **policies** as the source of truth for `admin_access` and `app_access` (plus `enforce_tfa`, IP guards, and time windows). Instances that predate the policy model stored these as flags on **roles**. During the compatibility window `PermissionService` still reads `role flags OR active policy flags`, so access does not break on upgrade — but before `1.0.0` you should materialize the legacy role flags into policy rows so the policy layer alone is authoritative.
+
+The backfill is idempotent and does **not** mutate role flags (they remain intact as the rollback anchor). For each role where `admin_access` or `app_access` is true it creates one flag-only policy — key `legacy_role_flags_<role_key>_<role_id>` (the role id suffix keeps roles whose keys normalize identically on separate policies), name `Legacy role flags: <role name>`, copying the exact flag values, with `enforce_tfa=false`, empty IP guards, and null time windows — and attaches it to the role via `role_policies`. Full contract: [Role Flag to Policy Flag Migration](../features/role-policy-flag-migration.md).
+
+Run it with the bundled script (apply also runs the post-check and exits non-zero if it fails):
+
+```bash
+DATABASE_URL=postgresql://... pnpm --filter @heopress/database backfill:role-policies          # apply + verify
+DATABASE_URL=postgresql://... pnpm --filter @heopress/database backfill:role-policies verify   # post-check only
+DATABASE_URL=postgresql://... pnpm --filter @heopress/database backfill:role-policies rollback # compat-window rollback
+```
+
+Run it against staging first, then verify. The post-check must return **zero rows** — every role that carries a legacy flag must have a matching policy:
+
+```sql
+SELECT r.id, r.site_id, r.name, r.admin_access, r.app_access
+FROM lumibase_roles r
+WHERE (r.admin_access = true OR r.app_access = true)
+AND NOT EXISTS (
+  SELECT 1
+  FROM lumibase_role_policies rp
+  JOIN lumibase_policies p ON p.id = rp.policy_id
+  WHERE rp.role_id = r.id
+    AND p.admin_access = r.admin_access
+    AND p.app_access = r.app_access
+);
+```
+
+Then confirm effective access is unchanged: a legacy admin role is still admin, a legacy app-only role can still enter Studio, and a role without app access still cannot. This whole path — pre-policy fixture → backfill → zero-row post-check → idempotent re-run → rollback — is exercised automatically in CI by `apps/cms/src/__tests__/upgrade-path.e2e.test.ts` (the `e2e-golden-path` job), so a green build is the release-gate evidence. Role flag columns stay in place through 1.0 for rollback; they are only scheduled to drop in a later release after `HEOPRESS_RBAC_LEGACY_ROLE_FLAGS=false` has shipped and been verified.
+
+### Rollback from 1.0
+
+- **Application:** roll back to the previous `0.25.x` deployment per [rollback app](#rollback-app). Every migration from `0.18.x` to `1.0.0` is additive, so the prior app version stays compatible with the 1.0 database — it simply ignores the tables and columns it does not know about.
+- **The two constraints to know about:** migration `0012_public_role_least_privilege` adds `CHECK` constraints — `roles_public_least_privilege` on `lumibase_roles` (`system_key = 'public'` ⇒ `admin_access` and `app_access` both false) and `policies_public_least_privilege` on `lumibase_policies` (`key = 'public'` ⇒ those two plus `enforce_tfa` false). An elevation flag on the anonymous realm is an unauthenticated admin bypass, so it is pinned in the database rather than only in the service layer. They reject writes, they delete nothing, and a rollback has nothing to undo: the public role ships *with* `0.25.0`, so no earlier release created one to violate them. Two consequences worth knowing:
+  - Postgres validates a `CHECK` against existing rows when it is added, so if an operator hand-created a policy keyed `public` with elevated flags before upgrading, the migration **fails** rather than silently relaxing. Clear the flags on that row, then re-run.
+  - A rolled-back app version that tries to grant the public role elevated access gets a constraint violation instead of succeeding. That is the constraint working, not a rollback defect.
+- **RBAC backfill:** it is separately reversible during the compatibility window — delete the `legacy_role_flags_%` policies and their `role_policies` rows (role flags are untouched, so access is preserved). See [§6 Rollback](../features/role-policy-flag-migration.md#6-rollback).
+- **Pre-0.17 re-import path:** there is no rollback to the old unprefixed schema; keep the source instance running read-only until the 1.0 install is verified.
+
+## Site creation and deletion (P07)
+
+From the release that adds the instance control plane (`/api/v1/instance/sites`), creating and deleting sites is reserved to the bootstrap administrator, and a deleted site's id cannot be used for a new site for 25 hours (enforced by database triggers, migrations 0042 and 0044).
+
+During a rolling upgrade to that release, do not delete sites until every older CMS instance has stopped: an older instance's delete route does not check that the caller's own site still exists and records its audit entry after the deletion. Either drain the old instances first or block `DELETE /api/v1/admin/sites/*` at the proxy for the duration of the rollout. The 25-hour hold on deleted ids is enforced by the database regardless of the instance version.
+
+## `heopress upgrade` (P13)
+
+For Docker Compose deployments, `heopress upgrade` (`apps/cms/scripts/upgrade-cli.ts`, run from `apps/cms` of the release to install, with `DATABASE_OWNER_URL`) automates the flow above. The full runbook, environment variables and exit codes are in the zh-CN [升级](../../zh-CN/operations/upgrades.md) document.
+
+```bash
+npx tsx scripts/cli.ts upgrade check                # compatibility only; changes nothing
+npx tsx scripts/cli.ts upgrade run                  # the whole upgrade
+npx tsx scripts/cli.ts upgrade status [--id <id>]   # the record of the latest (or a given) run
+npx tsx scripts/cli.ts upgrade rollback --id <id>   # retry the restore of a run that failed in maintenance
+```
+
+The switch runs `docker compose <HEOPRESS_UPGRADE_COMPOSE_ARGS> up -d --wait <HEOPRESS_UPGRADE_SERVICES>`. By default the Compose arguments are `-f docker/docker-compose.yml -f docker/docker-compose.prod.yml` and the services are `cms cms-worker site-classic` (Compose service names, space-separated: the API, the worker and the rendering service, the services whose image tag is `HEOPRESS_VERSION`).
+
+1. **Before maintenance** — compatibility (no downgrade, no major skip, PostgreSQL 18+, the production migration history is a prefix of the release's, every installed plugin's `heopress` range includes the target, a backup provider is registered), configuration snapshot, backup, and the migrations rehearsed on a scratch copy restored from that backup. A failure here aborts with production unchanged and maintenance never entered.
+2. **Write freeze** — maintenance turns on (`lumibase_maintenance`, owner-only). Every CMS process answers writes (REST mutations, GraphQL mutations, writing MCP tools, OAuth callbacks) with `503 MAINTENANCE` and `Retry-After`, pauses queue workers, scheduled jobs, event consumers and the Astro build loop, flushes audit, and acknowledges in `lumibase_maintenance_acks` once its in-flight writes finish. The upgrade continues only when every process acknowledged and no other session holds a write transaction; then it takes the final backup, which includes edits saved during the rehearsal.
+3. **Migrate, switch, smoke** — migrations on production, `HEOPRESS_VERSION` pinned in the Compose env file, `docker compose up -d --wait`, `/health/ready` and `/api/v1/system/version`, then writes open.
+4. **Failure after maintenance** — configuration, database (from the final backup) and the previous application are restored and verified; writes open only when verification passes (`rolled-back`). Otherwise maintenance stays on (`failed-in-maintenance`) and `upgrade rollback --id <id>` retries the restore.
+5. **No rollback after writes opened** — `upgrade rollback` on a `completed` upgrade is refused: restoring the old backup would discard everything written since. Make a data-retention plan or fix forward.
+
+Backups come from the backup module (`apps/cms/src/services/upgrade/adapters/backup-module.ts`), which `heopress upgrade` registers through `registerUpgradeBackupProvider` when a backup target is configured (`HEOPRESS_BACKUP_TARGET` and the other `HEOPRESS_BACKUP_*` settings, as for `heopress backup`); without one the compatibility check fails and nothing starts. The upgrade's backups are ordinary full backups taken with the `dump` method whatever `HEOPRESS_BACKUP_METHOD` says. Production is restored into a new database beside it (same owner, locale, database privileges and settings), checked table by table against the backup's manifest, then swapped in by renaming, so a failure before the swap leaves production as it was; the deletion ledger is replayed before writes may open, and the replaced database is dropped only once the restore verifies. The owner role must be able to create, rename and drop databases. Plugin API breaking changes are migrated with `heopress-ext codemod` (`packages/extension-cli/src/codemods/`).
+
+## Rollback app
+
+Application rollback means routing traffic back to the previous app deployment while keeping the database at its current post-upgrade state unless a separate database restore is approved.
+
+- Cloudflare-hosted: roll back to the previous Worker deployment or redeploy the previous fixed version.
+- Docker self-host: start the previous fixed image tag or digest.
+- After rollback, verify `/api/v1/system/version` and run smoke tests.
+- Confirm the previous app version is compatible with the current database schema before keeping it in service.
+
+## Rollback Docker image
+
+Use immutable tags or digests when possible:
+
+```bash
+# Example: pin the compose file or override to the previous image first, then restart cms.
+docker compose up -d cms
+curl -fsS http://localhost:1989/api/v1/system/version
+```
+
+If the previous image is not available locally, pull the exact previous tag or digest before restarting:
+
+```bash
+docker compose pull cms
+docker compose up -d cms
+```
+
+Do not roll back to `latest` blindly; update the compose image reference to the intended `X.Y.Z` tag or digest first.
+
+## Rollback database limits
+
+Database rollback is limited and higher risk than application rollback.
+
+- HeoPress does not assume every migration is reversible.
+- Downgrade migrations may not exist for destructive schema changes, data rewrites, backfills, or permission model changes.
+- Restoring a database backup can discard writes created after the backup timestamp.
+- Restoring only the database without matching object storage and configuration exports can create inconsistent state.
+- Database restore must be treated as a disaster-recovery action with explicit approval, a write freeze, and a post-restore consistency check.
+- Prefer forward fixes when the upgraded database is healthy and only application behavior needs correction.
