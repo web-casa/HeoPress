@@ -1,0 +1,23 @@
+# Custom domains overlay: the TLS overlay with on-demand certificates for
+# every verified site domain (HeoPress P04).
+# Usage:
+#   PUBLIC_DOMAIN=admin.example.com ACME_EMAIL=ops@example.com \
+#     docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#       -f docker-compose.tls.yml -f docker-compose.domains.yml up -d
+#
+# Caddy reaches the CMS over the Compose network, so its address is private
+# and passes the certificate gate's allow-list (HEOPRESS_TLS_ASK_ALLOW,
+# default loopback and private ranges). Visitors' requests that Caddy
+# forwards carry X-Forwarded-For and are refused there.
+
+services:
+  caddy:
+    volumes: !override
+      - ./Caddyfile.domains:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+
+  # The sites are served by the rendering service: the CMS refuses to start without its role.
+  cms:
+    environment:
+      HEOPRESS_REQUIRE_RENDER_ROLE: "true"
