@@ -1,0 +1,11 @@
+---
+// Was: title/description props, a hand-written canonical link and Open Graph tags.
+// Now: the system head (canonical, hreflang, robots, Open Graph, JSON-LD) from the page data, placed by the kit.
+import type { PageDataPage } from '@heopress/astro-kit';
+import SeoHead from '@heopress/astro-kit/SeoHead.astro';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+---
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<SeoHead page={page} />

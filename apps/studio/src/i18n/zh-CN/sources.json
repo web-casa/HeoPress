@@ -1,0 +1,186 @@
+{
+  "title": "信源",
+  "description": "本站关注的 feed、sitemap 与页面：何时检查，以及其内容可以怎样使用。",
+  "new": "新建信源",
+  "empty": {
+    "title": "还没有信源",
+    "body": "添加 RSS / Atom、sitemap、列表页或单个 URL。新信源默认为“仅发现”：标题与链接只作为线索。"
+  },
+  "columns": {
+    "source": "信源",
+    "schedule": "计划",
+    "status": "状态",
+    "terms": "授权与使用",
+    "health": "健康",
+    "actions": "操作"
+  },
+  "type": {
+    "rss": "RSS",
+    "atom": "Atom",
+    "sitemap": "Sitemap",
+    "list_page": "列表页",
+    "url": "单个 URL",
+    "plugin": "插件适配器"
+  },
+  "status": {
+    "active": "运行中",
+    "paused": "已暂停",
+    "pausedFailures": "因连续失败暂停"
+  },
+  "licence": {
+    "unknown": "授权未知",
+    "licensed": "已授权",
+    "own": "自有内容",
+    "open-license": "开放许可"
+  },
+  "usage": {
+    "discovery_only": "仅发现",
+    "facts_only": "仅事实",
+    "licensed_derivative": "授权衍生"
+  },
+  "trust": {
+    "low": "低信任",
+    "medium": "中信任",
+    "high": "高信任"
+  },
+  "failure": {
+    "network": "网络",
+    "timeout": "超时",
+    "access_denied": "访问被拒",
+    "blocked": "安全拦截",
+    "extraction": "抽取",
+    "quota": "配额",
+    "other": "其他"
+  },
+  "notEffective": "授权未生效：复核前仅作发现",
+  "commercial": "可商用",
+  "failures": "连续失败 {{count}} 次（{{category}}）",
+  "healthy": "正常",
+  "nextRun": "下次运行",
+  "never": "未排期",
+  "times": "{{times}}（{{timezone}}）",
+  "actions": {
+    "edit": "编辑",
+    "pause": "暂停",
+    "resume": "恢复",
+    "terms": "授权与条款",
+    "history": "历史",
+    "chain": "回退顺序"
+  },
+  "resumeAdminOnly": "只有站点管理员可以恢复信源。",
+  "form": {
+    "newTitle": "新建信源",
+    "editTitle": "编辑信源",
+    "name": "名称",
+    "type": "类型",
+    "url": "URL",
+    "itemSelector": "条目选择器",
+    "linkSelector": "链接选择器",
+    "titleSelector": "标题选择器（可选）",
+    "times": "每日时间",
+    "timesHint": "24 小时制本地时间，用逗号分隔，例如 08:00, 20:00。",
+    "timezone": "时区",
+    "maxItems": "每次最多条数",
+    "termsNote": "新信源为：授权未知、仅发现、不可商用、低信任。由站点管理员通过授权修订更改。",
+    "create": "创建",
+    "save": "保存",
+    "cancel": "取消",
+    "badTimes": "请使用 HH:MM 格式，例如 08:00。",
+    "badTimezone": "不是已知的时区。",
+    "nextPageSelector": "下一页选择器（可选）",
+    "adapter": "适配器",
+    "noAdapters": "本站没有已启用的插件提供信源适配器。",
+    "adapterHint": "地址必须位于插件声明的主机上。"
+  },
+  "terms": {
+    "title": "授权与条款",
+    "description": "每次更改都保存为一条带证据的修订。抓取到的页面内容不能更改这些设置。",
+    "licenceStatus": "授权状态",
+    "usageMode": "使用方式",
+    "commercialUse": "允许商用",
+    "trustLevel": "信任等级",
+    "evidence": "证据",
+    "evidencePlaceholder": "合同编号、许可链接、邮件……",
+    "scope": "范围",
+    "validUntil": "有效期至",
+    "reviewDueAt": "复核到期",
+    "attribution": "署名要求",
+    "save": "记录修订",
+    "adminOnly": "只有站点管理员可以更改信源的授权、使用方式与信任等级。"
+  },
+  "history": {
+    "title": "授权历史",
+    "empty": "没有修订。",
+    "setBy": "设置人：{{who}}",
+    "unknownActor": "未知",
+    "validUntil": "有效期至 {{date}}",
+    "reviewDue": "复核到期 {{date}}",
+    "close": "关闭"
+  },
+  "lastRun": "上次运行：发现 {{discovered}} · 新增 {{new}} · 重复 {{duplicate}}",
+  "stop": "提前结束：{{reason}}",
+  "documents": {
+    "title": "最近的来源文档",
+    "empty": "还没有来源文档。",
+    "nearSame": "近似重复",
+    "nearCross": "其他站点已有重复",
+    "representative": "事件代表",
+    "supplementary": "补充报道"
+  },
+  "chain": {
+    "title": "回退顺序",
+    "description": "无法直接抓取页面时，此来源按顺序尝试的抓取方式。",
+    "custom": "此来源使用自己的顺序。",
+    "default": "使用站点默认顺序。",
+    "order": "抓取顺序",
+    "up": "上移 {{step}}",
+    "down": "下移 {{step}}",
+    "remove": "移除",
+    "add": "添加 {{step}}",
+    "save": "保存顺序",
+    "useDefault": "使用站点默认",
+    "step": {
+      "native": "直接抓取",
+      "tinyfish": "TinyFish",
+      "firecrawl": "Firecrawl",
+      "crawl4ai": "Crawl4AI",
+      "cloudflare": "Cloudflare"
+    }
+  },
+  "settings": {
+    "open": "采集设置",
+    "title": "采集设置",
+    "policy": "来源许可失效时",
+    "policies": {
+      "hide": "隐藏派生内容直至复核",
+      "flag": "保持公开并标记复核"
+    },
+    "patterns": "一手来源白名单",
+    "patternsHint": "每行一个主机或“主机/路径”前缀；仅发现来源中匹配的链接会成为研究线索。",
+    "save": "保存",
+    "saved": "已保存。"
+  },
+  "reviews": {
+    "open": "许可复核",
+    "title": "许可复核",
+    "description": "派生自许可已失效来源的内容。恢复前许可必须重新生效。",
+    "empty": "没有待复核内容。",
+    "pick": "选择 {{title}}",
+    "action": {
+      "hidden": "已隐藏",
+      "flagged": "已标记"
+    },
+    "reason": {
+      "licence_expired": "许可已过期",
+      "review_overdue": "复核逾期",
+      "licence_not_started": "许可尚未生效",
+      "licence_unknown": "许可未知",
+      "revoked": "许可已撤销"
+    },
+    "effective": "许可有效",
+    "notEffective": "许可未生效",
+    "restore": "恢复",
+    "dismiss": "忽略",
+    "restoreSelected": "恢复所选 {{count}} 项"
+  }
+}

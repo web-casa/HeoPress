@@ -1,0 +1,32 @@
+{
+  "name": "heopress-briefing-daily",
+  "version": "1.0.0",
+  "type": "module",
+  "entry": "./dist/index.js",
+  "displayName": "Daily briefing",
+  "description": "Official HeoPress briefing plugin: what the site published today, and the drafts nobody has touched this week.",
+  "capabilities": [
+    "ext:briefing-sections",
+    "items:read:articles"
+  ],
+  "briefingSections": [
+    {
+      "id": "today",
+      "title": "Today",
+      "description": "Articles published today (UTC)"
+    },
+    {
+      "id": "week",
+      "title": "This week",
+      "description": "Drafts not updated since Monday (UTC)"
+    }
+  ],
+  "heopress": "^1.0.0-0",
+  "extensionPoints": {
+    "briefing-sections": "^1.0.0",
+    "context": "^1.0.0"
+  },
+  "security": {
+    "contact": "security@example.com"
+  }
+}
