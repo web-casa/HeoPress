@@ -1,0 +1,728 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { sql } from 'drizzle-orm';
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  real,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
+import { nanoid } from 'nanoid';
+import { agentRuns } from './ai';
+import { sites, users } from './core';
+
+/**
+ * Schema engine: collections (no-code definitions), fields (per-field
+ * config), relations (m2o/o2m/m2m/m2a). Item storage is generic JSONB
+ * (`items`) — HeoPress does not run DDL at runtime in MVP.
+ */
+
+const id = () => text('id').$defaultFn(() => nanoid()).primaryKey();
+const createdAt = () => timestamp('created_at').defaultNow().notNull();
+const updatedAt = () => timestamp('updated_at').defaultNow().notNull();
+
+/** Page-builder pages (kept from initial scaffold; consumed by /deliver). */
+export const pages = pgTable(
+  'lumibase_pages',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    slug: text('slug').notNull(),
+    title: text('title').notNull(),
+    /** Sections + CVA mappings consumed by the 1-roundtrip Delivery API. */
+    layoutConfig: jsonb('layout_config').default({}).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    siteSlugUnique: uniqueIndex('pages_site_slug_unique').on(t.siteId, t.slug),
+  }),
+);
+
+export const collections = pgTable(
+  'lumibase_collections',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    /** Machine name; unique per site. */
+    name: text('name').notNull(),
+    label: text('label'),
+    pluralLabel: text('plural_label'),
+    hidden: boolean('hidden').default(false).notNull(),
+    system: boolean('system').default(false).notNull(),
+    singleton: boolean('singleton').default(false).notNull(),
+    icon: text('icon'),
+    color: text('color'),
+    note: text('note'),
+    primaryKeyField: text('primary_key_field').default('id').notNull(),
+    primaryKeyType: text('primary_key_type').default('nanoid').notNull(),
+    storageMode: text('storage_mode').default('jsonb').notNull(),
+    /** Default mustache display template, e.g. `{{title}} — {{status}}`. */
+    displayTemplate: text('display_template'),
+    sortField: text('sort_field'),
+    archiveField: text('archive_field'),
+    archiveValue: text('archive_value'),
+    unarchiveValue: text('unarchive_value'),
+    itemDuplicationFields: jsonb('item_duplication_fields').default([]).notNull(),
+    translations: jsonb('translations').default({}).notNull(),
+    /** `all` | `activity` | `none` — controls revision/activity granularity. */
+    accountability: text('accountability').default('all').notNull(),
+    versioning: boolean('versioning').default(false).notNull(),
+    /** UI hints (group order, presentation defaults). */
+    meta: jsonb('meta').default({}).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    siteNameUnique: uniqueIndex('collections_site_name_unique').on(t.siteId, t.name),
+  }),
+);
+
+export const fields = pgTable(
+  'lumibase_fields',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    collectionId: text('collection_id')
+      .notNull()
+      .references(() => collections.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** Storage type — see docs/features/field-types-and-config.md. */
+    type: text('type').notNull(),
+    /** UI editor key (input, wysiwyg, select-dropdown, relation-m2m, ...). */
+    interface: text('interface').notNull(),
+    /** Optional display formatter key. */
+    display: text('display'),
+    label: text('label'),
+    note: text('note'),
+    defaultValue: jsonb('default_value'),
+    nullable: boolean('nullable').default(true).notNull(),
+    unique: boolean('unique').default(false).notNull(),
+    indexed: boolean('indexed').default(false).notNull(),
+    searchable: boolean('searchable').default(true).notNull(),
+    length: integer('length'),
+    precision: integer('precision'),
+    scale: integer('scale'),
+    special: jsonb('special').default([]).notNull(),
+    options: jsonb('options').default({}).notNull(),
+    displayOptions: jsonb('display_options').default({}).notNull(),
+    validation: jsonb('validation').default({ rules: [] }).notNull(),
+    conditions: jsonb('conditions').default([]).notNull(),
+    translations: jsonb('translations').default({}).notNull(),
+    required: boolean('required').default(false).notNull(),
+    readonly: boolean('readonly').default(false).notNull(),
+    hidden: boolean('hidden').default(false).notNull(),
+    encrypted: boolean('encrypted').default(false).notNull(),
+    /**
+     * Data sensitivity classification (Req 5): `none|internal|pii|phi`.
+     * `pii|phi` require `encrypted=true`, are masked by default unless the
+     * caller has `read_decrypted`, and their decrypted reads are audited.
+     */
+    classification: text('classification').default('none').notNull(),
+    versioned: boolean('versioned').default(false).notNull(),
+    rawEnabled: boolean('raw_enabled').default(true).notNull(),
+    /** `half` | `full` | `fill` */
+    width: text('width').default('full').notNull(),
+    group: text('group'),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    collectionNameUnique: uniqueIndex('fields_collection_name_unique').on(
+      t.collectionId,
+      t.name,
+    ),
+    siteIdx: index('fields_site_idx').on(t.siteId),
+  }),
+);
+
+export const relations = pgTable(
+  'lumibase_relations',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    manyCollection: text('many_collection').notNull(),
+    manyField: text('many_field').notNull(),
+    oneCollection: text('one_collection').notNull(),
+    oneField: text('one_field'),
+    junctionCollection: text('junction_collection'),
+    /** `m2o` | `o2m` | `m2m` | reserved `m2a` */
+    type: text('type').default('m2o').notNull(),
+    aliasField: text('alias_field'),
+    relatedDisplayTemplate: text('related_display_template'),
+    junctionManyField: text('junction_many_field'),
+    junctionOneField: text('junction_one_field'),
+    sortField: text('sort_field'),
+    /** `restrict` | `cascade` | `set null` | `no action` */
+    onDelete: text('on_delete').default('no action').notNull(),
+    meta: jsonb('meta').default({}).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    siteIdx: index('relations_site_idx').on(t.siteId),
+    manyIdx: index('relations_many_idx').on(t.manyCollection, t.manyField),
+  }),
+);
+
+/**
+ * Generic item store. Each row is a document for `collectionId`. JSONB
+ * `data` is keyed by `fields.name`. Materialization to physical tables is
+ * a Phase-2 optimization.
+ */
+export const items = pgTable(
+  'lumibase_items',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    collectionId: text('collection_id')
+      .notNull()
+      .references(() => collections.id, { onDelete: 'cascade' }),
+    /** `draft` | `published` | `archived` */
+    status: text('status').default('draft').notNull(),
+    data: jsonb('data').default({}).notNull(),
+    /**
+     * Field names pinned by a human edit (Law Zero / override-is-law).
+     * Agents are denied writes to pinned fields at the harness boundary.
+     */
+    pinnedFields: jsonb('pinned_fields').default([]).notNull(),
+    sort: integer('sort').default(0).notNull(),
+    /**
+     * Optimistic concurrency (HeoPress P04, spec content/write-concurrency):
+     * every change to the item increments it; an update names the version it
+     * was based on and fails with a conflict when the row has moved on.
+     */
+    version: integer('version').default(1).notNull(),
+    /**
+     * Hold (P04): a held item is never published, by any path. Only a human
+     * with publish permission releases it.
+     */
+    hold: boolean('hold').default(false).notNull(),
+    /**
+     * Site network model (HeoPress P05, spec content/site-network-model):
+     * the per-collection item number (`:id` in permalinks; positive, unique
+     * per site and collection, taken from `lumibase_item_numbers` in the
+     * create transaction), and the first publish time (date variables in
+     * permalinks), set once when the item first becomes published.
+     * `published_at_source`: `recorded` (seen being published), `set` (an
+     * administrator set or confirmed it), `estimated` (history unknown: the
+     * creation time stands in), `unknown` (existed before P05, not
+     * published then — may have been published before).
+     */
+    number: integer('number'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    publishedAtSource: text('published_at_source'),
+    /**
+     * Content scheduling window (Req 7). When set, the Scheduler publishes at
+     * `publishAt` and unpublishes at `unpublishAt`; delivery filters to the
+     * current Publish_Window. Both nullable → default behaviour unchanged.
+     */
+    publishAt: timestamp('publish_at'),
+    unpublishAt: timestamp('unpublish_at'),
+    /**
+     * Editorial workflow state (Req 8). Null = use `status` only (no workflow);
+     * preserves Tier 1 behaviour for collections without `editorialWorkflow`.
+     */
+    editorialState: text('editorial_state'),
+    /**
+     * Per-record wrapped DEK for envelope encryption (Req 4.5). Null unless
+     * `HEOPRESS_ENVELOPE_ENCRYPTION` is enabled; deleting it crypto-shreds the
+     * record (Req 11.2).
+     */
+    dekWrapped: text('dek_wrapped'),
+    userCreated: text('user_created').references(() => users.id),
+    userUpdated: text('user_updated').references(() => users.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    deletedAt: timestamp('deleted_at'),
+  },
+  (t) => ({
+    collectionStatusIdx: index('items_collection_status_idx').on(
+      t.siteId,
+      t.collectionId,
+      t.status,
+    ),
+    /** GIN over JSONB enables fast contains/path lookups on item data. */
+    dataGinIdx: index('items_data_gin_idx')
+      .using('gin', t.data)
+      .where(sql`${t.deletedAt} is null`),
+    siteIdx: index('items_site_idx').on(t.siteId),
+    /** P05: one number per item within its site and collection. */
+    numberUnique: uniqueIndex('items_site_collection_number_unique').on(t.siteId, t.collectionId, t.number),
+    numberPositive: check('items_number_positive', sql`${t.number} IS NULL OR ${t.number} > 0`),
+    publishedAtSourceValid: check(
+      'items_published_at_source_valid',
+      sql`${t.publishedAtSource} IS NULL OR ${t.publishedAtSource} IN ('recorded', 'set', 'estimated', 'unknown')`,
+    ),
+    /** Scheduler scans for items due to publish/unpublish (Req 7.3, 7.4). */
+    publishDueIdx: index('items_publish_due_idx').on(t.siteId, t.status, t.publishAt),
+    unpublishDueIdx: index('items_unpublish_due_idx').on(t.siteId, t.status, t.unpublishAt),
+    /** Default list sort by updated_at (high-load-cache-readiness Req 16). */
+    siteCollUpdatedIdx: index('items_site_coll_updated_idx').on(
+      t.siteId,
+      t.collectionId,
+      t.updatedAt,
+    ),
+    /** Delivery publish-window filter (high-load-cache-readiness Req 16). */
+    deliverIdx: index('items_deliver_idx')
+      .on(t.siteId, t.collectionId, t.status, t.publishAt, t.unpublishAt)
+      .where(sql`${t.deletedAt} is null`),
+  }),
+);
+
+/**
+ * Idempotency keys of content writes (HeoPress P04, spec content/change-events
+ * task 9.2): written in the same transaction as the item change, so a key is
+ * recorded exactly when its write committed. A retry with the same key — the
+ * response was lost, the client tries again — gets the item back instead of
+ * a second create or update. Keys are scoped to the caller; kept for a day.
+ */
+export const itemIdempotencyKeys = pgTable(
+  'lumibase_item_idempotency_keys',
+  {
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    /** Who sent it: `user:<id>`, `api_key:<id>` or `system`. */
+    scope: text('scope').notNull(),
+    key: text('key').notNull(),
+    /** SHA-256 of the operation and its body: the same key with a different request is refused. */
+    requestHash: text('request_hash').notNull(),
+    collection: text('collection').notNull(),
+    itemId: text('item_id').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.siteId, t.scope, t.key] }),
+    createdIdx: index('item_idempotency_keys_created_idx').on(t.createdAt),
+  }),
+);
+
+export const revisions = pgTable(
+  'lumibase_revisions',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    itemId: text('item_id')
+      .notNull()
+      .references(() => items.id, { onDelete: 'cascade' }),
+    collectionId: text('collection_id')
+      .notNull()
+      .references(() => collections.id, { onDelete: 'cascade' }),
+    /** JSON patch (RFC 6902) or compact delta. */
+    delta: jsonb('delta').default({}).notNull(),
+    /** Item version this revision produced (P04); null for revisions written before versions existed. */
+    itemVersion: integer('item_version'),
+    parentId: text('parent_id'),
+    userId: text('user_id').references(() => users.id),
+    /** Provenance: `human` | `agent`. Agent revisions must carry a run id. */
+    authorType: text('author_type').default('human').notNull(),
+    createdByRunId: text('created_by_run_id').references(() => agentRuns.id, {
+      onDelete: 'set null',
+    }),
+    /** LLM model identifier used to produce this revision, if agent-authored. */
+    model: text('model'),
+    /** Constitution version hash pinned by the producing run. */
+    constitutionHash: text('constitution_hash'),
+    /** Source references (URLs, item ids, memory ids) used by the agent. */
+    sources: jsonb('sources'),
+    /** Agent self-reported confidence in [0, 1]. */
+    confidence: real('confidence'),
+    /** Veto-window staging: staged revisions are not live until committed. */
+    staged: boolean('staged').default(false).notNull(),
+    /** When a staged revision auto-commits unless vetoed (L3 veto window). */
+    autoCommitAt: timestamp('auto_commit_at'),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    itemIdx: index('revisions_item_idx').on(t.itemId, t.createdAt),
+    stagedIdx: index('revisions_staged_idx')
+      .on(t.siteId, t.autoCommitAt)
+      .where(sql`${t.staged} = true`),
+  }),
+);
+
+export const activity = pgTable(
+  'lumibase_activity',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    /** `create` | `update` | `delete` | `login` | `permission_denied` | ... */
+    action: text('action').notNull(),
+    userId: text('user_id').references(() => users.id),
+    collection: text('collection'),
+    itemId: text('item_id'),
+    ip: text('ip'),
+    userAgent: text('user_agent'),
+    comment: text('comment'),
+    payload: jsonb('payload').default({}).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    siteCreatedIdx: index('activity_site_created_idx').on(t.siteId, t.createdAt),
+    actorIdx: index('activity_actor_idx').on(t.userId, t.createdAt),
+  }),
+);
+
+
+// ---------------------------------------------------------------------------
+// PGA3 — Flows / Operations engine.
+//
+// A Flow is a directed graph of Operations executed when a Trigger fires.
+// Triggers: webhook, item.* event, schedule (cron), manual.
+// Operations: condition, transform, http, mail, log, sleep, run-extension.
+// ---------------------------------------------------------------------------
+
+export const flows = pgTable(
+  'lumibase_flows',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    /** `active` | `inactive` | `draft` */
+    status: text('status').default('draft').notNull(),
+    /** `webhook` | `event` | `schedule` | `manual` */
+    triggerType: text('trigger_type').notNull(),
+    /** Trigger-specific config (collection, action, cron expr, headers, ...). */
+    triggerOptions: jsonb('trigger_options').default({}).notNull(),
+    /** Graph of operations: `{ nodes: [{ id, key, options, next?, onError? }] }`. */
+    graph: jsonb('graph').default({ nodes: [] }).notNull(),
+    /** When status = active and triggerType = schedule, the next run time. */
+    nextRunAt: timestamp('next_run_at'),
+    accountability: text('accountability').default('all').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    siteIdx: index('flows_site_idx').on(t.siteId, t.status),
+    nextRunIdx: index('flows_next_run_idx').on(t.nextRunAt),
+  }),
+);
+
+export const flowRuns = pgTable(
+  'lumibase_flow_runs',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    /** Null for `run_type = ai_chat` async jobs (high-load §21.5). */
+    flowId: text('flow_id').references(() => flows.id, { onDelete: 'cascade' }),
+    /** `flow` | `ai_chat` — AI chat async reuses this table (design §10.3). */
+    runType: text('run_type').default('flow').notNull(),
+    /** `pending` | `running` | `success` | `error` | `cancelled` */
+    status: text('status').default('pending').notNull(),
+    /** Initial payload (trigger event / webhook body / AI chat context). */
+    input: jsonb('input').default({}).notNull(),
+    /** Per-node output, keyed by node id. */
+    steps: jsonb('steps').default({}).notNull(),
+    /** Final output (last node / AI harness result). */
+    output: jsonb('output').default({}).notNull(),
+    error: text('error'),
+    createdAt: createdAt(),
+    startedAt: timestamp('started_at'),
+    finishedAt: timestamp('finished_at'),
+  },
+  (t) => ({
+    flowIdx: index('flow_runs_flow_idx').on(t.flowId, t.startedAt),
+    statusIdx: index('flow_runs_status_idx').on(t.siteId, t.status),
+    siteFlowCreatedIdx: index('flow_runs_site_flow_created_idx').on(
+      t.siteId,
+      t.flowId,
+      t.createdAt,
+    ),
+  }),
+);
+
+export const operations = pgTable(
+  'lumibase_operations',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    flowId: text('flow_id')
+      .notNull()
+      .references(() => flows.id, { onDelete: 'cascade' }),
+    /** Stable key referenced by graph edges. */
+    key: text('key').notNull(),
+    /** `condition` | `transform` | `http` | `mail` | `log` | `sleep` | `run-extension` | `item.create` | `item.update` | `item.delete` | `notify` */
+    type: text('type').notNull(),
+    name: text('name'),
+    options: jsonb('options').default({}).notNull(),
+    /** Position info for the visual editor; not used at runtime. */
+    position: jsonb('position').default({}).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    flowKeyUnique: uniqueIndex('operations_flow_key_unique').on(t.flowId, t.key),
+  }),
+);
+
+
+// ---------------------------------------------------------------------------
+// PGA6 — Materialized collections.
+//
+// For hot-path read traffic (high-RPS Delivery API), expensive JSONB
+// queries can be cached in a denormalized table refreshed on a schedule
+// or after writes.
+// ---------------------------------------------------------------------------
+
+export const materializedCollections = pgTable(
+  'lumibase_materialized_collections',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    /** The source collection name. */
+    collection: text('collection').notNull(),
+    /** Materialized view name (target table). */
+    target: text('target').notNull(),
+    /** `auto` | `cron` | `manual` */
+    refreshStrategy: text('refresh_strategy').default('manual').notNull(),
+    /** Cron expression when `refreshStrategy = 'cron'`. */
+    refreshCron: text('refresh_cron'),
+    /** Pre-computed projection: which fields to flatten + ordering. */
+    projection: jsonb('projection').default({ fields: ['*'] }).notNull(),
+    /** Optional row filter (subset of items). */
+    filter: jsonb('filter').default({}).notNull(),
+    /** Last successful refresh timestamp. */
+    lastRefreshedAt: timestamp('last_refreshed_at'),
+    /** Total rows in the materialized target as of last refresh. */
+    rowCount: integer('row_count').default(0).notNull(),
+    /** `idle` | `refreshing` | `error` */
+    status: text('status').default('idle').notNull(),
+    error: text('error'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    siteCollectionUnique: uniqueIndex('mc_site_collection_unique').on(
+      t.siteId,
+      t.collection,
+      t.target,
+    ),
+  }),
+);
+
+/**
+ * Insights dashboards — a named container of panels, per site.
+ * See `docs/legacy/kiro-specs/insights-dashboard`.
+ */
+export const dashboards = pgTable(
+  'lumibase_dashboards',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    icon: text('icon'),
+    color: text('color'),
+    note: text('note'),
+    createdBy: text('created_by'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    siteIdx: index('dashboards_site_idx').on(t.siteId),
+  }),
+);
+
+/**
+ * Insights panels — one visualization on a dashboard. `query` is a
+ * `PanelQuery` (see `@heopress/contracts`); `position` is the grid placement.
+ */
+export const panels = pgTable(
+  'lumibase_panels',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    dashboardId: text('dashboard_id')
+      .notNull()
+      .references(() => dashboards.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** `metric` | `timeSeries` | `bar` | `pie` | `list` | `table` */
+    type: text('type').notNull(),
+    /** Grid placement `{ x, y, w, h }`. */
+    position: jsonb('position').default({ x: 0, y: 0, w: 4, h: 4 }).notNull(),
+    /** A `PanelQuery` object. */
+    query: jsonb('query').notNull(),
+    /** Display options (refetch interval, formatting, etc.). */
+    options: jsonb('options').default({}).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    siteDashboardIdx: index('panels_site_dashboard_idx').on(t.siteId, t.dashboardId),
+  }),
+);
+
+/**
+ * Content versions — named, parallel draft branches of an item, distinct from
+ * the linear `revisions` history. A version snapshots item data off the live
+ * record; promoting applies it to main via ItemService (which writes a
+ * revision). See `docs/legacy/kiro-specs/content-versioning`.
+ */
+export const contentVersions = pgTable(
+  'lumibase_content_versions',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    itemId: text('item_id').notNull(),
+    collectionId: text('collection_id')
+      .notNull()
+      .references(() => collections.id, { onDelete: 'cascade' }),
+    /** Stable slug, unique per item. */
+    key: text('key').notNull(),
+    /** Human-readable label. */
+    name: text('name').notNull(),
+    /** Snapshot of the item data for this branch. */
+    data: jsonb('data').default({}).notNull(),
+    /** Hash of main at snapshot time → detects divergence before promote. */
+    hash: text('hash').notNull(),
+    createdBy: text('created_by').references(() => users.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    keyUnique: uniqueIndex('content_versions_key_unique').on(
+      t.siteId,
+      t.collectionId,
+      t.itemId,
+      t.key,
+    ),
+    itemIdx: index('content_versions_item_idx').on(t.siteId, t.itemId),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Content Releases (spec: docs/legacy/kiro-specs/content-releases)
+// A Release collates specific item revisions across collections into a named
+// bundle, published all at once (manual) or scheduled for a date/time. Reuses
+// the items/revisions model and the content-scheduler queue; only these two
+// junction tables are new.
+// ---------------------------------------------------------------------------
+
+/** A cross-collection publish bundle. */
+export const releases = pgTable(
+  'lumibase_releases',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    /** `draft` | `scheduled` | `published` | `failed` | `partially_failed` */
+    status: text('status').default('draft').notNull(),
+    /** `all_or_nothing` | `best_effort` — publish atomicity strategy. */
+    atomicityMode: text('atomicity_mode').default('all_or_nothing').notNull(),
+    /** When a scheduled release should publish (null for manual-only). */
+    publishAt: timestamp('publish_at'),
+    /** Set once the release reaches `published`. */
+    publishedAt: timestamp('published_at'),
+    /** `{ tz, windows: [{ dow, start, end }] }` — borrowed from contentIntents. */
+    maintenanceWindow: jsonb('maintenance_window'),
+    /** Circuit-breaker detail when status is `failed`/`partially_failed`. */
+    statusReason: text('status_reason'),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    siteStatusIdx: index('releases_site_status_idx').on(t.siteId, t.status),
+    // Release sweep scan: due scheduled releases per site (mirrors items.publishDueIdx).
+    publishDueIdx: index('releases_publish_due_idx').on(t.siteId, t.status, t.publishAt),
+  }),
+);
+
+/** Junction: a release ↔ a specific item, optionally pinned to one revision. */
+export const releaseItems = pgTable(
+  'lumibase_release_items',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    releaseId: text('release_id')
+      .notNull()
+      .references(() => releases.id, { onDelete: 'cascade' }),
+    /** Collection name (releases span collections). */
+    collection: text('collection').notNull(),
+    itemId: text('item_id')
+      .notNull()
+      .references(() => items.id, { onDelete: 'cascade' }),
+    /** Target `items.status` to set on publish (`published` default). */
+    targetStatus: text('target_status').default('published').notNull(),
+    /** Revision pin; null → publish the item's live state at publish time. */
+    revisionId: text('revision_id').references(() => revisions.id, { onDelete: 'set null' }),
+    /** Publish outcome: null until publish; `published` | `skipped` | `failed`. */
+    outcome: text('outcome'),
+    outcomeReason: text('outcome_reason'),
+    createdAt: createdAt(),
+  },
+  (t) => ({
+    releaseItemUnique: uniqueIndex('release_items_release_item_unique').on(
+      t.releaseId,
+      t.collection,
+      t.itemId,
+    ),
+    releaseIdx: index('release_items_release_idx').on(t.siteId, t.releaseId),
+  }),
+);
+
+/**
+ * Named image-transform presets — a stable slug (`key`) mapped to a
+ * `TransformDsl` (@heopress/contracts). The delivery route resolves `?preset=key`
+ * to these params so callers get canonical derivatives (e.g. `thumbnail`,
+ * `hero`) without spelling out every dimension. See
+ * `docs/legacy/kiro-specs/image-transform-dsl`.
+ */
+export const transformPresets = pgTable(
+  'lumibase_transform_presets',
+  {
+    id: id(),
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    /** URL-safe slug used as `?preset=<key>`. */
+    key: text('key').notNull(),
+    name: text('name').notNull(),
+    /** The TransformDsl object: `{ width?, height?, format?, quality?, fit?, focal? }`. */
+    dsl: jsonb('dsl').default({}).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => ({
+    siteKeyUnique: uniqueIndex('transform_presets_site_key_unique').on(t.siteId, t.key),
+  }),
+);

@@ -1,0 +1,565 @@
+# garden-shop.example.com (site_p07_seo_reg_shop)
+
+## GET https://garden-shop.example.com/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Example Garden Shop</title>
+<link rel="canonical" href="https://garden-shop.example.com/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="Example Garden Shop" href="https://garden-shop.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Example Garden Shop" href="https://garden-shop.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Example Garden Shop">
+<meta property="og:url" content="https://garden-shop.example.com/">
+<meta property="og:site_name" content="Example Garden Shop">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://garden-shop.example.com/#identity",
+      "name": "Example Garden Shop",
+      "url": "https://garden-shop.example.com/",
+      "telephone": "+1 555 0100",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1 Example Road",
+        "addressLocality": "Springfield",
+        "addressRegion": "EX",
+        "postalCode": "00001",
+        "addressCountry": "US"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://garden-shop.example.com/#website",
+      "url": "https://garden-shop.example.com/",
+      "name": "Example Garden Shop",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://garden-shop.example.com/#identity"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://garden-shop.example.com/#webpage",
+      "url": "https://garden-shop.example.com/",
+      "name": "Example Garden Shop",
+      "isPartOf": {
+        "@id": "https://garden-shop.example.com/#website"
+      },
+      "inLanguage": "en",
+      "about": {
+        "@id": "https://garden-shop.example.com/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://garden-shop.example.com/spring-planting/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spring planting guide — Example Garden Shop</title>
+<meta name="description" content="What to sow in spring.">
+<link rel="canonical" href="https://garden-shop.example.com/spring-planting/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="Example Garden Shop" href="https://garden-shop.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Example Garden Shop" href="https://garden-shop.example.com/atom.xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring planting guide — Example Garden Shop">
+<meta property="og:description" content="What to sow in spring.">
+<meta property="og:url" content="https://garden-shop.example.com/spring-planting/">
+<meta property="og:site_name" content="Example Garden Shop">
+<meta property="og:locale" content="en">
+<meta property="article:published_time" content="2026-09-10T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-10T10:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://garden-shop.example.com/#identity",
+      "name": "Example Garden Shop",
+      "url": "https://garden-shop.example.com/",
+      "telephone": "+1 555 0100",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1 Example Road",
+        "addressLocality": "Springfield",
+        "addressRegion": "EX",
+        "postalCode": "00001",
+        "addressCountry": "US"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://garden-shop.example.com/#website",
+      "url": "https://garden-shop.example.com/",
+      "name": "Example Garden Shop",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://garden-shop.example.com/#identity"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://garden-shop.example.com/spring-planting/#webpage",
+      "url": "https://garden-shop.example.com/spring-planting/",
+      "name": "Spring planting guide",
+      "description": "What to sow in spring.",
+      "isPartOf": {
+        "@id": "https://garden-shop.example.com/#website"
+      },
+      "inLanguage": "en",
+      "breadcrumb": {
+        "@id": "https://garden-shop.example.com/spring-planting/#breadcrumb"
+      },
+      "datePublished": "2026-09-10T10:00:00.000Z",
+      "dateModified": "2026-09-10T10:00:00.000Z"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://garden-shop.example.com/spring-planting/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Example Garden Shop",
+          "item": "https://garden-shop.example.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Spring planting guide",
+          "item": "https://garden-shop.example.com/spring-planting/"
+        }
+      ]
+    },
+    {
+      "@type": "Article",
+      "@id": "https://garden-shop.example.com/spring-planting/#article",
+      "headline": "Spring planting guide",
+      "description": "What to sow in spring.",
+      "datePublished": "2026-09-10T10:00:00.000Z",
+      "dateModified": "2026-09-10T10:00:00.000Z",
+      "publisher": {
+        "@id": "https://garden-shop.example.com/#identity"
+      },
+      "mainEntityOfPage": {
+        "@id": "https://garden-shop.example.com/spring-planting/#webpage"
+      },
+      "inLanguage": "en"
+    }
+  ]
+}
+
+## GET https://garden-shop.example.com/contact/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact — Example Garden Shop</title>
+<link rel="canonical" href="https://garden-shop.example.com/contact/">
+<meta name="robots" content="max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="Example Garden Shop" href="https://garden-shop.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Example Garden Shop" href="https://garden-shop.example.com/atom.xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Contact — Example Garden Shop">
+<meta property="og:url" content="https://garden-shop.example.com/contact/">
+<meta property="og:site_name" content="Example Garden Shop">
+<meta property="og:locale" content="en">
+<meta property="article:published_time" content="2026-09-01T00:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-01T00:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://garden-shop.example.com/#identity",
+      "name": "Example Garden Shop",
+      "url": "https://garden-shop.example.com/",
+      "telephone": "+1 555 0100",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1 Example Road",
+        "addressLocality": "Springfield",
+        "addressRegion": "EX",
+        "postalCode": "00001",
+        "addressCountry": "US"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://garden-shop.example.com/#website",
+      "url": "https://garden-shop.example.com/",
+      "name": "Example Garden Shop",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://garden-shop.example.com/#identity"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://garden-shop.example.com/contact/#webpage",
+      "url": "https://garden-shop.example.com/contact/",
+      "name": "Contact",
+      "isPartOf": {
+        "@id": "https://garden-shop.example.com/#website"
+      },
+      "inLanguage": "en",
+      "breadcrumb": {
+        "@id": "https://garden-shop.example.com/contact/#breadcrumb"
+      },
+      "datePublished": "2026-09-01T00:00:00.000Z",
+      "dateModified": "2026-09-01T00:00:00.000Z"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://garden-shop.example.com/contact/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Example Garden Shop",
+          "item": "https://garden-shop.example.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Contact",
+          "item": "https://garden-shop.example.com/contact/"
+        }
+      ]
+    }
+  ]
+}
+
+## GET https://garden-shop.example.com/tag/seeds/
+status: 200
+content-type: text/html; charset=utf-8
+x-robots-tag: noindex
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seeds — Example Garden Shop</title>
+<meta name="robots" content="noindex">
+<link rel="alternate" type="application/rss+xml" title="Example Garden Shop" href="https://garden-shop.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Example Garden Shop" href="https://garden-shop.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Seeds — Example Garden Shop">
+<meta property="og:site_name" content="Example Garden Shop">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://garden-shop.example.com/#identity",
+      "name": "Example Garden Shop",
+      "url": "https://garden-shop.example.com/",
+      "telephone": "+1 555 0100",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1 Example Road",
+        "addressLocality": "Springfield",
+        "addressRegion": "EX",
+        "postalCode": "00001",
+        "addressCountry": "US"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://garden-shop.example.com/#website",
+      "url": "https://garden-shop.example.com/",
+      "name": "Example Garden Shop",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://garden-shop.example.com/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://garden-shop.example.com/clearance-internal/
+status: 200
+content-type: text/html; charset=utf-8
+x-robots-tag: noindex, nofollow
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clearance (internal) — Example Garden Shop</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="alternate" type="application/rss+xml" title="Example Garden Shop" href="https://garden-shop.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Example Garden Shop" href="https://garden-shop.example.com/atom.xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Clearance (internal) — Example Garden Shop">
+<meta property="og:site_name" content="Example Garden Shop">
+<meta property="og:locale" content="en">
+<meta property="article:published_time" content="2026-09-11T00:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-11T00:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://garden-shop.example.com/#identity",
+      "name": "Example Garden Shop",
+      "url": "https://garden-shop.example.com/",
+      "telephone": "+1 555 0100",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1 Example Road",
+        "addressLocality": "Springfield",
+        "addressRegion": "EX",
+        "postalCode": "00001",
+        "addressCountry": "US"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://garden-shop.example.com/#website",
+      "url": "https://garden-shop.example.com/",
+      "name": "Example Garden Shop",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://garden-shop.example.com/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://garden-shop.example.com/robots.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+User-agent: *
+Allow: /
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: Meta-ExternalAgent
+User-agent: Bytespider
+User-agent: Amazonbot
+Disallow: /
+
+Sitemap: https://garden-shop.example.com/sitemap.xml
+# Feed: https://garden-shop.example.com/feed.xml
+# Feed: https://garden-shop.example.com/atom.xml
+
+## GET https://garden-shop.example.com/sitemap.xml
+status: 200
+content-type: application/xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<sitemap><loc>https://garden-shop.example.com/sitemap-1.xml</loc><lastmod>2026-09-10T10:00:00.000Z</lastmod></sitemap>
+</sitemapindex>
+
+## GET https://garden-shop.example.com/sitemap-1.xml
+status: 200
+content-type: application/xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<url><loc>https://garden-shop.example.com/</loc></url>
+<url><loc>https://garden-shop.example.com/contact/</loc><lastmod>2026-09-01T00:00:00.000Z</lastmod></url>
+<url><loc>https://garden-shop.example.com/spring-planting/</loc><lastmod>2026-09-10T10:00:00.000Z</lastmod></url>
+</urlset>
+
+## GET https://garden-shop.example.com/sitemap.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+https://garden-shop.example.com/
+https://garden-shop.example.com/contact/
+https://garden-shop.example.com/spring-planting/
+
+## GET https://garden-shop.example.com/news-sitemap.xml
+status: 404
+content-type: text/plain; charset=UTF-8
+
+Not found
+
+## GET https://garden-shop.example.com/feed.xml
+status: 200
+content-type: application/rss+xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel><title>Example Garden Shop</title><link>https://garden-shop.example.com/</link><description>Example Garden Shop</description><language>en</language><lastBuildDate>Thu, 10 Sep 2026 10:00:00 GMT</lastBuildDate><atom:link href="https://garden-shop.example.com/feed.xml" rel="self" type="application/rss+xml"/>
+<item><title>Spring planting guide</title><link>https://garden-shop.example.com/spring-planting/</link><guid isPermaLink="true">https://garden-shop.example.com/spring-planting/</guid><pubDate>Thu, 10 Sep 2026 10:00:00 GMT</pubDate><description>What to sow in spring.</description><content:encoded>&lt;p data-block-id=&quot;<block:1>&quot;&gt;Sow peas early.&lt;/p&gt;</content:encoded></item>
+</channel>
+</rss>
+
+## GET https://garden-shop.example.com/atom.xml
+status: 200
+content-type: application/atom+xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+<id>https://garden-shop.example.com/atom.xml</id><title>Example Garden Shop</title><subtitle>Example Garden Shop</subtitle><updated>2026-09-10T10:00:00.000Z</updated><author><name>Example Garden Shop</name></author><link rel="self" type="application/atom+xml" href="https://garden-shop.example.com/atom.xml"/><link rel="alternate" type="text/html" href="https://garden-shop.example.com/"/>
+<entry><id>https://garden-shop.example.com/spring-planting/</id><title>Spring planting guide</title><link rel="alternate" type="text/html" href="https://garden-shop.example.com/spring-planting/"/><published>2026-09-10T10:00:00.000Z</published><updated>2026-09-10T10:00:00.000Z</updated><summary>What to sow in spring.</summary><content type="html">&lt;p data-block-id=&quot;<block:1>&quot;&gt;Sow peas early.&lt;/p&gt;</content></entry>
+</feed>
+
+## GET https://garden-shop.example.com/llms.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+# Example Garden Shop
+
+> Example Garden Shop.
+
+## Pages
+- [Contact](https://garden-shop.example.com/contact/)
+
+## Recent
+- [Spring planting guide](https://garden-shop.example.com/spring-planting/): What to sow in spring.
+
+## Optional
+- [RSS feed](https://garden-shop.example.com/feed.xml)
+- [Atom feed](https://garden-shop.example.com/atom.xml)
+- [Sitemap](https://garden-shop.example.com/sitemap.xml)
+- [Full text](https://garden-shop.example.com/llms-full.txt)
+
+## GET https://garden-shop.example.com/llms-full.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+# Example Garden Shop
+
+> Example Garden Shop.
+
+(Full text of https://garden-shop.example.com/ — pages, then the newest articles.)
+
+---
+
+# Contact
+
+- URL: <https://garden-shop.example.com/contact/>
+- Published: 2026-09-01T00:00:00.000Z
+- Modified: 2026-09-01T00:00:00.000Z
+
+Call us.
+
+---
+
+# Spring planting guide
+
+> What to sow in spring.
+
+- URL: <https://garden-shop.example.com/spring-planting/>
+- Published: 2026-09-10T10:00:00.000Z
+- Modified: 2026-09-10T10:00:00.000Z
+
+Sow peas early.
+
+## GET https://garden-shop.example.com/spring-planting.md
+status: 404
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 — Example Garden Shop</title>
+<meta name="robots" content="noindex">
+<link rel="alternate" type="application/rss+xml" title="Example Garden Shop" href="https://garden-shop.example.com/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="Example Garden Shop" href="https://garden-shop.example.com/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="404 — Example Garden Shop">
+<meta property="og:site_name" content="Example Garden Shop">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://garden-shop.example.com/#identity",
+      "name": "Example Garden Shop",
+      "url": "https://garden-shop.example.com/",
+      "telephone": "+1 555 0100",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1 Example Road",
+        "addressLocality": "Springfield",
+        "addressRegion": "EX",
+        "postalCode": "00001",
+        "addressCountry": "US"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://garden-shop.example.com/#website",
+      "url": "https://garden-shop.example.com/",
+      "name": "Example Garden Shop",
+      "inLanguage": "en",
+      "publisher": {
+        "@id": "https://garden-shop.example.com/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://garden-shop.example.com/0123456789abcdef0123456789abcdef.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+0123456789abcdef0123456789abcdef
