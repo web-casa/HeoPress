@@ -1,0 +1,43 @@
+{
+  "title": "文件与媒体",
+  "root": "根目录",
+  "newFolder": "新建文件夹",
+  "upload": "上传",
+  "deleteFolder": "删除此文件夹？",
+  "deleteFile": "删除此文件？",
+  "emptyFolder": "此文件夹为空。",
+  "createFolder": "新建文件夹",
+  "folderName": "文件夹名称",
+  "create": "创建",
+  "tooLarge": "“{{name}}”超过了 {{mb}} MB 的上传上限。",
+  "badType": "“{{name}}”的文件类型不允许上传。允许的类型：{{allowed}}。",
+  "requestFailed": "请求失败：{{status}}",
+  "focal": {
+    "set": "设置焦点",
+    "preview": "焦点预览"
+  },
+  "presets": {
+    "title": "图片处理预设",
+    "new": "新建预设",
+    "key": "标识（slug）",
+    "name": "名称",
+    "width": "宽度",
+    "height": "高度",
+    "empty": "还没有预设。",
+    "copyUrlFor": "复制 {{key}} 的 URL",
+    "deleteKey": "删除 {{key}}"
+  },
+  "transform": {
+    "presetOnly": "已禁用自定义处理，请使用预设。",
+    "width": "宽度",
+    "height": "高度",
+    "quality": "质量",
+    "format": "格式",
+    "fit": "缩放方式",
+    "auto": "自动",
+    "default": "默认",
+    "copied": "已复制",
+    "copyUrl": "复制 URL"
+  },
+  "sizeKb": "{{size}} KB"
+}
