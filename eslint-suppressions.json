@@ -1,0 +1,393 @@
+{
+  "apps/cms/src/extensions/__tests__/sandbox.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 18
+    }
+  },
+  "apps/cms/src/middleware/auth.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "apps/cms/src/modules/auth/__tests__/registration-guard.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "apps/cms/src/modules/consent/__tests__/service.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "apps/cms/src/modules/data-rights/__tests__/automated-decisions-service.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "apps/cms/src/modules/data-rights/__tests__/export-service.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "apps/cms/src/modules/data-rights/__tests__/restriction-service.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "apps/cms/src/modules/data-rights/__tests__/retention-service.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "apps/cms/src/modules/email/__tests__/suppression.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "apps/cms/src/modules/setup/service.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "apps/cms/src/realtime/__tests__/node-hub.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "apps/cms/src/routes/__tests__/access-grants.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "apps/cms/src/routes/__tests__/api-keys-publishable-elevation.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    }
+  },
+  "apps/cms/src/routes/__tests__/consent.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "apps/cms/src/routes/__tests__/roles-public-role-guard.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "apps/cms/src/routes/auth.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "apps/cms/src/services/__tests__/conditions.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "apps/cms/src/services/__tests__/field-classification.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 4
+    }
+  },
+  "apps/cms/src/services/__tests__/materialize-sql-injection.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "apps/cms/src/services/auth/__tests__/public-role.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    }
+  },
+  "apps/cms/src/services/auth/__tests__/realm-access.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "apps/cms/src/services/auth/__tests__/refresh-token.db.integration.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "apps/cms/src/services/auth/__tests__/refresh-token.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 9
+    }
+  },
+  "apps/cms/src/services/auth/__tests__/subscriber-access.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/App.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/components/notifications-panel.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/components/search-palette.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/components/server-connection.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/hooks/use-presence.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    },
+    "react-hooks/exhaustive-deps": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/access/api-keys-page.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/access/import-export-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/access/policies-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/access/policy-detail.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/access/roles-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/auth/admin-login-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 2
+    },
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    }
+  },
+  "apps/studio/src/modules/automation/flow-editor.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/automation/flow-node-types.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 10
+    }
+  },
+  "apps/studio/src/modules/data-model/__tests__/fields-tab-performance.test.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    }
+  },
+  "apps/studio/src/modules/data-model/detail.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/data-model/display-tab.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/data-model/wizard.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/files/index.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/insights/list-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/insights/panel-editor.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/mission-control/constitution-editor.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/mission-control/intent-composer.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/mission-control/kill-switch.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/recovery/backup-code-page.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    }
+  },
+  "apps/studio/src/modules/recovery/forgot-path-page.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/settings/deployments-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/settings/domains-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/settings/extensions-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/settings/git-integrations-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    },
+    "@typescript-eslint/no-misused-promises": {
+      "count": 3
+    }
+  },
+  "apps/studio/src/modules/settings/keyboard-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/settings/marketplace-page.tsx": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/settings/security-audit-tab.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/settings/site-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    },
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/settings/uploads-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/settings/webhooks-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/setup/admin-ready-gate.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 2
+    }
+  },
+  "apps/studio/src/modules/setup/setup-layout.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    }
+  },
+  "apps/studio/src/modules/setup/simple-setup-wizard.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    }
+  },
+  "apps/studio/src/modules/setup/steps/step-account.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    },
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/setup/steps/step-done.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/setup/steps/step-path.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 2
+    }
+  },
+  "apps/studio/src/modules/setup/steps/step-project.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/setup/steps/step-recovery.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/setup/steps/step-security.tsx": {
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/modules/translations/tm-page.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "apps/studio/src/router.tsx": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 2
+    },
+    "@typescript-eslint/no-misused-promises": {
+      "count": 4
+    },
+    "react-hooks/rules-of-hooks": {
+      "count": 4
+    }
+  },
+  "packages/sdk/src/client.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "packages/sdk/src/realtime/__tests__/audience.test.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    }
+  },
+  "packages/sdk/src/realtime/audience.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "packages/sdk/src/realtime/index.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 2
+    }
+  }
+}
