@@ -1,0 +1,213 @@
+{
+  "name": "heopress-glossary",
+  "version": "1.0.0",
+  "type": "hook",
+  "entry": "./dist/index.js",
+  "displayName": "Glossary",
+  "description": "Glossary terms with their own pages, term links and tooltips in article bodies, and a source-citation check for definitions.",
+  "capabilities": [
+    "ext:collections",
+    "ext:routes",
+    "ext:events",
+    "ext:jobs",
+    "ext:gate-checks",
+    "ext:admin-panels",
+    "seo:structured-data",
+    "items:read:heopress_glossary__terms",
+    "items:read:articles",
+    "items:write:articles",
+    "items:publish:articles",
+    "cdc:subscribe:articles",
+    "cdc:subscribe:heopress_glossary__terms"
+  ],
+  "heopress": "^1.0.0-0",
+  "security": {
+    "contact": "https://github.com/web-casa/HeoPress/security/advisories/new"
+  },
+  "collections": [
+    {
+      "name": "terms",
+      "label": "Glossary terms",
+      "fields": [
+        {
+          "name": "title",
+          "type": "string",
+          "interface": "input",
+          "label": "Term",
+          "required": true
+        },
+        {
+          "name": "slug",
+          "type": "string",
+          "interface": "slug",
+          "label": "Slug",
+          "required": true
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "interface": "input",
+          "label": "Language"
+        },
+        {
+          "name": "excerpt",
+          "type": "text",
+          "interface": "textarea",
+          "label": "Short definition"
+        },
+        {
+          "name": "body",
+          "type": "text",
+          "interface": "wysiwyg",
+          "label": "Explanation"
+        },
+        {
+          "name": "aliases",
+          "type": "string",
+          "interface": "input",
+          "label": "Aliases (comma-separated)"
+        },
+        {
+          "name": "source_url",
+          "type": "string",
+          "interface": "input",
+          "label": "Source URL"
+        },
+        {
+          "name": "source_title",
+          "type": "string",
+          "interface": "input",
+          "label": "Source title"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "id": "term",
+      "kind": "item",
+      "path": "/glossary/:slug",
+      "collection": "terms",
+      "template": "term"
+    },
+    {
+      "id": "index",
+      "kind": "list",
+      "path": "/glossary",
+      "collection": "terms",
+      "template": "index",
+      "title": "Glossary",
+      "pageSize": 50
+    }
+  ],
+  "templates": {
+    "classic": {
+      "term": "<!doctype html>\n<html lang=\"{{ page.locale }}\">\n<head>\n<meta charset=\"utf-8\">\n{% seo_head %}\n</head>\n<body class=\"heopress-glossary heopress-glossary-term\">\n<main>\n<article>\n<h1>{{ item.title }}</h1>\n{% include 'ext/heopress_glossary/components/tooltip' %}\n{% item_body %}\n{% if item.fields.source_url and item.fields.source_url != \"\" %}<p class=\"heopress-glossary-source\">Source: <a href=\"{{ item.fields.source_url | url }}\">{% if item.fields.source_title and item.fields.source_title != \"\" %}{{ item.fields.source_title }}{% else %}{{ item.fields.source_url }}{% endif %}</a></p>{% endif %}\n</article>\n</main>\n</body>\n</html>\n",
+      "index": "<!doctype html>\n<html lang=\"{{ page.locale }}\">\n<head>\n<meta charset=\"utf-8\">\n{% seo_head %}\n</head>\n<body class=\"heopress-glossary heopress-glossary-index\">\n<main>\n<h1>{{ route.title }}</h1>\n{% if list.size > 0 %}<dl class=\"heopress-glossary-list\">{% for c in list %}<dt><a href=\"{{ c.url | url }}\">{{ c.title }}</a></dt>{% if c.excerpt != \"\" %}<dd>{{ c.excerpt }}</dd>{% endif %}{% endfor %}</dl>{% endif %}\n{% if pagination %}<nav class=\"heopress-glossary-pages\">{% if pagination.prevUrl %}<a href=\"{{ pagination.prevUrl | url }}\" rel=\"prev\">Previous</a>{% endif %}{% if pagination.nextUrl %}<a href=\"{{ pagination.nextUrl | url }}\" rel=\"next\">Next</a>{% endif %}</nav>{% endif %}\n</main>\n</body>\n</html>\n"
+    },
+    "astro": {
+      "term": "---\nimport type { PageDataPage } from '@heopress/astro-kit';\nimport { safeUrl } from '@heopress/astro-kit';\nimport SeoHead from '@heopress/astro-kit/SeoHead.astro';\nimport ItemBody from '@heopress/astro-kit/ItemBody.astro';\nimport Tooltip from 'heopress:ext/heopress_glossary/tooltip';\ninterface Props { page: PageDataPage }\nconst { page } = Astro.props;\nconst { vm } = page;\nconst item = vm.item;\nconst source = typeof item?.fields.source_url === 'string' ? item.fields.source_url : '';\nconst sourceTitle = typeof item?.fields.source_title === 'string' && item.fields.source_title !== '' ? item.fields.source_title : source;\n---\n<html lang={vm.page.locale}>\n<head>\n<meta charset=\"utf-8\">\n<SeoHead page={page} />\n</head>\n<body class=\"heopress-glossary heopress-glossary-term\">\n<main>\n<article>\n<h1>{item?.title}</h1>\n<Tooltip page={page} />\n<ItemBody page={page} />\n{source !== '' && <p class=\"heopress-glossary-source\">Source: <a href={safeUrl(source)}>{sourceTitle}</a></p>}\n</article>\n</main>\n</body>\n</html>\n",
+      "index": "---\nimport type { PageDataPage } from '@heopress/astro-kit';\nimport { safeUrl } from '@heopress/astro-kit';\nimport SeoHead from '@heopress/astro-kit/SeoHead.astro';\ninterface Props { page: PageDataPage }\nconst { page } = Astro.props;\nconst { vm } = page;\n---\n<html lang={vm.page.locale}>\n<head>\n<meta charset=\"utf-8\">\n<SeoHead page={page} />\n</head>\n<body class=\"heopress-glossary heopress-glossary-index\">\n<main>\n<h1>{vm.route?.title}</h1>\n{vm.list.length > 0 && <dl class=\"heopress-glossary-list\">{vm.list.map((c) => <><dt><a href={safeUrl(c.url)}>{c.title}</a></dt>{c.excerpt !== '' && <dd>{c.excerpt}</dd>}</>)}</dl>}\n{vm.pagination && <nav class=\"heopress-glossary-pages\">{vm.pagination.prevUrl && <a href={safeUrl(vm.pagination.prevUrl)} rel=\"prev\">Previous</a>}{vm.pagination.nextUrl && <a href={safeUrl(vm.pagination.nextUrl)} rel=\"next\">Next</a>}</nav>}\n</main>\n</body>\n</html>\n"
+    }
+  },
+  "components": {
+    "tooltip": {
+      "classic": "{% if item and item.collection == \"heopress_glossary__terms\" and item.fields.excerpt and item.fields.excerpt != \"\" %}<aside class=\"heopress-glossary-tooltip\" role=\"note\"><dfn>{{ item.title }}</dfn> <span>{{ item.fields.excerpt | strip }}</span></aside>{% endif %}\n",
+      "astro": "---\nimport type { PageDataPage } from '@heopress/astro-kit';\ninterface Props { page: PageDataPage }\nconst { page } = Astro.props;\nconst item = page.vm.item;\nconst definition = item && item.collection === 'heopress_glossary__terms' && typeof item.fields.excerpt === 'string' ? item.fields.excerpt.trim() : '';\n---\n{definition !== '' && <aside class=\"heopress-glossary-tooltip\" role=\"note\"><dfn>{item?.title}</dfn> <span>{definition}</span></aside>}\n"
+    }
+  },
+  "structuredData": [
+    {
+      "key": "term",
+      "scope": "item",
+      "collections": [
+        "heopress_glossary__terms"
+      ],
+      "node": {
+        "@type": "DefinedTerm",
+        "name": {
+          "$field": "title"
+        },
+        "description": {
+          "$field": "excerpt"
+        }
+      }
+    }
+  ],
+  "gateChecks": [
+    {
+      "id": "citation",
+      "label": "Term definition cites a source",
+      "description": "A term without a source URL (or with one that is not an http(s) address) needs review.",
+      "collections": [
+        "heopress_glossary__terms"
+      ]
+    }
+  ],
+  "storage": {
+    "references": {
+      "indexes": [
+        [
+          "item"
+        ],
+        [
+          "term"
+        ]
+      ]
+    }
+  },
+  "admin": {
+    "pages": [
+      {
+        "id": "references",
+        "title": "Term references",
+        "type": "table",
+        "storage": "references",
+        "columns": [
+          "term_title",
+          "title",
+          "collection"
+        ]
+      },
+      {
+        "id": "settings",
+        "title": "Glossary settings",
+        "type": "settings"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "references",
+        "title": "Term references",
+        "type": "count",
+        "storage": "references"
+      }
+    ],
+    "settings": [
+      {
+        "key": "trailing_slash",
+        "type": "boolean",
+        "label": "Term links end with a slash (match the site's setting)",
+        "default": true
+      },
+      {
+        "key": "locale_prefixes",
+        "type": "json",
+        "label": "Language prefixes of term pages, e.g. {\"fr\": \"/fr\"}",
+        "default": {}
+      },
+      {
+        "key": "max_links",
+        "type": "integer",
+        "label": "Terms linked per article at most",
+        "default": 20
+      },
+      {
+        "key": "batch_size",
+        "type": "integer",
+        "label": "Articles per batch of the periodic recomputation",
+        "default": 25
+      }
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+ALTER TABLE "lumibase_indexnow_sites" ADD COLUMN "lease_token" text;
