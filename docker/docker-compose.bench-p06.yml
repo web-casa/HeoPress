@@ -1,0 +1,24 @@
+# Resource limits emulating a 2 vCPU / 4 GB VPS for the P06 baseline
+# (docs/benchmarks/p06-classic.md), used with docker-compose.sites.yml.
+# Docker cannot share one limit across containers, so the budget is split;
+# the sum is 2 CPUs and 4 GB. The rendering service gets the largest CPU
+# share: it is what is measured.
+services:
+  postgres:
+    deploy:
+      resources:
+        limits: { cpus: "0.6", memory: 1280M }
+  cms:
+    environment:
+      HEOPRESS_API_RATE_LIMIT: "10000000"
+    deploy:
+      resources:
+        limits: { cpus: "0.3", memory: 1024M }
+  cms-worker:
+    deploy:
+      resources:
+        limits: { cpus: "0.1", memory: 768M }
+  site-classic:
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1024M }
