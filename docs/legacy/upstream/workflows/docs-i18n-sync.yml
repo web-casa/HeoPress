@@ -1,0 +1,184 @@
+name: Docs i18n Sync
+
+# Keeps docs/en and docs/vi in sync. On pull requests it only reports language
+# detection + planned actions (no writes). On push to main it preserves any
+# mislabelled content, stamps version + lastUpdated front matter, and commits the
+# result back.
+#
+# It does NOT translate. Translations are written by hand (an LLM reading the
+# source in the editor), a deliberate project decision recorded in
+# `docs/.i18n/TASKS.md` §6 — there is no ANTHROPIC_API_KEY secret and none is
+# wanted. Wiring the machine-translation path back in here would need that
+# decision reversed first, not just a secret added.
+
+on:
+  pull_request:
+    paths:
+      - 'docs/en/**'
+      - 'docs/vi/**'
+      - 'scripts/docs-i18n/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/en/**'
+      - 'docs/vi/**'
+      - 'scripts/docs-i18n/**'
+
+concurrency:
+  group: docs-i18n-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # PR: detect-only. Never writes; uploads the report so reviewers can see what
+  # a sync would do (mismatches, conflicts, pending translations).
+  # ---------------------------------------------------------------------------
+  detect:
+    name: Detect language drift (report only)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # The changed-files gate below diffs against the PR base, so the
+          # merge-base has to be in the clone.
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # The scripts run on plain `node` (only node builtins + local .mjs);
+          # no install is needed. Disable auto pnpm cache, which would otherwise
+          # try to invoke pnpm (not on PATH) and fail Setup Node. Matches the
+          # convention in ci.yml / release.yml.
+          package-manager-cache: false
+
+      - name: Run detection (plan mode)
+        run: node scripts/docs-i18n/sync.mjs
+
+      # Verify the docs' claims about the repo still hold. `sync.mjs` above only
+      # compares hashes between the en/vi pair, which cannot catch both sides
+      # being wrong together — a deleted endpoint documented identically in both
+      # languages reads as perfectly "in sync".
+      #
+      # Report-only for now (`|| true`): the check is being introduced against a
+      # tree that already carries findings, and failing here would block PRs that
+      # never touched the offending docs. Drop the `|| true` once the backlog is
+      # clear so a newly-stale reference cannot land.
+      - name: Verify code references (report only)
+        run: node scripts/docs-i18n/verify-code-refs.mjs || true
+
+      - name: Write code-reference report
+        run: node scripts/docs-i18n/verify-code-refs.mjs --json > docs/.i18n/code-refs-report.json || true
+
+      # Structural parity between the two locales: same headings, same code, same
+      # link targets, target actually in the target language. This is the check
+      # that stands in for a human reviewer — translations are hand-written and
+      # merged without a second pass (`docs/.i18n/TASKS.md`).
+      #
+      # Repo-wide run stays report-only: a backlog of legacy pairs still fails
+      # (48 of 148 at the time of writing; the older 77/142 figure in this
+      # comment was stale), and failing on those would block PRs that never
+      # touched them. The enforcing gate is the changed-files step below.
+      - name: Check EN/VI structural parity (report only, whole repo)
+        run: node scripts/docs-i18n/check-parity.mjs || true
+
+      - name: Write parity report
+        run: node scripts/docs-i18n/check-parity.mjs --json > docs/.i18n/parity-report.json || true
+
+      # Artifacts are uploaded before the gate so a failing run still leaves the
+      # reports attached for whoever has to fix the pair.
+      - name: Upload sync report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: docs-i18n-report
+          path: |
+            docs/.i18n/last-report.json
+            docs/.i18n/code-refs-report.json
+            docs/.i18n/parity-report.json
+            docs/i18n-sync-log.md
+          if-no-files-found: warn
+
+      # Enforcing gate, scoped to what this PR actually changed. A contributor
+      # is answerable for the pairs they touch, not for the inherited backlog —
+      # so this fails only when a changed doc is itself out of parity. That
+      # keeps the backlog from growing while leaving it to be retired
+      # separately; drop the scoping (and the `|| true` above) once it is clear.
+      - name: Enforce parity on docs changed by this PR
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          # NO --diff-filter=d: a deleted path is exactly the case the gate has
+          # to see. Excluding deletions meant a PR removing only docs/vi/x.md
+          # orphaned the EN side and handed the gate an empty list, which
+          # exited 0. Renames are the same hole, via the vanished old path.
+          # The gate decides what to do per pair: both sides gone is a
+          # deliberate retirement and passes, one side left fails.
+          git diff --name-only --no-renames \
+            "$(git merge-base HEAD FETCH_HEAD)" HEAD > /tmp/changed-files.txt
+          node scripts/docs-i18n/gate-changed-parity.mjs /tmp/changed-files.txt
+
+  # ---------------------------------------------------------------------------
+  # main: preservation + versioning. Rescues Vietnamese content that lives in an
+  # en-labelled file, stamps version/lastUpdated front matter, commits back. No
+  # translation happens here (see the header) — outstanding pairs stay listed in
+  # `docs/i18n-sync-log.md` until someone translates them by hand.
+  # ---------------------------------------------------------------------------
+  sync:
+    name: Preserve and version (no translation)
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # The scripts run on plain `node` (only node builtins + local .mjs);
+          # no install is needed. Disable auto pnpm cache, which would otherwise
+          # try to invoke pnpm (not on PATH) and fail Setup Node. Matches the
+          # convention in ci.yml / release.yml.
+          package-manager-cache: false
+
+      # Preservation + version stamps only. The outstanding-translation count is
+      # echoed into the job summary so the backlog is visible on every run
+      # instead of being buried in the log file this job commits.
+      - name: Run preservation + versioning
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            echo '```'
+            node scripts/docs-i18n/sync.mjs --preserve-only
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit preserved docs
+        run: |
+          git config user.name "Javier"
+          git config user.email "javier@genuis.app"
+          if [ -z "$(git status --porcelain docs)" ]; then
+            echo "No documentation changes to commit."
+            exit 0
+          fi
+          git add docs
+          git commit -m "docs(i18n): preserve mislabelled content + bump doc versions [skip ci]"
+          git push

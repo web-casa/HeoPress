@@ -1,0 +1,29 @@
+---
+import type { PageDataPage } from '@heopress/astro-kit';
+import { safeUrl } from '@heopress/astro-kit';
+import SeoHead from '@heopress/astro-kit/SeoHead.astro';
+import ItemBody from '@heopress/astro-kit/ItemBody.astro';
+import Tooltip from 'heopress:ext/heopress_glossary/tooltip';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const { vm } = page;
+const item = vm.item;
+const source = typeof item?.fields.source_url === 'string' ? item.fields.source_url : '';
+const sourceTitle = typeof item?.fields.source_title === 'string' && item.fields.source_title !== '' ? item.fields.source_title : source;
+---
+<html lang={vm.page.locale}>
+<head>
+<meta charset="utf-8">
+<SeoHead page={page} />
+</head>
+<body class="heopress-glossary heopress-glossary-term">
+<main>
+<article>
+<h1>{item?.title}</h1>
+<Tooltip page={page} />
+<ItemBody page={page} />
+{source !== '' && <p class="heopress-glossary-source">Source: <a href={safeUrl(source)}>{sourceTitle}</a></p>}
+</article>
+</main>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "example-briefing-stale-drafts",
+  "version": "0.1.0",
+  "type": "module",
+  "entry": "./dist/index.js",
+  "displayName": "Stale drafts briefing",
+  "description": "A Studio overview briefing section that counts the drafts nobody has touched for two weeks and links to them.",
+  "capabilities": [
+    "ext:briefing-sections",
+    "items:read:articles"
+  ],
+  "briefingSections": [
+    {
+      "id": "stale-drafts",
+      "title": "Stale drafts",
+      "description": "Drafts not touched for 14 days"
+    }
+  ],
+  "heopress": "^1.0.0-0",
+  "extensionPoints": {
+    "briefing-sections": "^1.0.0",
+    "context": "^1.0.0"
+  },
+  "security": {
+    "contact": "security@example.com"
+  }
+}
