@@ -1,0 +1,344 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { ArrowLeft, MailQuestion, MailCheck } from 'lucide-react';
+import i18n from 'i18next';
+import { useId } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { z } from 'zod';
+import { parseRetryAfterSeconds, formatWait } from './backup-code-page';
+import { publicFetch } from '@/lib/http';
+
+/**
+ * "Forgot admin path" page — PUBLIC, pre-auth recovery UI.
+ *
+ * Implements Req 14.5 and design.md §5.1 (the `/recovery/*` routes under
+ * `publicLayoutRoute`). Counterpart to the CMS endpoint from task 10.7:
+ *
+ *   POST /api/v1/admin/security/forgot-path
+ *     body { email }
+ *     → 200 { data: { sent: true } }   (ALWAYS — anti-enumeration)
+ *     → 429 { errors: [{ code: 'RATE_LIMITED' }] } + Retry-After header
+ *
+ * ── Anti-enumeration is the whole point (Req 14.5) ───────────────────
+ *
+ * The server returns the SAME generic 200 whether or not the email
+ * matches the Bootstrap Admin — it never reveals which accounts exist.
+ * This page mirrors that faithfully: ANY 200 (and even a network error,
+ * treated gracefully) renders ONE generic success message
+ * ("If that email belongs to the admin account, we've sent recovery
+ * instructions…"). The message is identical regardless of the input, so
+ * the UI leaks nothing the server doesn't.
+ *
+ * Only a 429 RATE_LIMITED breaks the uniform success — and that's a
+ * property of the requester's IP, not of any account's existence, so
+ * surfacing it doesn't enable enumeration.
+ *
+ * ── Network errors are treated as success ────────────────────────────
+ *
+ * A network failure could otherwise become a side channel ("the request
+ * to that email hung → maybe it triggered a real send"). To keep the
+ * observable behaviour uniform we render the same generic success panel
+ * on a network error as on a 200. The operator is told to check their
+ * inbox; if nothing arrives they can retry. This is deliberate — see the
+ * mutation's error handling below.
+ *
+ * ── Accessibility ────────────────────────────────────────────────────
+ *
+ *   - `useId()`-driven label/error wiring; `<label htmlFor>`.
+ *   - `aria-invalid` + `aria-describedby` for the inline email error.
+ *   - The rate-limit banner is `role="alert"`; the success panel uses
+ *     `aria-live="polite"`.
+ *   - A link back to `/recovery/backup-code`.
+ *
+ * ── i18n ─────────────────────────────────────────────────────────────
+ *
+ * Copy lives in the Studio `setup` namespace under `forgotPath.*`
+ * (zh-CN + en); the language comes from the locally saved choice or the
+ * browser, since the page is pre-auth (`src/i18n/index.ts`).
+ *
+ * Spec refs: requirements §14.5; design.md §5.1 (route tree), §4.8
+ * (endpoint contract), §5.6 (i18n keys).
+ */
+
+// ────────────────────────────────────────────────────────────────────────
+// Form schema
+// ────────────────────────────────────────────────────────────────────────
+
+/** Built per form so its message follows the current language. */
+const forgotPathSchema = () =>
+  z.object({
+    email: z.string().email(i18n.t('setup:backupCode.invalidEmail')),
+  });
+
+type ForgotPathFormValues = z.infer<ReturnType<typeof forgotPathSchema>>;
+
+// ────────────────────────────────────────────────────────────────────────
+// Request types
+// ────────────────────────────────────────────────────────────────────────
+
+/**
+ * Outcome of a forgot-path submit. We collapse the security-relevant
+ * branches deliberately:
+ *
+ *   - 'sent'        → any 200 OR a network error (uniform success copy).
+ *   - 'rate_limited'→ 429; carries the optional `Retry-After` wait.
+ */
+export type ForgotPathOutcome =
+  | { kind: 'sent' }
+  | { kind: 'rate_limited'; retryAfterSeconds: number | undefined };
+
+/**
+ * POST the forgot-path request. NEVER throws for the success/network
+ * branches — it resolves to a `ForgotPathOutcome` so the UI can stay
+ * uniform. A 429 resolves to `rate_limited`; everything else (200, 4xx
+ * other than 429, 5xx, network error) resolves to `sent`, keeping the
+ * observable behaviour indistinguishable across account existence.
+ */
+async function postForgotPath(
+  values: ForgotPathFormValues,
+): Promise<ForgotPathOutcome> {
+  let response: Response;
+  try {
+    response = await publicFetch('/api/v1/admin/security/forgot-path', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ email: values.email }),
+    });
+  } catch {
+    // Network error → treat as generic success to avoid a side channel.
+    return { kind: 'sent' };
+  }
+
+  if (response.status === 429) {
+    const retryAfterSeconds = parseRetryAfterSeconds(
+      response.headers.get('Retry-After'),
+    );
+    return { kind: 'rate_limited', retryAfterSeconds };
+  }
+
+  // 200 (the documented happy path) and any other non-429 status all map
+  // to the same generic success — the server already guarantees a 200 for
+  // the real flow, and we refuse to differentiate the rest.
+  return { kind: 'sent' };
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Component
+// ────────────────────────────────────────────────────────────────────────
+
+export function ForgotPathPage() {
+  const { t } = useTranslation('setup');
+  const emailId = useId();
+  const bannerId = useId();
+
+  const form = useForm<ForgotPathFormValues>({
+    resolver: zodResolver(forgotPathSchema()),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
+    defaultValues: { email: '' },
+  });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = form;
+
+  const mutation = useMutation<ForgotPathOutcome, never, ForgotPathFormValues>({
+    mutationKey: ['recovery', 'forgot-path'],
+    mutationFn: postForgotPath,
+    retry: false,
+  });
+
+  const onSubmit: SubmitHandler<ForgotPathFormValues> = (values) => {
+    mutation.mutate(values);
+  };
+
+  // A successful submit (whether the email matched or not) flips to the
+  // generic confirmation panel.
+  if (mutation.isSuccess && mutation.data.kind === 'sent') {
+    return <ForgotPathSentPanel />;
+  }
+
+  const rateLimited =
+    mutation.isSuccess && mutation.data.kind === 'rate_limited'
+      ? mutation.data
+      : null;
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-12">
+      <div className="w-full max-w-md rounded-card border border-line bg-panel p-8 shadow-sm">
+        <form noValidate className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <BackButton />
+
+          <header className="space-y-2">
+            <div className="flex items-center gap-2">
+              <MailQuestion
+                className="h-5 w-5 text-brand"
+                aria-hidden="true"
+              />
+              <h1 className="text-lg font-semibold tracking-tight">
+                {t('forgotPath.title')}
+              </h1>
+            </div>
+            <p className="text-sm text-dim">
+              {t('forgotPath.intro')}
+            </p>
+          </header>
+
+          {/* ── Rate-limit banner ────────────────────────────────────── */}
+          {rateLimited ? (
+            <div
+              id={bannerId}
+              role="alert"
+              className="rounded-ctl border border-bad/40 bg-bad-soft p-3 text-sm text-bad"
+            >
+              {rateLimited.retryAfterSeconds !== undefined
+                ? t('backupCode.banner.rateLimitedWait', {
+                  wait: formatWait(rateLimited.retryAfterSeconds),
+                })
+                : t('backupCode.banner.rateLimited')}
+            </div>
+          ) : null}
+
+          {/* ── Email ────────────────────────────────────────────────── */}
+          <Field id={emailId} label={t('backupCode.email')} error={errors.email?.message}>
+            <input
+              id={emailId}
+              type="email"
+              inputMode="email"
+              autoComplete="username"
+              spellCheck={false}
+              aria-invalid={errors.email ? 'true' : 'false'}
+              aria-describedby={errors.email ? `${emailId}-error` : undefined}
+              className={inputClass(Boolean(errors.email))}
+              {...register('email')}
+            />
+          </Field>
+
+          {/* ── Submit ───────────────────────────────────────────────── */}
+          <button
+            type="submit"
+            disabled={isSubmitting || mutation.isPending}
+            className="inline-flex w-full items-center justify-center rounded-ctl bg-brand px-4 py-2 text-[13px] font-medium text-brand-fg shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {mutation.isPending ? t('forgotPath.sending') : t('forgotPath.submit')}
+          </button>
+
+          {/* ── Have-a-code link ─────────────────────────────────────── */}
+          <p className="text-center text-sm text-dim">
+            {t('forgotPath.haveCode')}{' '}
+            <a
+              href="backup-code"
+              className="font-medium text-brand underline-offset-2 hover:underline"
+            >
+              {t('backupCode.title')}
+            </a>
+            {t('backupCode.sentenceEnd')}
+          </p>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Sub-components
+// ────────────────────────────────────────────────────────────────────────
+
+/**
+ * Generic confirmation panel. Rendered on ANY successful submit
+ * regardless of whether the email matched — the copy is identical so it
+ * never reveals account existence (Req 14.5).
+ */
+function ForgotPathSentPanel() {
+  const { t } = useTranslation('setup');
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-12">
+      <div className="w-full max-w-md space-y-6 rounded-card border border-line bg-panel p-8 shadow-sm">
+        <BackButton />
+
+        <header className="space-y-2">
+          <div className="flex items-center gap-2">
+            <MailCheck className="h-5 w-5 text-ok" aria-hidden="true" />
+            <h1 className="text-lg font-semibold tracking-tight">
+              {t('forgotPath.sentTitle')}
+            </h1>
+          </div>
+          <p className="text-sm text-dim" aria-live="polite">
+            {t('forgotPath.sentBody')}
+          </p>
+        </header>
+
+        <p className="text-center text-sm text-dim">
+          {t('forgotPath.haveCodeInstead')}{' '}
+            <a
+              href="backup-code"
+              className="font-medium text-brand underline-offset-2 hover:underline"
+            >
+            {t('backupCode.title')}
+          </a>
+          {t('backupCode.sentenceEnd')}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function BackButton() {
+  const { t } = useTranslation('setup');
+  return (
+    <button
+      type="button"
+      onClick={() => window.history.back()}
+      className="inline-flex items-center gap-2 text-sm font-medium text-dim transition hover:text-fg"
+    >
+      <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+      {t('backupCode.back')}
+    </button>
+  );
+}
+
+interface FieldProps {
+  id: string;
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}
+
+/**
+ * Label + inline error wrapper. Owns the `<label htmlFor>` linkage so the
+ * input gets a clickable label and a stable `role="alert"` error region.
+ */
+function Field({ id, label, error, children }: FieldProps) {
+  return (
+    <div className="space-y-1">
+      <label htmlFor={id} className="block text-sm font-medium text-fg">
+        {label}
+      </label>
+      {children}
+      {error ? (
+        <p id={`${id}-error`} role="alert" className="text-xs text-bad">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function inputClass(hasError: boolean, extra = ''): string {
+  const base =
+    'block w-full rounded-ctl border bg-bg px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-brand/30 border-line';
+  const border = hasError
+    ? 'border-bad/40 focus:border-bad/40 focus:ring-bad/30'
+    : 'border-line focus:border-brand';
+  return `${base} ${border} ${extra}`.trim();
+}
+
+export default ForgotPathPage;

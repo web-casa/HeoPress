@@ -1,0 +1,48 @@
+{
+  "title": "站点",
+  "topologyDescription": "你的站点、各站健康状态与带来访客的 AI 平台。",
+  "listTitle": "站点列表",
+  "deployment": "本部署",
+  "layer": "AI 平台",
+  "layerOn": "显示 AI 平台",
+  "groups": {
+    "bad": "异常",
+    "warn": "警告",
+    "unknown": "未知",
+    "ok": "正常",
+    "mfa_required": "需要二次验证",
+    "unavailable": "暂不可用"
+  },
+  "node": "{{name}}，{{state}}",
+  "noEdgesHint": "这里不显示站点之间的链接。",
+  "verifyToSee": "切换并验证后可查看其 AI 平台。",
+  "detail": {
+    "empty": "选择一个站点查看详情。",
+    "health": "健康状态",
+    "published": "已发布文章",
+    "readableOnly": "仅含可读集合",
+    "crawler": "AI 爬虫访问 · 7 天",
+    "referral": "AI 引荐 · 30 天",
+    "platforms": "AI 平台引荐份额",
+    "attention": "需要关注",
+    "nothing": "没有需要关注的事项。",
+    "role": "你的角色",
+    "domain": "主域名",
+    "openSite": "切换到此站点",
+    "topPages": "被 AI 爬虫读取最多",
+    "pagesOnSite": "切换到该站点后可查看页面级内容。"
+  },
+  "list": {
+    "search": "搜索站点",
+    "health": "健康状态",
+    "all": "全部",
+    "sort": "排序",
+    "byName": "名称",
+    "byHealth": "健康状态",
+    "name": "站点",
+    "domain": "主域名",
+    "role": "角色",
+    "status": "状态",
+    "empty": "没有匹配的站点。"
+  }
+}

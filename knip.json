@@ -1,0 +1,91 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": [
+    "examples/**",
+    "apps/cms/src/services/site-import/__tests__/fixtures/**"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.{mjs,js,ts}",
+        "docker/scripts/*.mjs"
+      ],
+      "ignoreBinaries": [
+        "gitleaks",
+        "actionlint"
+      ]
+    },
+    "apps/cms": {
+      "entry": [
+        "src/serve.ts",
+        "src/index.ts",
+        "scripts/**/*.{ts,mjs}",
+        "src/scripts/**/*.ts",
+        "k6/**/*.{js,ts}"
+      ],
+      "ignoreBinaries": [
+        "k6"
+      ],
+      "ignoreDependencies": [
+        "esbuild",
+        "k6"
+      ]
+    },
+    "apps/studio": {
+      "entry": [
+        "e2e-visual/*.mjs"
+      ],
+      "ignoreDependencies": [
+        "axe-core"
+      ]
+    },
+    "apps/site-classic": {
+      "entry": [
+        "src/serve.ts",
+        "src/app.ts",
+        "src/read-port.ts",
+        "src/cache.ts"
+      ]
+    },
+    "apps/site-astro": {
+      "entry": [
+        "astro.config.mjs",
+        "src/integration.mjs",
+        "src/pages/**/*.astro",
+        "src/ext-stub.astro",
+        "src/builder/step-guard.mjs",
+        "themes/*/src/**/*.astro"
+      ],
+      "ignoreBinaries": [
+        "prlimit"
+      ]
+    },
+    "packages/database": {
+      "drizzle": false,
+      "entry": [
+        "drizzle.config.ts",
+        "scripts/**/*.{ts,mjs}",
+        "src/__tests__/fixtures/*.ts"
+      ]
+    },
+    "packages/runtime": {
+      "ignoreDependencies": [
+        "sharp",
+        "tsx"
+      ],
+      "entry": [
+        "src/__tests__/fixtures/*.ts"
+      ]
+    },
+    "packages/public-site": {
+      "entry": [
+        "playwright.sites.config.ts",
+        "e2e/*.stack.ts"
+      ],
+      "ignoreDependencies": [
+        "axe-core"
+      ]
+    },
+    "packages/*": {}
+  }
+}

@@ -1,0 +1,18 @@
+// A plugin written for the LumiBase Extension SDK: every change here is deterministic.
+import { defineHook, type HookContext } from '@lumibase/extension-sdk';
+import type { ExtensionManifest } from "@lumibase/extension-sdk";
+export { defineCdcSubscriber } from '@lumibase/extension-sdk';
+
+export const pluginName: ExtensionManifest['name'] = 'acme-seo-notes';
+
+export default defineHook<{ title?: string }>({
+  on: 'items.create',
+  handler: async ({ payload, ctx }: { payload: { title?: string }; ctx: HookContext }) => {
+    ctx.logger.info(`created ${payload.title ?? ''}`);
+  },
+});
+
+/** Loaded on demand. */
+export async function sdk(): Promise<typeof import('@lumibase/extension-sdk')> {
+  return import('@lumibase/extension-sdk');
+}

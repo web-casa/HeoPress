@@ -1,0 +1,474 @@
+{
+  "apiKeys": {
+    "title": "API keys",
+    "description": "Issue scoped bearer tokens and attach roles or policies to shape data access.",
+    "new": "New API key",
+    "loadFailed": "Failed to load API keys.",
+    "loading": "Loading API keys…",
+    "emptyTitle": "No API keys yet",
+    "emptyBody": "Create a key to grant machine access.",
+    "columns": {
+      "name": "Name",
+      "prefix": "Prefix",
+      "status": "Status",
+      "lastUsed": "Last used"
+    },
+    "publishable": "Publishable",
+    "anyOrigin": "any origin",
+    "rotateLabel": "Rotate API key {{name}}",
+    "confirmRotate": "Rotate API key \"{{name}}\"?",
+    "revokeLabel": "Revoke API key {{name}}",
+    "confirmRevoke": "Revoke API key \"{{name}}\"?",
+    "info": {
+      "created": "Created",
+      "expires": "Expires",
+      "rotated": "Rotated",
+      "lastIp": "Last IP"
+    },
+    "roles": "Roles",
+    "noRoles": "No roles attached.",
+    "attachRole": "Attach role…",
+    "newRole": "New role",
+    "directPolicies": "Direct policies",
+    "noPolicies": "No direct policies attached.",
+    "attachPolicy": "Attach policy…",
+    "newPolicy": "New policy",
+    "newGeneric": "New",
+    "errors": {
+      "selectFirst": "Select an API key first.",
+      "conflicts": "Policy conflicts must be resolved before attaching.",
+      "attachCancelled": "Attach cancelled."
+    },
+    "confirmAttachRole_one": "Attach role with {{count}} permission warning?",
+    "confirmAttachRole_other": "Attach role with {{count}} permission warnings?",
+    "confirmAttachPolicy_one": "Attach policy with {{count}} permission warning?",
+    "confirmAttachPolicy_other": "Attach policy with {{count}} permission warnings?",
+    "status": {
+      "active": "active",
+      "expired": "expired",
+      "revoked": "revoked"
+    },
+    "allowedOrigins": "Allowed origins",
+    "allowedOriginsLabel": "Allowed origins, one per line",
+    "allowedOriginsHelp": "One per line. Empty means <strong>any origin</strong>. Requests without an origin — native or server-side callers — are always allowed, so this is not a defence against <code>curl</code>.",
+    "confirmRemoveOrigins": "Remove the origin allowlist? This key will then work from any website.",
+    "saving": "Saving…",
+    "saveOrigins": "Save origins",
+    "reset": "Reset",
+    "detach": "Detach {{name}}",
+    "preview": {
+      "title": "Effective permission preview",
+      "description": "Policy rows reachable through direct policies and attached roles.",
+      "rows_one": "{{count}} row",
+      "rows_other": "{{count}} rows",
+      "loading": "Loading preview…",
+      "empty": "No permission rows attached.",
+      "collection": "Collection"
+    },
+    "actions": {
+      "create": "create",
+      "read": "read",
+      "update": "update",
+      "delete": "delete",
+      "share": "share"
+    },
+    "form": {
+      "name": "Name",
+      "description": "Description",
+      "expires": "Expires",
+      "publishable": "Publishable (safe to embed in a browser or app)",
+      "publishableHelp": "Issues an <code>lbk_pub_…</code> token. It is <strong>not</strong> a secret — anyone who loads your app can read it, so scope it as if it were already public. Buys per-key quota, rotation and audit, not confidentiality.",
+      "allowedOrigins": "Allowed origins (one per line, optional)",
+      "allowedOriginsHelp": "Blocks other websites from using this key in a browser. Leave empty for no constraint. Requests without an origin — native or server-side callers — are always allowed, so this is not a defence against <code>curl</code>.",
+      "adminAccess": "Admin access",
+      "adminAccessHint": "(bypass all permission checks)",
+      "appAccess": "App access",
+      "appAccessHint": "(can sign in to Studio)"
+    },
+    "creating": "Creating…",
+    "create": "Create",
+    "createAndAttach": "Create & attach",
+    "token": "API key token",
+    "copied": "Copied",
+    "copy": "Copy",
+    "done": "Done",
+    "accessReview": "Access review",
+    "placeholders": {
+      "origin": "https://app.example.com",
+      "name": "production-sync"
+    }
+  },
+  "importExport": {
+    "title": "Import / export",
+    "description": "Move roles, policies, bindings, and API key access metadata between environments.",
+    "exporting": "Exporting…",
+    "export": "Export",
+    "import": "Import",
+    "capabilities": {
+      "portableTitle": "Portable manifest",
+      "portableText": "JSON includes access refs and binding priorities.",
+      "dryRunTitle": "Dry-run first",
+      "dryRunText": "Review diff, warnings, and blocking conflicts before writes.",
+      "auditedTitle": "Audited apply",
+      "auditedText": "Successful imports refresh access queries after the apply response."
+    },
+    "errors": {
+      "chooseManifest": "Choose a manifest first.",
+      "notManifest": "Selected file is not a HeoPress access manifest.",
+      "readFailed": "Could not read file."
+    },
+    "dialog": {
+      "title": "Import access manifest",
+      "description": "Dry-run runs immediately after a valid JSON file is selected.",
+      "close": "Close import dialog",
+      "manifestJson": "Manifest JSON",
+      "parseFailed": "Could not parse manifest",
+      "dryRunFailed": "Dry-run failed",
+      "running": "Running dry-run…",
+      "blocking": "Blocking conflicts",
+      "warnings": "Warnings",
+      "applyMode": "Apply mode",
+      "importFailed": "Import failed",
+      "applied": "Import applied",
+      "appliedBody": "Access data was updated successfully.",
+      "applying": "Applying…",
+      "apply": "Apply import",
+      "diff": "Dry-run diff"
+    },
+    "status": {
+      "create": "Create",
+      "update": "Update",
+      "unchanged": "Unchanged",
+      "delete": "Delete"
+    },
+    "modes": {
+      "merge": {
+        "label": "Merge",
+        "hint": "Upsert managed refs and keep existing access rows."
+      },
+      "replaceManaged": {
+        "label": "Replace managed",
+        "hint": "Replace refs present in the manifest."
+      },
+      "replaceAll": {
+        "label": "Replace all",
+        "hint": "Replace all importable access rows for this site."
+      }
+    },
+    "sections": {
+      "roles": "Roles",
+      "policies": "Policies",
+      "apiKeys": "API keys",
+      "rolePolicies": "Role policies",
+      "userRoles": "User roles",
+      "userPolicies": "User policies",
+      "apiKeyRoles": "API key roles",
+      "apiKeyPolicies": "API key policies"
+    },
+    "titleCount": "{{title}} ({{count}})",
+    "dryRun": {
+      "passed": "Dry-run passed",
+      "passedBody": "No blocking conflicts or validation errors.",
+      "warnings": "Dry-run passed with warnings",
+      "warningsBody": "Review warnings before applying.",
+      "blocked": "Dry-run blocked",
+      "blockedBody": "Resolve blocking conflicts before applying."
+    }
+  },
+  "publicAccess": {
+    "actions": {
+      "read": "Read",
+      "create": "Create",
+      "update": "Update",
+      "delete": "Delete"
+    },
+    "requestFailed": "Request failed.",
+    "loading": "Loading access grants…",
+    "loadFailed": "Could not load access grants.",
+    "intro": "Grant content access to visitors who are not staff. Anything not listed here is denied — both realms start empty.",
+    "noCollections": "This site has no content collections yet. Create one before granting access to it.",
+    "disable": "Disable public access",
+    "enable": "Enable public access",
+    "publicWarning": "Anyone on the internet can read what is checked below, with no credential. A token in your frontend does not change that — treat these grants as fully public.",
+    "off": "Public access is off. Unauthenticated requests are rejected. Enable it to choose what visitors may read.",
+    "collection": "Collection",
+    "rowScope": "Row scope",
+    "checkboxLabel": "{{action}} {{collection}} for {{realm}}",
+    "actionPrefix": "{{action}}:",
+    "publishedOnly": "published only",
+    "ownOnly": "own rows only"
+  },
+  "layout": {
+    "title": "Access control",
+    "description": "Roles bundle policies; policies bundle permission rules. Use the matrix to audit and the sandbox to debug a verdict.",
+    "tabs": {
+      "roles": "Roles",
+      "policies": "Policies",
+      "public": "Public & subscribers",
+      "apiKeys": "API keys",
+      "importExport": "Import / export",
+      "matrix": "Permission matrix",
+      "sandbox": "Test sandbox"
+    }
+  },
+  "systemCollections": {
+    "content": {
+      "label": "Content collections",
+      "hint": "Project content and custom collections returned by the schema API."
+    },
+    "schema": {
+      "label": "Schema builder",
+      "hint": "Collections, fields, and relations that shape the data model."
+    },
+    "access": {
+      "label": "Access control",
+      "hint": "Roles, policies, bindings, and permission rows."
+    },
+    "extension": {
+      "label": "Extension access",
+      "hint": "Extension install/configure grants, module visibility, endpoints, and operations."
+    },
+    "sensitive": {
+      "label": "Sensitive system",
+      "hint": "Security state, audit trails, backup codes, and API key metadata."
+    }
+  },
+  "roles": {
+    "title": "Roles",
+    "description": "Each user has one primary role per site. Assign policies to roles to grant collection permissions.",
+    "new": "New role",
+    "loadFailed": "Failed to load roles.",
+    "emptyTitle": "No roles yet",
+    "emptyBody": "Create a role to start assigning permissions.",
+    "columns": {
+      "name": "Name",
+      "admin": "Admin",
+      "appAccess": "App access",
+      "description": "Description"
+    },
+    "yes": "yes",
+    "no": "no",
+    "deleteLabel": "Delete role {{name}}",
+    "deleteConfirm": "Delete role \"{{name}}\"?",
+    "adminAccessHint": "Admin access (bypass all permission checks)",
+    "appAccessHint": "App access (members can sign in to Studio)",
+    "creating": "Creating…",
+    "create": "Create",
+    "namePlaceholder": "editor"
+  },
+  "policies": {
+    "title": "Policies",
+    "description": "Each policy bundles permission rows (collection × action). Attach policies to roles or users; lower priority runs first.",
+    "new": "New policy",
+    "loadFailed": "Failed to load policies.",
+    "emptyTitle": "No policies yet",
+    "emptyBody": "Create a policy and add permission rules to it.",
+    "columns": {
+      "name": "Name",
+      "description": "Description",
+      "guards": "Guards"
+    },
+    "deleteLabel": "Delete policy {{name}}",
+    "deleteConfirm": "Delete policy \"{{name}}\"?",
+    "guard": {
+      "from": "from {{date}}",
+      "until": "until {{date}}",
+      "allowIp_one": "allow {{count}} ip",
+      "allowIp_other": "allow {{count}} ips",
+      "denyIp_one": "deny {{count}} ip",
+      "denyIp_other": "deny {{count}} ips"
+    },
+    "creating": "Creating…",
+    "create": "Create",
+    "namePlaceholder": "content-editors"
+  },
+  "roleDetail": {
+    "conflictsBlock": "Policy conflicts must be resolved before attaching.",
+    "attachWithWarnings_one": "Attach policy with {{count}} permission warning?",
+    "attachWithWarnings_other": "Attach policy with {{count}} permission warnings?",
+    "attachCancelled": "Attach cancelled.",
+    "loading": "Loading role…",
+    "notFound": "Role not found.",
+    "back": "Back to roles",
+    "descriptionPlaceholder": "Add description…",
+    "delete": "Delete",
+    "adminAccess": "Admin access",
+    "adminAccessHint": "Bypass all permission checks for members.",
+    "appAccess": "App access",
+    "appAccessHint": "Members can sign in to Studio.",
+    "attachedPolicies": "Attached policies",
+    "attachedCount_one": "{{count}} attached",
+    "attachedCount_other": "{{count}} attached",
+    "noPolicies": "No policies attached yet.",
+    "priority": "priority {{priority}}",
+    "detachPolicy": "Detach policy",
+    "attachPlaceholder": "Attach an existing policy…",
+    "managePolicies": "Manage policies",
+    "members": "Members",
+    "assignedCount_one": "{{count}} assigned",
+    "assignedCount_other": "{{count}} assigned",
+    "noMembers": "No users assigned yet. Provide a user id below to assign one.",
+    "removeUser": "Remove user",
+    "conflict": {
+      "none": "No permission conflicts detected.",
+      "preview": "Permission conflict preview",
+      "blocking": "Blocking",
+      "warnings": "Warnings"
+    },
+    "userIdPlaceholder": "user id",
+    "assign": "Assign"
+  },
+  "policyDetail": {
+    "loading": "Loading policy…",
+    "notFound": "Policy not found.",
+    "back": "Back to policies",
+    "rows": "Permission rows",
+    "rowsHint": "Each row grants (collection, action) with optional row-level rules, field whitelist, validation, and presets.",
+    "addPermission": "Add permission",
+    "noRows": "No permissions yet. Add one to grant access.",
+    "guards": {
+      "title": "Guardrails",
+      "hint": "Time-bound + IP allow/deny evaluated before any permission row.",
+      "gui": "GUI",
+      "json": "JSON",
+      "validFrom": "Valid from",
+      "validUntil": "Valid until",
+      "ipAllow": "IP allow (comma separated)",
+      "ipDeny": "IP deny (comma separated)"
+    },
+    "collection": "Collection",
+    "collectionPlaceholder": "posts",
+    "sensitiveHidden": "Sensitive system collections are hidden unless your current principal has admin bypass.",
+    "action": "Action",
+    "adding": "Adding…",
+    "add": "Add",
+    "groupLabel": "{{label}}:"
+  },
+  "matrix": {
+    "actions": {
+      "create": "create",
+      "read": "read",
+      "update": "update",
+      "delete": "delete",
+      "share": "share",
+      "review": "review",
+      "read_decrypted": "read_decrypted"
+    },
+    "loading": "Loading matrix…",
+    "loadFailed": "Failed to load permission matrix.",
+    "title": "Permission matrix",
+    "description": "Compiled bundle for the current principal. Click a cell to inspect.",
+    "adminActive": "Admin bypass active — every cell allowed",
+    "noCollections": "No collections yet.",
+    "cellAllowed": "{{action}} on {{collection}}: allowed",
+    "cellDenied": "{{action}} on {{collection}}: denied",
+    "adminBypass": "Admin bypass",
+    "conditional": "conditional",
+    "inspector": {
+      "admin": "Admin bypass — all fields, no rule restriction.",
+      "compiled": "Compiled from one or more permission rows on attached policies.",
+      "denied": "No matching permission row — denied.",
+      "close": "Close inspector",
+      "sources": "Source policies",
+      "unknown": "unknown",
+      "fields": "Fields",
+      "none": "none",
+      "rule": "Rule (permissions)",
+      "presets": "Presets / validation"
+    }
+  },
+  "sandbox": {
+    "notObject": "Item payload must be a JSON object.",
+    "invalidJson": "Invalid JSON: {{message}}",
+    "title": "Test sandbox",
+    "description": "Simulate a verdict for the active principal. Send an optional item payload to evaluate row-level rules.",
+    "checking": "Checking…",
+    "run": "Run check",
+    "includeItem": "Include item payload (evaluates row-level rule)",
+    "allowed": "Allowed",
+    "denied": "Denied",
+    "rule": "Rule",
+    "presets": "Presets"
+  },
+  "rowEditor": {
+    "noFields": "no fields",
+    "allFields": "all fields",
+    "fieldCount_one": "{{count}} field",
+    "fieldCount_other": "{{count}} fields",
+    "deleteRow": "Delete permission row",
+    "deleteConfirm": "Delete {{action}} permission for \"{{collection}}\"?",
+    "ruleTitle": "Row-level rule (permissions)",
+    "ruleHint": "Empty = unconditional. Use $CURRENT_USER / $CURRENT_SITE / $NOW / $IP / $HEADERS.* magic vars.",
+    "topLevelObject": "Top-level value must be a JSON object.",
+    "validation": "Validation",
+    "validationHint": "Per-action validation overrides (Zod-like JSONata).",
+    "presetsHint": "Server-applied defaults, e.g. {\"updated_by\": \"$CURRENT_USER\"}.",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "saved": "Saved",
+    "fieldsHint": "* = all, -name = exclude.",
+    "allFieldsButton": "All fields",
+    "removeField": "Remove {{field}}",
+    "addField": "add field…",
+    "mustBeObject": "Must be a JSON object.",
+    "nested": "This rule uses _or / _not nesting. Switch to JSON mode to edit it.",
+    "noConditions": "No conditions — anyone with this row can pass the rule check.",
+    "fieldPlaceholder": "field",
+    "magicValuePlaceholder": "$VAR or value",
+    "valuePlaceholder": "value",
+    "magicVar": "$var…",
+    "removeCondition": "Remove condition",
+    "addCondition": "+ Add condition"
+  },
+  "users": {
+    "title": "Users",
+    "invite": "Invite User",
+    "noRole": "No Role",
+    "unknownRole": "Unknown",
+    "columns": {
+      "user": "User",
+      "role": "Role",
+      "status": "Status",
+      "lastSeen": "Last Seen",
+      "actions": "Actions"
+    },
+    "empty": "No users found.",
+    "never": "Never",
+    "confirmRemove": "Are you sure you want to remove this user from the site?",
+    "edit": "Edit user",
+    "remove": "Remove user",
+    "status": {
+      "active": "Active",
+      "invited": "Invited",
+      "suspended": "Suspended"
+    },
+    "inviteTitle": "Invite User",
+    "email": "Email address",
+    "emailPlaceholder": "user@example.com",
+    "assignRole": "Assign Role",
+    "inviting": "Inviting…",
+    "sendInvite": "Send Invite",
+    "editTitle": "Edit User: {{email}}",
+    "saving": "Saving…"
+  },
+  "teams": {
+    "title": "Teams",
+    "create": "Create Team",
+    "empty": "No teams found.",
+    "noDescription": "No description provided.",
+    "manageMembers": "Manage Members",
+    "confirmDelete": "Delete this team?",
+    "edit": "Edit team",
+    "delete": "Delete team",
+    "editTitle": "Edit Team",
+    "name": "Name",
+    "description": "Description",
+    "saving": "Saving…",
+    "membersTitle": "{{name}} Members",
+    "selectUser": "Select a user to add...",
+    "add": "Add",
+    "noMembers": "No members yet.",
+    "confirmRemoveMember": "Remove user from team?",
+    "removeMember": "Remove from team"
+  }
+}
