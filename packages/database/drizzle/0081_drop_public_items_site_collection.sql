@@ -1,0 +1,1 @@
+DROP INDEX "public_items_site_collection";
