@@ -1,0 +1,42 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "landing-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4311", "--directory", "apps/landing/out"],
+      "port": 4311
+    },
+    {
+      "name": "landing",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-F", "@lumibase/landing", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "marketplace",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-F", "@lumibase/marketplace", "dev"],
+      "port": 3002
+    },
+    {
+      "name": "studio",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-F", "@lumibase/studio", "dev"],
+      "port": 2026
+    },
+    {
+      "name": "docs",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-F", "@lumibase/docs", "dev"],
+      "port": 5174,
+      "autoPort": true
+    },
+    {
+      "name": "docs-dist",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4312", "--directory", "apps/docs/dist"],
+      "port": 4312
+    }
+  ]
+}
