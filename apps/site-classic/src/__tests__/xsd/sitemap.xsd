@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HeoPress test schema (written for this project from the sitemap protocol 0.9 as published at sitemaps.org; not a
+  copy of the published schema): url sets and sitemap indexes, at most 50,000 entries, absolute http(s) locations of
+  at most 2,048 characters, W3C datetime lastmod; other namespaces only where an imported schema defines them.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:sm="http://www.sitemaps.org/schemas/sitemap/0.9"
+           targetNamespace="http://www.sitemaps.org/schemas/sitemap/0.9"
+           elementFormDefault="qualified">
+  <xs:import namespace="http://www.w3.org/1999/xhtml" schemaLocation="xhtml-link.xsd"/>
+  <xs:import namespace="http://www.google.com/schemas/sitemap-news/0.9" schemaLocation="news.xsd"/>
+
+  <xs:simpleType name="loc">
+    <xs:restriction base="xs:anyURI">
+      <xs:minLength value="12"/>
+      <xs:maxLength value="2048"/>
+      <xs:pattern value="https?://[^\s]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="w3cDatetime">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="\d{4}(-\d{2}(-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+\-]\d{2}:\d{2}))?)?)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="urlset">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="url" minOccurs="0" maxOccurs="50000">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="loc" type="sm:loc"/>
+              <xs:element name="lastmod" type="sm:w3cDatetime" minOccurs="0"/>
+              <xs:any namespace="##other" processContents="strict" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="sitemapindex">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="sitemap" minOccurs="0" maxOccurs="50000">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="loc" type="sm:loc"/>
+              <xs:element name="lastmod" type="sm:w3cDatetime" minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
