@@ -1,0 +1,21 @@
+# Resource limits emulating a 2 vCPU / 4 GB VPS for the P03 baseline
+# (docs/benchmarks/p03-baseline.md). Docker cannot share one limit across
+# containers, so the budget is split; the sum is 2 CPUs and 4 GB.
+services:
+  postgres:
+    deploy:
+      resources:
+        limits: { cpus: "0.75", memory: 1536M }
+  cms:
+    # One benchmark principal makes all requests: raise its per-principal API
+    # budget (default 600/min) instead of switching the limiter off, so every
+    # request still pays for its counter in PostgreSQL.
+    environment:
+      HEOPRESS_API_RATE_LIMIT: "10000000"
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1536M }
+  cms-worker:
+    deploy:
+      resources:
+        limits: { cpus: "0.25", memory: 1024M }
