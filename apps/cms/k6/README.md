@@ -1,0 +1,143 @@
+# k6 Load Tests — HeoPress CMS
+
+Load test scripts for HeoPress delivery API and realtime WebSocket endpoints.
+
+## Prerequisites
+
+Install [k6](https://k6.io/docs/getting-started/installation/):
+
+```bash
+# macOS
+brew install k6
+
+# Docker
+docker pull grafana/k6
+```
+
+## Scripts
+
+| Script | Scenario | Target |
+|---|---|---|
+| `smoke.js` | Quick sanity — 1 VU, 30 s | All main endpoints |
+| `load-items.js` | Item list/detail throughput + create burst | 50 VU list ramp + 10 VU detail + 30 VU burst |
+| `load-deliver.js` | 90% Zipf delivery + 10% item-list mix | Phase 0 baseline workload |
+| `load-realtime.js` | WebSocket subscription ramp | 100 concurrent WS connections |
+| `load-penetration.js` | 95% missing-slug probes + 5% good page (Req 19) | DB-query-per-404 ≤ 0.05 |
+| `login-brute-force.js` | 50 VU login spam + baseline traffic | `/api/v1/auth/login` IP block (Req 8.2/8.3) |
+| `cross-site-leak.js` | Cross-tenant isolation probe | Multi-site data + auth + realtime isolation |
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `BASE_URL` | `http://localhost:1989` | CMS base URL (use `ws://` for realtime) |
+| `SITE_ID` | `site_test` | Site ID for `X-HeoPress-Site` header |
+| `TOKEN` | `dev:user123` | Bearer token |
+| `COLLECTION` | `articles` | Collection name for items/realtime tests |
+
+### `login-brute-force.js` extra env
+
+| Variable | Default | Description |
+|---|---|---|
+| `LOGIN_EMAIL` | `bruteforce-target@example.test` | Email used in the wrong-password POSTs. Need not exist; the LoginGuard counts both known and unknown emails toward the IP rate-limit. |
+| `WRONG_PASSWORD` | `definitely-not-the-password` | Password sent on every attempt. Must not match a real account. |
+| `IP_MAX_FAILED_ATTEMPTS` | `20` | The `ipMaxFailedAttempts` configured in `Lockout_Policy` (Standard preset = 20). |
+| `IP_BLOCK_HEADROOM` | `10` | Extra attempts tolerated before the first observed 429 (race between 50 VUs and the server-side counter). Sets the `attempts_before_first_block` p95 threshold. |
+| `BASELINE_P95_MS` | `800` | p95 latency budget for the `baseline_traffic` scenario. Test fails if `/health` or `/api/v1/setup/state` exceeds this while login is being spammed. |
+| `DURATION` | `2m` | Duration of both scenarios. |
+
+## Running
+
+```bash
+# Smoke test (quick sanity check)
+k6 run --env BASE_URL=http://localhost:1989 \
+       --env SITE_ID=my-site \
+       --env TOKEN=dev:myuser \
+       apps/cms/k6/smoke.js
+
+# Item load test (list/detail/create against the seeded dataset)
+k6 run --env BASE_URL=http://localhost:1989 \
+       --env SITE_ID=loadtest-main-00000001 \
+       --env TOKEN=dev:admin@heopress.example:admin \
+       --env COLLECTION=loadtest_collection_01 \
+       apps/cms/k6/load-items.js
+
+# Delivery baseline (90% Zipf pages + 10% item lists)
+k6 run --summary-export=load-deliver.json \
+       --env BASE_URL=http://localhost:1989 \
+       --env SITE_ID=loadtest-main-00000001 \
+       --env TOKEN=dev:admin@heopress.example:admin \
+       --env COLLECTION=loadtest_collection_01 \
+       apps/cms/k6/load-deliver.js
+
+# Realtime WebSocket test
+k6 run --env BASE_URL=ws://localhost:1989 \
+       --env SITE_ID=my-site \
+       --env TOKEN=dev:myuser \
+       apps/cms/k6/load-realtime.js
+
+# Login brute-force defence (Req 8.2, 8.3 — IP block under 50 VU spam)
+# Assumes a running CMS instance with system_state='initialized'.
+# Test is on-demand, not part of CI.
+k6 run --env BASE_URL=http://localhost:1989 \
+       --env LOGIN_EMAIL=bruteforce-target@example.test \
+       apps/cms/k6/login-brute-force.js
+
+# Cache penetration (Req 19 — tombstone + shape guard)
+# Seed a published page first. For DB-query-per-404 measurement from one IP,
+# set HEOPRESS_DELIVER_RATE_LIMIT=0 (default 1200/min trips at 50 RPS).
+k6 run --env BASE_URL=http://localhost:1989 \
+       --env SITE_ID=site_test \
+       --env GOOD_SLUG=home \
+       --env MISS_POOL=40 \
+       apps/cms/k6/load-penetration.js
+```
+
+## Reproducible Phase 0 baseline
+
+Use the pinned runner after starting CMS with `HEOPRESS_API_RATE_LIMIT=0`:
+
+```bash
+DATABASE_URL=postgresql://heopress:heopress_dev@127.0.0.1:55432/heopress_baseline \
+TOKEN="$LOAD_TEST_TOKEN" \
+BASE_URL=http://127.0.0.1:1989 \
+apps/cms/k6/baseline/run.sh
+```
+
+The runner pins the k6 image digest `grafana/k6@sha256:e7eeddf1ce2361df6920d925297f487c0ba549c44be242c6a9c22f28d9b08efa`, seeds the dataset, uses
+`PAGE_COUNT=100`, `ZIPF_EXPONENT=1.1`, `THINK_TIME=0.1`, `20 VUs` for delivery,
+and exports p50/p95/p99 summaries for all four workloads. It does not stop or
+remove Docker containers.
+
+## Thresholds
+
+### smoke.js
+- `http_req_failed` < 1%
+- `http_req_duration` p95 < 500 ms
+
+### load-items.js
+- List: `http_req_failed` < 1%, p95 < 800 ms
+- Create: `http_req_failed` < 2%, p95 < 1200 ms
+
+### load-realtime.js
+- WS connect: p95 < 500 ms
+- `realtime_errors` < 5
+
+### login-brute-force.js
+- `login_blocked_responses` count > 0 — at least one HTTP 429 IP_BLOCKED observed (Req 8.3)
+- `attempts_before_first_block` p95 ≤ `IP_MAX_FAILED_ATTEMPTS + IP_BLOCK_HEADROOM` (default 30) — block kicks in close to the configured `ipMaxFailedAttempts` (Req 8.2)
+- `http_req_failed{scenario:baseline_traffic}` < 1% — `/health` and `/api/v1/setup/state` keep returning 2xx during the spam
+- `http_req_duration{scenario:baseline_traffic}` p95 ≤ `BASELINE_P95_MS` (default 800 ms) — non-login routes do not degrade
+- `login_unexpected_responses` count < 10 — login responses stay within the expected 401 / 423 / 429 set
+
+## CI Integration
+
+```yaml
+# .github/workflows/load-test.yml (run manually or on schedule)
+- name: Run smoke test
+  run: k6 run apps/cms/k6/smoke.js
+  env:
+    BASE_URL: ${{ secrets.PREVIEW_API_URL }}
+    TOKEN: ${{ secrets.LOAD_TEST_TOKEN }}
+    SITE_ID: ${{ secrets.LOAD_TEST_SITE }}
+```
