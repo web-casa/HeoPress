@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Example Blog</title>
+  <link rel="self" href="https://blog.example.com/atom.xml"/>
+  <link rel="next" href="https://blog.example.com/atom.xml?page=2"/>
+  <entry>
+    <title>Release notes</title>
+    <link rel="alternate" type="text/html" href="https://blog.example.com/posts/release-notes"/>
+    <link rel="edit" href="https://blog.example.com/api/1"/>
+    <published>2026-10-20T10:00:00Z</published>
+  </entry>
+  <entry>
+    <title>Second post</title>
+    <link href="posts/second"/>
+    <updated>2026-10-21T10:00:00Z</updated>
+  </entry>
+</feed>

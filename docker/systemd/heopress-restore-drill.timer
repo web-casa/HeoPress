@@ -1,0 +1,12 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+[Unit]
+Description=Run HeoPress restore drill weekly
+
+[Timer]
+OnCalendar=Sun *-*-* 03:00:00
+RandomizedDelaySec=10min
+Persistent=true
+Unit=heopress-restore-drill.service
+
+[Install]
+WantedBy=timers.target
