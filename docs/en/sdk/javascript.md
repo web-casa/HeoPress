@@ -1,0 +1,376 @@
+---
+version: 2
+lastUpdated: 2026-10-10T09:01:07.711Z
+sourceLang: en
+contentHash: 6e60b18d751ffc9c
+codeVerified: 2026-10-10T09:01:07.711Z
+codeVerifiedHash: 6e60b18d751ffc9c
+codeVerifiedClaims: 6
+---
+
+# HeoPress JavaScript SDK
+
+> **Package:** `@heopress/sdk`
+>
+> A composable, typed REST client for HeoPress, plus realtime subscriptions and TypeScript type generation.
+
+## Installation
+
+```bash
+npm install @heopress/sdk
+# or
+pnpm add @heopress/sdk
+```
+
+## The shape of this SDK
+
+Two things to know before the examples, because they differ from most CMS clients:
+
+1. **The client is a transport, not a façade.** `createHeoPressClient` gives you
+   `rawRequest`, `request`, and `with`. Operations are separate **command**
+   functions you pass to `request` — a command is a function that takes the
+   client and returns a promise. This keeps the bundle tree-shakeable: you import
+   only the commands you use.
+2. **There is no `login()`.** The client takes a `token` you already hold. Obtain
+   it through your auth flow (Logto, or `dev:<logtoId>` in dev mode) and pass it
+   in. The client can silently refresh it if you also supply a `refreshToken`.
+
+A convenience plugin, `legacyRest()`, bundles the whole REST surface into grouped
+namespaces if you would rather not import commands individually.
+
+## Quick start
+
+```typescript
+import { createHeoPressClient, readItems } from '@heopress/sdk'
+
+const client = createHeoPressClient({
+  url: 'https://api.mysite.heopress.example',
+  siteId: 'site_abc123',
+  token: process.env.HEOPRESS_TOKEN!,
+})
+
+// Commands are curried: build one, hand it to request().
+const articles = await client.request(
+  readItems('articles', {
+    filter: { status: { _eq: 'published' } },
+    sort: ['-created_at'],
+    limit: 10,
+  }),
+)
+```
+
+---
+
+## Client configuration
+
+`createHeoPressClient(opts: HeoPressClientOptions)` (`packages/sdk/src/client.ts`):
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `url` | `string` | Yes | API base URL, e.g. `https://api.heopress.example` |
+| `token` | `string` | Yes | Bearer token (Logto access token, or `dev:<logtoId>` in dev mode) |
+| `siteId` | `string` | Yes | Active tenant id; sent as `X-HeoPress-Site` |
+| `fetcher` | `typeof fetch` | No | Override fetch (Node/Workers polyfills); defaults to `globalThis.fetch` |
+| `headers` | `Record<string, string>` | No | Extra headers on every request |
+| `onUnauthorized` | `() => void` | No | Fires once on a `401`, before the `HeoPressError` throws — clear the stale token and route to login. With auto-refresh on, it fires only after a refresh attempt also fails |
+| `refreshToken` | `string` | No | Rotating refresh token. A `401` then triggers one `POST /api/v1/auth/refresh` and retries the original request once |
+| `onTokensRefreshed` | `(tokens) => void` | No | Called after a successful silent refresh with the rotated pair, so the host can persist them — the old refresh token is now revoked |
+
+The returned `HeoPressClient`:
+
+| Member | Description |
+|--------|-------------|
+| `rawRequest<T>(path, init?)` | One HTTP call; returns `{ data, meta? }` |
+| `request<Output>(command)` | Runs a command function against this client |
+| `with(plugin)` | Returns the client extended by a plugin's members |
+| `url`, `token`, `siteId`, `fetcher` | The resolved configuration |
+
+Refresh is single-flight: a burst of parallel `401`s triggers one refresh, not one per request.
+
+---
+
+## Grouped namespaces via `legacyRest()`
+
+`legacyRest()` is a plugin. Attach it with `with()` and you get the REST surface
+as namespaces — convenient for application code and for Studio:
+
+```typescript
+import { createHeoPressClient, legacyRest } from '@heopress/sdk'
+
+const client = createHeoPressClient({ url, siteId, token }).with(legacyRest())
+
+await client.schema.collections.list()
+await client.items('articles').list({ limit: 20 })
+await client.me.getPreferences()
+```
+
+Namespaces exposed: `schema` (`collections`, `fields`, `relations`), `items`,
+`roles`, `policies`, `access`, `apiKeys`, `shares`, `me`, `permissions`,
+`presets`, `translations`, `tm`, `settings`, `uploads`, `site`, `domains`,
+`users`, `teams`, `folders`, `files`, `webhooks`, `activity`, `extensions`,
+`deployments`, `realtime`.
+
+---
+
+## Items
+
+### The item envelope
+
+An item is **not** a flat record. Field values live under `data`; workflow and
+scheduling columns sit beside it:
+
+```typescript
+{ data: { title: 'Hello' }, status: 'draft', sort: 1, publishAt: null, unpublishAt: null }
+```
+
+### List
+
+```typescript
+const res = await client.items('articles').list({
+  fields: ['id', 'title', 'status'],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-published_at'],
+  limit: 20,
+  offset: 0,
+  status: 'published',
+})
+```
+
+Supported list params are `fields`, `filter`, `sort`, `limit`, `offset`, and
+`status`. Note there is **no** `page` param — paginate with `limit`/`offset` —
+and no `aggregate`/`groupBy` on this endpoint. Full-text search is the separate
+`search` command.
+
+### Detail
+
+```typescript
+const article = await client.items('articles').detail('art_abc123', ['id', 'title', 'content'])
+```
+
+### Create
+
+```typescript
+const created = await client.items('articles').create({
+  data: { title: 'New Article', author: 'usr_abc123' },
+  status: 'draft',
+})
+```
+
+### Update (patch) and replace
+
+Every update names the `version` of the item it is based on
+(`expectedVersion`). If someone changed the item since, the server refuses
+with 409 `VERSION_CONFLICT` and writes nothing; without a version it refuses
+with 428. See [item versions](../api/hono-api-spec.md) in the API reference.
+
+```typescript
+import { versionConflictOf } from '@heopress/sdk'
+
+const { data: item } = await client.items('articles').detail('art_abc123')
+try {
+  await client.items('articles').patch('art_abc123', {
+    data: { title: 'Updated title' },
+    status: 'published',
+    publishAt: new Date().toISOString(),
+    expectedVersion: item.version,
+  })
+} catch (err) {
+  const conflict = versionConflictOf(err)
+  if (!conflict) throw err
+  // Someone else saved first: conflict.currentVersion, conflict.changedFields.
+  // Read the item again, re-apply the change, retry with the new version.
+}
+
+// PUT — replaces `data` wholesale
+await client.items('articles').replace('art_abc123', {
+  data: { title: 'Only field left' },
+  expectedVersion: item.version,
+})
+```
+
+### Delete and bulk
+
+```typescript
+await client.items('articles').delete('art_abc123')
+
+// op is 'create' | 'update' | 'delete'; see docs/en/features/data-import.md
+// An 'update' entry carries its own expectedVersion: { id, expectedVersion, ...fields }
+await client.items('articles').bulk('create', [{ title: 'A' }, { title: 'B' }])
+```
+
+### Revisions and pins
+
+```typescript
+const revisions = await client.items('articles').listRevisions('art_abc123')
+await client.items('articles').revertRevision('art_abc123', revisions.data[0].id, item.version)
+
+// Law Zero pins — fields a human edit locked against agent writes
+await client.items('articles').listPins('art_abc123')
+```
+
+---
+
+## Files
+
+```typescript
+await client.files.list()
+await client.files.create({ /* file metadata */ })
+await client.files.update('fil_abc123', { title: 'My Image' })
+await client.files.delete('fil_abc123')
+```
+
+Binary upload goes through the `uploads` namespace, which is the presigned flow —
+the CMS does not accept a file body on `/files`.
+
+For a transform URL, use the `mediaUrl` command rather than building the query
+string yourself.
+
+---
+
+## Agent Harness API
+
+The governance lifecycle used by AI runs and generated app artifacts:
+
+```typescript
+import {
+  generateAgentApp,
+  listAgentRuns,
+  publishAgentArtifact,
+  rollbackAgentArtifact,
+} from '@heopress/sdk/rest'
+
+const result = await generateAgentApp({
+  collections: ['products', 'orders', 'customers'],
+  targetApp: 'storefront',
+  approvalPolicy: 'before_commit',
+  budget: { maxToolCalls: 20 },
+})(client)
+
+// result.artifacts contains page_spec, component_spec, seed_data, api_spec
+const runs = await listAgentRuns()(client)
+const published = await publishAgentArtifact(result.artifacts[0].id)(client)
+await rollbackAgentArtifact(published.id, 'revert generated storefront')(client)
+```
+
+Publishing is idempotent. Schema and migration artifacts require a passing evaluation unless the caller supplies an override reason.
+
+Other agent commands: `createAgentGoal`, `listAgentGoals`, `retryAgentRun`,
+`listAgentTools`, `listAgentApprovals`, `decideAgentApproval`,
+`createAgentArtifact`, `listAgentArtifacts`, `evaluateAgentArtifact`,
+`readAgentMemoryContext`, `writeAgentMemory`.
+
+---
+
+## Decisions
+
+`decide` calls `POST /api/v1/ai/decisions`: typed `noul` / `choice` / `score` questions answered with probabilities by TypeSafe Jev or the configured equivalent. Provider keys stay on the CMS; the client only sends its usual bearer and `X-HeoPress-Site` headers, so never put a TypeSafe or OpenRouter key in browser code.
+
+```typescript
+import { decide, HeoPressError } from '@heopress/sdk'
+
+const controller = new AbortController()
+try {
+  const result = await client.request(
+    decide(
+      {
+        state: { title: 'Summer sale', body: 'Buy now!!!' },
+        questions: {
+          spam: {
+            type: 'noul',
+            instructions: 'Is this post spam?',
+            criteria: { true: 'spam', false: 'legitimate' },
+          },
+          topic: {
+            type: 'choice',
+            instructions: 'Pick the topic',
+            criteria: { promo: 'Promotion', news: null },
+          },
+        },
+      },
+      { signal: controller.signal },
+    ),
+  )
+  result.answers.spam // { type: 'noul', noul: 0.12 }
+} catch (err) {
+  if (err instanceof HeoPressError && err.body.errors[0]?.code === 'DECISION_NOT_CONFIGURED') {
+    // the CMS has no DECISION_PROVIDER set
+  }
+}
+```
+
+`calibrated` is `false` when the CMS answers with `DECISION_PROVIDER=llm`. Error codes are typed as `DecisionErrorCode`; see the [API spec](../api/hono-api-spec.md) for limits and statuses.
+
+---
+
+## Change Feed
+
+```typescript
+import { readCdcEvents, ackCdcSubscription } from '@heopress/sdk'
+
+let cursor: string | undefined
+for (;;) {
+  const { data, meta } = await client.request(readCdcEvents({ collections: ['posts'], cursor }))
+  for (const event of data) await handle(event) // dedupe on event.id
+  cursor = (meta as { nextCursor?: string }).nextCursor ?? cursor
+  if (!(meta as { hasMore?: boolean }).hasMore) break
+}
+await client.request(ackCdcSubscription(subId, cursor!))
+```
+
+See [Change Feed](../features/cdc-change-feed.md) for the delivery semantics.
+
+---
+
+## Realtime
+
+Realtime is a `RealtimeClient`, created through the `realtime` namespace with a token for the WebSocket handshake:
+
+```typescript
+const rt = client.realtime.create(process.env.HEOPRESS_TOKEN!, {
+  userId: 'usr_abc123',
+  initialBackoffMs: 500,
+  maxBackoffMs: 30_000,
+})
+```
+
+`RealtimeClient` and `AudienceClient` are also exported directly from
+`@heopress/sdk` if you want to construct one without the plugin.
+
+---
+
+## TypeScript types
+
+The client is generic over your schema, so generated types flow into every call:
+
+```typescript
+import { createHeoPressClient } from '@heopress/sdk'
+import type { Collections } from './heopress-types'
+
+const client = createHeoPressClient<Collections>({ url, siteId, token })
+```
+
+See the [TypeGen reference](./typegen.md) for how to generate `heopress-types.ts`.
+
+---
+
+## Error handling
+
+Every non-2xx response throws `HeoPressError`:
+
+```typescript
+import { HeoPressError } from '@heopress/sdk'
+
+try {
+  await client.items('articles').create({ data: { title: '' } })
+} catch (error) {
+  if (error instanceof HeoPressError) {
+    console.error(error.status)            // 400
+    console.error(error.body.errors[0].code)    // 'VALIDATION_FAILED'
+    console.error(error.body.errors[0].message) // 'title is required'
+    console.error(error.body.errors[0].path)    // optional field path
+  }
+}
+```
+
+A non-JSON or bodyless failure is still normalized into the same envelope, with
+code `HTTP_ERROR`.
