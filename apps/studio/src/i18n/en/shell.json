@@ -1,0 +1,66 @@
+{
+  "skipToMain": "Skip to main content",
+  "menu": "Menu",
+  "closeMenu": "Close menu",
+  "search": "Search",
+  "searchHint": "Search or jump to…",
+  "notifications": "Notifications",
+  "theme": "Theme",
+  "account": "Account",
+  "signOut": "Sign out",
+  "primaryNav": "Modules",
+  "modules": {
+    "overview": "Overview",
+    "content": "Content",
+    "sites": "Sites",
+    "seo": "SEO / GEO",
+    "aiTraffic": "AI traffic",
+    "audit": "Audit",
+    "monitoring": "Logs & monitoring",
+    "settings": "Settings"
+  },
+  "themes": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "goTo": "Go to {{module}}",
+    "palette": "Open the command palette",
+    "help": "Show keyboard shortcuts",
+    "next": "Next item",
+    "previous": "Previous item"
+  },
+  "brand": "HeoPress",
+  "signOutOffline": "You are signed out in this browser, but the server could not be reached: your session stays valid there until it expires.",
+  "close": "Close",
+  "paletteEmpty": "Nothing matches.",
+  "paletteContent": "Content",
+  "paletteJump": "Go to",
+  "paletteActions": "Actions",
+  "actions": {
+    "newArticle": "New article",
+    "toggleTheme": "Switch theme"
+  },
+  "keys": {
+    "esc": "Esc"
+  },
+  "site": {
+    "current": "Current site",
+    "switch": "Switch site",
+    "switching": "Switching…",
+    "search": "Find a site",
+    "noMatch": "No site matches.",
+    "new": "New site",
+    "newHint": "You become its Administrator and go to its identity settings.",
+    "name": "Site name",
+    "id": "Site id",
+    "idHint": "Lowercase letters, digits, - and _. Used in API calls; filled in from the name.",
+    "language": "Default language",
+    "languageHint": "A language tag such as en or zh-CN. Leave empty for the instance default.",
+    "cancel": "Cancel",
+    "create": "Create site",
+    "creating": "Creating…"
+  }
+}

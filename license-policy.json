@@ -1,0 +1,59 @@
+{
+  "$comment": "Dependency license policy (ADR-0008, P01 engineering/license-compliance). Checked by scripts/check-licenses.mjs. Exceptions need a maintainer decision recorded in approvedBy. devOnlyExceptions record approved licenses of development-only dependencies (not checked: check-licenses covers production dependencies).",
+  "allow": [
+    "MIT",
+    "MIT-0",
+    "ISC",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "0BSD",
+    "Apache-2.0",
+    "PostgreSQL",
+    "Zlib",
+    "Unlicense",
+    "CC0-1.0",
+    "Python-2.0",
+    "BlueOak-1.0.0"
+  ],
+  "deny": [
+    "GPL",
+    "AGPL",
+    "LGPL",
+    "SSPL",
+    "BUSL",
+    "BSL",
+    "EUPL",
+    "OSL",
+    "RPL",
+    "CPAL"
+  ],
+  "permissiveBoundary": {
+    "$comment": "ADR-0008 §4 (P07 task 7.9): the Extension SDK, the theme contract and the extension types (@heopress/contracts: ./theme, ./extensions) and the API client plugins may call are Apache-2.0, carry a LICENSE file and depend on no AGPL core package and on nothing off the allow list; the exceptions below do not apply to them.",
+    "license": "Apache-2.0",
+    "packages": [
+      "packages/extension-sdk",
+      "packages/contracts",
+      "packages/sdk"
+    ]
+  },
+  "exceptions": [
+    {
+      "package": "@img/sharp-libvips-*",
+      "license": "LGPL-3.0-or-later",
+      "linking": "dynamic",
+      "reason": "libvips native library loaded by sharp as a separate shared library; replaceable by the user.",
+      "approvedBy": "maintainer",
+      "decision": "docs/decisions/ADR-0008-licensing-and-borrowing.md"
+    }
+  ],
+  "devOnlyExceptions": [
+    {
+      "package": "axe-core",
+      "license": "MPL-2.0",
+      "scope": "devDependency of @heopress/public-site and @heopress/studio only: injected into a test browser page by the starter-theme and Studio accessibility checks; never bundled, shipped in an image or published",
+      "reason": "Task P06 5.1 requires an axe accessibility check; no permissively licensed equivalent of axe exists.",
+      "approvedBy": "maintainer (2026-10-20; Studio scope 2026-10-24)",
+      "decision": "openspec/changes/archive/2026-10-20-p06-classic-rendering-engine/design.md R45; openspec/changes/archive/2026-10-24-p07a-studio-carbon-ui/design.md (axe in Studio)"
+    }
+  ]
+}

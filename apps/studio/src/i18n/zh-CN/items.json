@@ -1,0 +1,724 @@
+{
+  "saveAction": {
+    "stay": "保存并留在此页",
+    "return": "保存并返回列表",
+    "createNew": "保存并新建"
+  },
+  "detail": {
+    "noRead": "你没有此内容类型的<code>读取</code>权限。",
+    "loadFailed": "条目加载失败。",
+    "loading": "正在加载条目…",
+    "breadcrumb": "内容",
+    "backToList": "返回列表",
+    "title": "编辑条目",
+    "noShare": "你没有此内容类型的分享权限。",
+    "share": "分享",
+    "noDelete": "你没有此内容类型的删除权限。",
+    "delete": "删除",
+    "noUpdate": "你没有此内容类型的修改权限。",
+    "saving": "正在保存…",
+    "saved": "已保存",
+    "saveOptions": "保存选项",
+    "setDefault": "将“{{action}}”设为默认",
+    "conflict": "未保存：你打开此条目后，有人修改了它。你的编辑仍在这里，请先复制需要的内容，然后",
+    "conflictFields": "未保存：你打开此条目后，有人修改了它（{{fields}}）。你的编辑仍在这里，请先复制需要的内容，然后",
+    "loadCurrent": "加载最新版本",
+    "conflictEnd": "。",
+    "saveFailed": "保存失败。",
+    "shareTitle": "创建分享链接",
+    "shareClose": "关闭分享对话框",
+    "shareRole": "分享角色",
+    "shareRolePick": "选择一个只读角色",
+    "sharePassword": "密码",
+    "shareMaxUses": "最多使用次数",
+    "shareValidUntil": "有效期至",
+    "shareRolesLoading": "正在加载可用角色…",
+    "shareNoRoles": "没有可用于分享的只读角色。",
+    "shareFailed": "创建分享链接失败。",
+    "shareCopy": "复制分享链接",
+    "shareCreating": "正在创建…",
+    "shareCreate": "创建链接",
+    "targetLocale": "目标语言",
+    "tabs": {
+      "title": "面板",
+      "fields": "字段",
+      "translation": "翻译",
+      "group": "翻译组",
+      "revisions": "修订记录",
+      "versions": "版本",
+      "raw": "原始 JSON"
+    },
+    "meta": {
+      "status": "状态",
+      "sort": "排序",
+      "editorial": "审稿状态",
+      "updated": "更新时间",
+      "created": "创建时间"
+    },
+    "scheduling": "定时",
+    "publishAt": "发布时间",
+    "unpublishAt": "下线时间"
+  },
+  "fieldsTab": {
+    "empty": "没有可编辑的字段。",
+    "pinnedHint": "已由人工编辑锁定，Agent 不能覆盖此字段。",
+    "pinned": "已锁定",
+    "release": "解除 {{field}} 的锁定",
+    "releaseHint": "解除锁定，允许 Agent 再次写入此字段。",
+    "readOnly": "只读"
+  },
+  "list": {
+    "reviews": "审稿",
+    "newItem": "新建条目",
+    "liveMode": "实时模式",
+    "saveBookmark": "将当前视图保存为书签",
+    "filters": "筛选",
+    "editRaw": "编辑原始数据（{{count}}）",
+    "refresh": "刷新",
+    "loadFailed": "条目加载失败。",
+    "columns": {
+      "id": "ID",
+      "status": "状态",
+      "updated": "更新时间"
+    },
+    "empty": "没有匹配的条目。",
+    "showing": "第 {{from}}–{{to}} 条，共 {{total}} 条",
+    "none": "0 条，共 {{total}} 条"
+  },
+  "status": {
+    "published": "已发布",
+    "draft": "草稿",
+    "archived": "已归档"
+  },
+  "create": {
+    "failed": "创建失败。",
+    "noCreate": "你没有此内容类型的创建权限。",
+    "loadingFields": "正在加载字段…",
+    "crumbNew": "新建",
+    "submit": "创建草稿"
+  },
+  "revisions": {
+    "loading": "正在加载修订记录…",
+    "loadFailed": "修订记录加载失败。",
+    "empty": "还没有修订记录。",
+    "by": "由 {{who}}",
+    "agent": "Agent",
+    "system": "系统",
+    "pick": "选择一条修订记录查看。",
+    "title": "修订 {{id}}…",
+    "diff": "差异",
+    "raw": "原始",
+    "reverting": "正在还原…",
+    "revert": "还原到此版本",
+    "reasonPrompt": "此次还原会改变已发布条目的赞助标记。原因是什么？",
+    "reasonLabel": "还原原因",
+    "reasonSubmit": "按此原因还原",
+    "revertFailed": "还原失败。",
+    "showUnchanged": "显示未改动的字段"
+  },
+  "impact": {
+    "verb": {
+      "delete": "仍然删除",
+      "save": "仍然保存"
+    },
+    "what": {
+      "delete": "删除此页面",
+      "unpublish": "下线此页面",
+      "move": "修改此页面的地址"
+    },
+    "forbidden": "你没有执行此操作的权限。",
+    "redirectDone": "已添加重定向：{{from}} → {{to}}。此页面不再可访问后，指向它的链接会跳转到那里。",
+    "updated_one": "已更新 {{count}} 个页面中的链接。",
+    "updated_other": "已更新 {{count}} 个页面中的链接。",
+    "updatedSkipped_one": "已更新 {{count}} 个页面中的链接；{{skipped}} 个保持不变（{{reasons}}）。",
+    "updatedSkipped_other": "已更新 {{count}} 个页面中的链接；{{skipped}} 个保持不变（{{reasons}}）。",
+    "title": "可能受影响的页面",
+    "summary_one": "{{what}}可能使 {{count}} 个页面及下列链接失效。主题或其他站点中的链接无法在此得知。",
+    "summary_other": "{{what}}可能使 {{count}} 个页面及下列链接失效。主题或其他站点中的链接无法在此得知。",
+    "truncated": "仅列出前 {{limit}} 条。",
+    "moveRedirect": "保存时会自动添加从旧地址到新地址的重定向。",
+    "linkingPages": "链接到此页的页面",
+    "navigation": "导航：{{label}}",
+    "depth2": "（链接到某个引用页）",
+    "checkFailed": "无法检查链接到此页的页面。{{what}}可能导致链接失效，请确认后再继续。",
+    "address": "另一个页面的地址",
+    "createRedirect": "创建重定向",
+    "updateLinks": "更新链接",
+    "failed": "操作未成功。",
+    "addressPlaceholder": "https://example.com/another-page/"
+  },
+  "diff": {
+    "empty": "没有记录到字段改动。",
+    "added": "新增",
+    "removed": "删除",
+    "changed": "修改",
+    "unchanged": "未改动"
+  },
+  "dependents": {
+    "failed": "处理失败。",
+    "title": "有记录依赖此条目",
+    "intro": "其他记录引用了此条目。删除前请逐组处理。",
+    "resolved": "已处理",
+    "onDelete": "删除时：{{action}}",
+    "setNull": "清除引用",
+    "reassign": "改为引用另一个条目",
+    "delete": "删除这些记录",
+    "targetId": "新目标 ID",
+    "apply": "应用"
+  },
+  "editorial": {
+    "submit_review": "提交审核",
+    "approve": "批准",
+    "reject": "退回",
+    "publish": "发布",
+    "unpublish": "下线",
+    "failed": "操作失败。",
+    "saveFirst": "请先保存修改。",
+    "state": "审稿状态",
+    "releaseHint": "解除暂停（需要发布权限）",
+    "holdHint": "暂停：此条目不会通过任何途径发布",
+    "release": "已暂停 · 解除",
+    "hold": "暂停发布"
+  },
+  "versions": {
+    "requestFailed": "请求失败：{{status}}",
+    "title": "版本",
+    "new": "新建版本",
+    "name": "版本名称",
+    "create": "创建",
+    "loading": "正在加载版本…",
+    "empty": "还没有版本。新建一个版本，即可在不影响线上记录的情况下起草修改。",
+    "mainChangedHint": "创建此版本后，主版本已有改动",
+    "mainChanged": "主版本已改动",
+    "hide": "收起",
+    "compare": "对比",
+    "promoteConfirm": "将“{{name}}”设为主版本？",
+    "promoteConfirmChanged": "将“{{name}}”设为主版本？创建此版本后，主版本已有改动。",
+    "promote": "设为主版本",
+    "loadingDiff": "正在加载差异…",
+    "delete": "删除版本"
+  },
+  "catalogue": {
+    "groups": {
+      "Text": "文本",
+      "Number": "数字",
+      "Choice": "选项",
+      "Boolean": "布尔",
+      "Date": "日期",
+      "Relation": "关联",
+      "File": "文件",
+      "Content": "内容",
+      "Special": "特殊"
+    },
+    "interfaces": {
+      "input": {
+        "label": "输入框",
+        "description": "单行文本、UUID 或标量值。"
+      },
+      "input-multiline": {
+        "label": "多行文本",
+        "description": "多行纯文本编辑器。"
+      },
+      "wysiwyg": {
+        "label": "所见即所得",
+        "description": "富文本 HTML 编辑器。"
+      },
+      "markdown": {
+        "label": "Markdown",
+        "description": "Markdown 编辑器。"
+      },
+      "code": {
+        "label": "代码",
+        "description": "等宽代码编辑器。"
+      },
+      "input-hash": {
+        "label": "哈希",
+        "description": "保存时进行哈希处理的密文输入框。"
+      },
+      "input-autocomplete-api": {
+        "label": "自动补全（API）",
+        "description": "从 API 获取候选项的文本输入框。"
+      },
+      "slug": {
+        "label": "别名（Slug）",
+        "description": "由其他字段生成的 URL 安全文本。"
+      },
+      "color": {
+        "label": "颜色",
+        "description": "颜色选择器。"
+      },
+      "input-number": {
+        "label": "数字",
+        "description": "整数输入框。"
+      },
+      "rating": {
+        "label": "评分",
+        "description": "星级评分。"
+      },
+      "slider": {
+        "label": "滑块",
+        "description": "可设置最小值、最大值和步长的范围滑块。"
+      },
+      "select-dropdown": {
+        "label": "下拉菜单",
+        "description": "单选下拉菜单。"
+      },
+      "select-multiple-dropdown": {
+        "label": "下拉菜单（多选）",
+        "description": "多选下拉菜单。"
+      },
+      "select-radio": {
+        "label": "单选按钮",
+        "description": "用单选按钮选择一项。"
+      },
+      "select-multiple-checkbox": {
+        "label": "复选框",
+        "description": "多选复选框列表。"
+      },
+      "select-multiple-checkbox-tree": {
+        "label": "复选框（树形）",
+        "description": "分层的多选复选框。"
+      },
+      "select-icon": {
+        "label": "图标",
+        "description": "从精选图标集中选择一个图标。"
+      },
+      "tags": {
+        "label": "标签",
+        "description": "自由填写的标签列表。"
+      },
+      "toggle": {
+        "label": "开关",
+        "description": "布尔开关。"
+      },
+      "datetime": {
+        "label": "日期/时间",
+        "description": "日期和时间选择器。"
+      },
+      "relation-m2o": {
+        "label": "多对一",
+        "description": "选择一个关联条目。"
+      },
+      "relation-o2m": {
+        "label": "一对多",
+        "description": "通过别名字段显示多个关联条目。"
+      },
+      "relation-m2m": {
+        "label": "多对多",
+        "description": "通过中间内容类型管理关联条目。"
+      },
+      "relation-m2a": {
+        "label": "构建器（M2A）",
+        "description": "关联多个内容类型中的记录（多对任意）。"
+      },
+      "collection-item-dropdown": {
+        "label": "内容类型条目",
+        "description": "从若干内容类型之一中选择一条记录。"
+      },
+      "relation-o2m-tree-view": {
+        "label": "树形视图",
+        "description": "以可展开的树显示自引用的一对多关系。"
+      },
+      "file": {
+        "label": "文件",
+        "description": "单个文件上传与选择。"
+      },
+      "files": {
+        "label": "多个文件",
+        "description": "多个文件上传与选择。"
+      },
+      "seo": {
+        "label": "SEO",
+        "description": "标题、描述、规范 URL、robots 指令和社交分享图。"
+      },
+      "aio": {
+        "label": "AIO",
+        "description": "AI 概览提示词、实体提示、语气和答案摘要。"
+      },
+      "json-raw": {
+        "label": "JSON（原始）",
+        "description": "原始 JSON 编辑器。"
+      },
+      "repeater": {
+        "label": "重复器",
+        "description": "重复的嵌套字段组。"
+      },
+      "map": {
+        "label": "地图",
+        "description": "GeoJSON 点 / 几何图形编辑器。"
+      },
+      "presentation-divider": {
+        "label": "展示：分隔线",
+        "description": "仅用于视觉分隔。"
+      },
+      "presentation-notice": {
+        "label": "展示：提示",
+        "description": "行内编辑提示。"
+      },
+      "presentation-header": {
+        "label": "展示：标题",
+        "description": "带副标题的分节标题。"
+      },
+      "presentation-links": {
+        "label": "展示：链接",
+        "description": "一排链接按钮。"
+      },
+      "group-raw": {
+        "label": "分组：无样式",
+        "description": "将字段分组，不加视觉外框。"
+      },
+      "group-detail": {
+        "label": "分组：详情",
+        "description": "将字段分组到带边框的字段集中。"
+      },
+      "group-accordion": {
+        "label": "分组：折叠面板",
+        "description": "可折叠的字段组。"
+      }
+    }
+  },
+  "displays": {
+    "catalogue": {
+      "formatted-value": {
+        "label": "格式化值",
+        "hint": "通用文本，支持前缀/后缀/大小写/截断。"
+      },
+      "raw": {
+        "label": "原始值",
+        "hint": "直接转为字符串，不做格式化。"
+      },
+      "badge": {
+        "label": "徽标",
+        "hint": "按值着色的胶囊标签。"
+      },
+      "boolean-icon": {
+        "label": "布尔图标",
+        "hint": "对勾 / 叉号图标。"
+      },
+      "datetime": {
+        "label": "日期时间",
+        "hint": "相对 / 简短 / ISO 日期格式。"
+      },
+      "color-swatch": {
+        "label": "色块",
+        "hint": "行内色块加十六进制值。"
+      },
+      "rating-stars": {
+        "label": "评分星级",
+        "hint": "数值评分显示为一排星星。"
+      },
+      "tags-pills": {
+        "label": "标签胶囊",
+        "hint": "`string[]` 值显示为紧凑的胶囊。"
+      },
+      "labels": {
+        "label": "标签",
+        "hint": "按值映射色调的胶囊。"
+      },
+      "image": {
+        "label": "图片",
+        "hint": "文件/URL 值的缩略图。"
+      },
+      "relation": {
+        "label": "关联",
+        "hint": "将 ID 解析为关联内容类型的字段。"
+      },
+      "relation-m2a": {
+        "label": "关联（M2A）",
+        "hint": "汇总跨多个内容类型的链接。"
+      },
+      "mustache-template": {
+        "label": "Mustache 模板",
+        "hint": "编写行模板，如 `{{title}} ({{slug}})`。"
+      },
+      "component-template": {
+        "label": "组件模板",
+        "hint": "基于区块的可视化模板（Phase F）。"
+      }
+    },
+    "invalidDate": "无效",
+    "invalidTemplate": "模板无效",
+    "linkedAcross_one": "{{links}} 条链接，来自 {{count}} 个内容类型",
+    "linkedAcross_other": "{{links}} 条链接，来自 {{count}} 个内容类型",
+    "loading": "加载中…",
+    "noTemplate": "无模板",
+    "ratingOutOf": "{{current}} / {{max}}"
+  },
+  "interfaces": {
+    "add": "添加",
+    "addCount": "添加（{{count}}）",
+    "addExisting": "添加已有条目",
+    "addTag": "添加标签…",
+    "aio": {
+      "entities": "实体",
+      "prompt": "AI 提示词",
+      "questions": "问题",
+      "summary": "答案摘要",
+      "tone": "语气"
+    },
+    "clear": "清除",
+    "close": "关闭",
+    "collapse": "折叠",
+    "expand": "展开",
+    "createAndAdd": "创建并添加",
+    "createFailed": "创建条目失败。",
+    "createNew": "新建",
+    "dragToReorder": "拖动以排序",
+    "file": {
+      "clear": "清除文件",
+      "count": "{{count}}/{{limit}} 个文件",
+      "dropMany": "拖放文件或点击选择",
+      "dropOne": "拖放文件或点击选择",
+      "limit_one": "此字段最多允许 {{count}} 个文件。",
+      "limit_other": "此字段最多允许 {{count}} 个文件。",
+      "remove": "移除 {{file}}",
+      "storageHint": "上传到站点配置的文件存储",
+      "tooLarge": "文件超过大小上限（{{max}} 字节）。",
+      "uploadFailed": "文件上传失败。",
+      "uploading": "上传中…"
+    },
+    "hash": {
+      "placeholder": "输入密文值…",
+      "reset": "重置",
+      "set": "已设置（保存时哈希处理）"
+    },
+    "loading": "加载中…",
+    "loadingFields": "正在加载字段…",
+    "map": {
+      "invalid": "GeoJSON 无效。",
+      "lat": "纬度",
+      "lng": "经度",
+      "placeholder": "{ \"type\": \"Point\", \"coordinates\": [105.8, 21.0] }",
+      "raw": "原始 GeoJSON"
+    },
+    "markdown": {
+      "preview": "预览",
+      "write": "编辑"
+    },
+    "missingOption": "{{kind}} 字段缺少 `meta.options.{{option}}` 配置。",
+    "noChoices": "尚未配置选项。",
+    "noLinks": "尚未配置链接。",
+    "noMatches": "没有匹配项。",
+    "noRows": "没有数据。",
+    "pickFrom": "从 {{collection}} 中选择…",
+    "pickIcon": "选择图标…",
+    "rate": "评 {{value}} 星",
+    "raw": {
+      "gui": "表单",
+      "guiTitle": "表单编辑器",
+      "raw": "原始",
+      "rawTitle": "原始 JSON",
+      "toGui": "切换到表单编辑器",
+      "toRaw": "切换到原始 JSON"
+    },
+    "removeItem": "移除 {{item}}",
+    "repeater": {
+      "add": "添加一项",
+      "empty": "还没有任何项。",
+      "item": "第 {{n}} 项",
+      "moveDown": "下移",
+      "moveUp": "上移",
+      "remove": "移除"
+    },
+    "requestFailed": "请求失败。",
+    "searchBy": "按 {{field}} 搜索…",
+    "selectPlaceholder": "— 请选择 —",
+    "seo": {
+      "canonical": "规范 URL",
+      "description": "Meta 描述",
+      "image": "社交分享图",
+      "noFollow": "禁止跟踪链接（nofollow）",
+      "noIndex": "禁止收录（noindex）",
+      "title": "SEO 标题"
+    },
+    "translationFor": "{{lang}} 译文…",
+    "typeToSearch": "输入以搜索…"
+  },
+  "blockTemplate": {
+    "literal": "— 固定值 —",
+    "fieldOrLiteral": "$.字段 或固定值",
+    "prop": {
+      "value": "值",
+      "src": "来源",
+      "variant": "样式",
+      "muted": "弱化",
+      "size": "尺寸",
+      "rounded": "圆角",
+      "sizePx": "尺寸 (px)",
+      "direction": "方向",
+      "gap": "间距",
+      "align": "对齐"
+    },
+    "direction": {
+      "col": "纵向",
+      "row": "横向"
+    },
+    "childrenViaJson": "（子块可在 JSON 标签页中编辑）",
+    "ifPlaceholder": "条件：$.字段",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "remove": "删除块",
+    "childCount_one": "{{count}} 个子块 — 请在 JSON 标签页中编辑",
+    "childCount_other": "{{count}} 个子块 — 请在 JSON 标签页中编辑",
+    "add": "添加块",
+    "empty": "还没有块，请在下方添加。",
+    "kindRequired": "JSON 必须包含 \"kind\": \"component-template\"",
+    "invalidJson": "JSON 无效",
+    "sample": {
+      "full": "完整行",
+      "partial": "部分行",
+      "empty": "空行"
+    },
+    "previewHint": "用 3 行示例数据预览：完整、部分、空。",
+    "noFields": "没有字段，示例数据为空，预览效果有限。",
+    "tab": {
+      "visual": "可视化",
+      "json": "JSON",
+      "preview": "预览"
+    },
+    "emptyTemplate": "空模板"
+  },
+  "displayTemplate": {
+    "mustacheTitle": "Mustache 模式：用 {{字段}} 占位符组合",
+    "mustache": "Mustache",
+    "blockTitle": "块构建模式：组合可视化组件",
+    "block": "块构建器",
+    "mustacheHint": "带 {{字段}} 占位符的简单文本模板",
+    "blockHint": "可视化组件 DSL — 拖拽组合块",
+    "switchTo": "切换到{{mode}}模式？",
+    "toBlockWarning": "Mustache 模板无法自动转换，切换后将从空白块模板开始。",
+    "toMustacheWarning": "块模板将被清空，且无法撤销。",
+    "switchAnyway": "仍然切换",
+    "cancel": "取消",
+    "placeholder": "{{title}} — {{slug}}"
+  },
+  "mustache": {
+    "livePreview": "实时预览",
+    "empty": "空"
+  },
+  "filter": {
+    "op": {
+      "eq": "等于",
+      "neq": "不等于",
+      "contains": "包含",
+      "startsWith": "开头是",
+      "endsWith": "结尾是",
+      "in": "属于",
+      "nin": "不属于",
+      "gt": ">",
+      "gte": ">=",
+      "lt": "<",
+      "lte": "<=",
+      "null": "为空",
+      "nnull": "不为空",
+      "jsonContains": "JSON 包含",
+      "hasKey": "含有键",
+      "hasAnyKeys": "含有任一键",
+      "hasAllKeys": "含有全部键"
+    },
+    "value": "值",
+    "remove": "移除筛选条件",
+    "add": "添加筛选条件"
+  },
+  "translation": {
+    "changeFailed": "更改失败。",
+    "loadFailed": "无法加载翻译组。",
+    "loading": "加载中…",
+    "heading": "翻译组",
+    "statusLabel": "翻译状态",
+    "state": {
+      "missing": "缺失",
+      "draft": "草稿",
+      "in_review": "待审核",
+      "published": "已发布",
+      "stale": "已过时"
+    },
+    "noGroup": "此条目不在任何翻译组中。",
+    "startGroup": "以此条目为源文创建翻译组",
+    "members": "组成员",
+    "col": {
+      "language": "语言",
+      "item": "条目",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "siteSuffix": "（站点 {{site}}）",
+    "source": "源文",
+    "internalOnly": "仅内部",
+    "thisItem": "（当前条目）",
+    "sharedSync": "共享字段待同步（{{fields}}）",
+    "sharedSyncHold": "共享字段待同步（{{fields}}，已暂停）",
+    "sharedSyncPermission": "共享字段待同步（{{fields}}，需要该站点的编辑处理）",
+    "applyShared": "应用共享字段",
+    "makeSource": "设为源文",
+    "allowPublishing": "允许发布",
+    "setInternalOnly": "设为仅内部",
+    "removeMember": "从翻译组中移除 {{locale}} 版本",
+    "otherSitePublished": "（其他站点，已发布）",
+    "itemId": "条目 ID",
+    "siteId": "站点 ID（其他站点，可选）",
+    "addToGroup": "加入翻译组",
+    "newDraft": "新建翻译草稿（语言）",
+    "localePlaceholder": "ja",
+    "createDraft": "创建草稿",
+    "footer": "内容类型 {{collection}} · 翻译组版本 {{version}}",
+    "noTranslatable": "此内容类型没有可翻译（多语言）字段。",
+    "translating": "正在翻译",
+    "complete": "已完成 {{pct}}%",
+    "sourceLocale": "{{locale}}（源文）",
+    "targetLocale": "{{locale}}（译文）",
+    "sourceAria": "{{field}} 源文（{{locale}}）",
+    "targetAria": "{{field}} 译文（{{locale}}）"
+  },
+  "tm": {
+    "lookingUp": "正在查询翻译记忆…",
+    "apply": "应用",
+    "noMatch": "翻译记忆中没有 ≥ {{threshold}}% 的匹配。",
+    "translating": "翻译中…",
+    "autoTranslate": "自动翻译",
+    "autoTranslateFailed": "自动翻译失败。",
+    "source": {
+      "human": "人工",
+      "mt": "机翻",
+      "imported": "导入"
+    }
+  },
+  "provenance": {
+    "byHuman": "由人工撰写。",
+    "byAgent": "由智能体撰写。",
+    "modelValue": "模型：{{value}}",
+    "runValue": "运行：{{value}}",
+    "constitutionValue": "准则：{{value}}",
+    "confidenceValue": "置信度：{{value}}",
+    "agent": "智能体",
+    "human": "人工",
+    "model": "模型",
+    "run": "运行",
+    "constitution": "准则",
+    "confidence": "置信度",
+    "heading": "来源记录",
+    "noDetail": "由智能体创建，未记录更多详情。"
+  },
+  "rawJson": {
+    "mustBeObject": "顶层值必须是 JSON 对象。",
+    "valid": "JSON 有效 — 点击保存按钮后生效。"
+  },
+  "bulkRaw": {
+    "partialFailure": "{{total}} 个条目中有 {{failed}} 个未保存，其余已保存。",
+    "conflicts_one": "其中 {{count}} 个在你打开后已被修改：请重新打开编辑器以加载最新版本。",
+    "conflicts_other": "其中 {{count}} 个在你打开后已被修改：请重新打开编辑器以加载最新版本。",
+    "title": "批量原始数据编辑 — {{collection}}",
+    "editing_one": "正在编辑 {{count}} 行，只提交有改动的条目。",
+    "editing_other": "正在编辑 {{count}} 行，只提交有改动的条目。",
+    "saving": "保存中…",
+    "save": "保存更改",
+    "close": "关闭",
+    "valid": "有效的 {id, data} 条目数组。",
+    "saveFailed": "保存失败：{{message}}",
+    "loading": "正在加载数据行…",
+    "mustBeArray": "顶层值必须是数组。",
+    "entryObject": "每个条目都必须是对象。",
+    "entryId": "每个条目都需要字符串类型的 `id`。",
+    "dataObject": "`data` 必须是对象。"
+  }
+}
