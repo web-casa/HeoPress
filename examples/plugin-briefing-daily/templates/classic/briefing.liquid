@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="{{ page.locale }}">
+<head>
+<meta charset="utf-8">
+{% seo_head %}
+</head>
+<body class="heopress-briefing heopress-briefing-item">
+<main>
+<article>
+<h1>{{ item.title }}</h1>
+{% if item.fields.briefing_date and item.fields.briefing_date != "" %}<p class="heopress-briefing-date"><time datetime="{{ item.fields.briefing_date }}">{{ item.fields.briefing_date }}</time></p>{% endif %}
+{% if item.fields.period and item.fields.period != "" %}<p class="heopress-briefing-period">{{ item.fields.period }}</p>{% endif %}
+{% item_body %}
+</article>
+</main>
+</body>
+</html>
