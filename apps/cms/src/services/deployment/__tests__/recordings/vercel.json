@@ -1,0 +1,96 @@
+{
+  "source": "Vercel REST API reference (POST /v2/files, POST /v13/deployments, GET /v13/deployments/{id}, GET /v6/deployments), 2026-10-28. Refresh from a real deployment: apps/cms/scripts/p11-deploy-smoke.ts --transcript.",
+  "interactions": [
+    {
+      "method": "POST",
+      "url": "https://api.vercel.com/v2/files?teamId=team_abc123",
+      "status": 200,
+      "response": {
+        "urls": [
+          "https://api.vercel.com/v2/files"
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.vercel.com/v13/deployments?skipAutoDetectionConfirmation=1&teamId=team_abc123",
+      "status": 200,
+      "response": {
+        "id": "dpl_89qyp1cskzkLrVicDaZoDbjyHuDJ",
+        "uid": "dpl_89qyp1cskzkLrVicDaZoDbjyHuDJ",
+        "url": "heo-docs-abc123.vercel.app",
+        "readyState": "QUEUED",
+        "meta": {
+          "heopressMarker": "heopress-site_a-dep2"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.vercel.com/v13/deployments/dpl_89qyp1cskzkLrVicDaZoDbjyHuDJ?teamId=team_abc123",
+      "status": 200,
+      "response": {
+        "id": "dpl_89qyp1cskzkLrVicDaZoDbjyHuDJ",
+        "url": "heo-docs-abc123.vercel.app",
+        "readyState": "READY"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.vercel.com/v6/deployments?projectId=prj_heo&target=production&limit=20&teamId=team_abc123",
+      "status": 200,
+      "response": {
+        "deployments": [
+          {
+            "uid": "dpl_89qyp1cskzkLrVicDaZoDbjyHuDJ",
+            "url": "heo-docs-abc123.vercel.app",
+            "state": "READY",
+            "meta": {
+              "heopressMarker": "heopress-site_a-dep2"
+            }
+          }
+        ],
+        "pagination": {
+          "count": 1,
+          "next": null,
+          "prev": null
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.vercel.com/v6/deployments?projectId=prj_heo&target=production&limit=1&teamId=team_abc123",
+      "status": 200,
+      "response": {
+        "deployments": [
+          {
+            "uid": "dpl_prev",
+            "url": "heo-docs-prev.vercel.app",
+            "state": "READY"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.vercel.com/v13/deployments?teamId=team_abc123",
+      "status": 200,
+      "response": {
+        "id": "dpl_redeploy",
+        "url": "heo-docs-redeploy.vercel.app",
+        "readyState": "QUEUED"
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://api.vercel.com/v13/deployments?skipAutoDetectionConfirmation=1&teamId=team_abc123",
+      "status": 400,
+      "response": {
+        "error": {
+          "code": "missing_files",
+          "message": "Missing files"
+        }
+      }
+    }
+  ]
+}
