@@ -1,0 +1,58 @@
+{
+  "title": "AI traffic",
+  "description": "How AI crawlers read your sites and how many visitors AI assistants send. Being read is not being cited. Details are kept 7 days; no visitor address is stored.",
+  "scope": {
+    "current": "This site",
+    "all": "All sites"
+  },
+  "range": {
+    "label": "Period",
+    "days": "{{count}} days"
+  },
+  "metric": {
+    "crawler": "AI crawler reads",
+    "referral": "AI-referred visits"
+  },
+  "purpose": {
+    "training": "Training",
+    "search": "AI search",
+    "userFetch": "Fetched for a user",
+    "referral": "AI-referred visits"
+  },
+  "chart": "{{metric}} per day",
+  "noData": "No AI traffic recorded in this period.",
+  "byAgent": {
+    "title": "By crawler and assistant",
+    "who": "Who",
+    "operator": "Operator",
+    "purpose": "Purpose",
+    "count": "Count",
+    "share": "Share",
+    "counts": "Counts",
+    "shares": "Shares",
+    "blocked": "Blocked",
+    "blockedHint": "Blocked by this site's crawler policy — open the policy"
+  },
+  "topCrawled": {
+    "title": "Most read by AI crawlers",
+    "resource": {
+      "page": "Page",
+      "markdown": "Markdown copy",
+      "llms": "llms.txt",
+      "robots": "robots.txt",
+      "sitemap": "Sitemap",
+      "feed": "Feed",
+      "other": "File"
+    }
+  },
+  "topLanding": {
+    "title": "Where AI assistants send visitors",
+    "via": "via {{sources}}"
+  },
+  "perSite": {
+    "title": "Per site",
+    "site": "Site",
+    "crawler": "Crawler reads",
+    "referral": "Referred visits"
+  }
+}
