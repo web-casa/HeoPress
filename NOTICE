@@ -1,0 +1,31 @@
+HeoPress
+Copyright 2026 The HeoPress Authors
+
+HeoPress is licensed under the GNU Affero General Public License, version 3
+only (SPDX-License-Identifier: AGPL-3.0-only); see the LICENSE file. A separate
+commercial license will also be offered.
+
+This product includes software developed by the LumiBase project
+(https://github.com/khuepm/LumiBase).
+Copyright 2024-present LumiBase Contributors
+Licensed under the Apache License, Version 2.0; see LICENSES/Apache-2.0.txt.
+
+HeoPress is a modified, hard fork of LumiBase at upstream commit
+93936ef0a4ce215e436beffe0cde6828fc8ff76e (see UPSTREAM.md). Files carried over
+from LumiBase keep their original copyright notices; files modified by the
+HeoPress project are marked as modified. "LumiBase" is a name of the upstream
+project and is not used as the name of this product.
+
+Third-party components bundled with HeoPress, and their licenses, are listed in
+THIRD_PARTY_NOTICES.md.
+
+The image processing dependency sharp loads libvips, licensed under the GNU
+Lesser General Public License, version 3 or later (LGPL-3.0-or-later). libvips
+is shipped unmodified as the separate shared library packages
+@img/sharp-libvips-* and is dynamically linked, so it can be replaced; its
+source is available at https://github.com/lovell/sharp-libvips.
+
+The Astro static engine's build toolchain (Vite 8) uses lightningcss and its
+platform binary packages lightningcss-*, licensed under the Mozilla Public
+License 2.0 (MPL-2.0). They are used unmodified; their source is available at
+https://github.com/parcel-bundler/lightningcss.

@@ -1,0 +1,2 @@
+ALTER TABLE "lumibase_public_alternates" DROP CONSTRAINT "lumibase_public_alternates_site_id_item_id_target_item_id_pk";--> statement-breakpoint
+ALTER TABLE "lumibase_public_alternates" ADD CONSTRAINT "lumibase_public_alternates_site_id_item_id_locale_pk" PRIMARY KEY("site_id","item_id","locale");
