@@ -1,0 +1,1 @@
+CREATE INDEX "public_items_site_collection_locale_recent" ON "lumibase_public_items" USING btree ("site_id","collection","locale","published_at","item_id");
