@@ -1,0 +1,1 @@
+ALTER TABLE "lumibase_cdc_prune_marks" ADD COLUMN "deleted_until" timestamp with time zone;

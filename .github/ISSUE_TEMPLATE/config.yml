@@ -1,0 +1,9 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/web-casa/HeoPress/tree/main/docs/en
+    about: Read the HeoPress documentation before opening an issue.
+  - name: 💬 Discussions & Questions
+    url: https://github.com/web-casa/HeoPress/discussions
+    about: Ask questions and discuss ideas with the community.

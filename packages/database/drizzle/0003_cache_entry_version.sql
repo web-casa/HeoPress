@@ -1,0 +1,2 @@
+CREATE SEQUENCE "public"."lumibase_cache_version_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 9223372036854775807 START WITH 1 CACHE 1;--> statement-breakpoint
+ALTER TABLE "lumibase_cache_entries" ADD COLUMN "version" bigint DEFAULT nextval('lumibase_cache_version_seq') NOT NULL;

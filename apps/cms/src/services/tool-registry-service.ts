@@ -1,0 +1,273 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { agentToolCalls, agentTools, type Database } from '@heopress/database';
+import { and, desc, eq, gte } from 'drizzle-orm';
+import type { SkillDefinition } from './ai-harness';
+
+export type AgentRiskLevel = 'safe' | 'review_required' | 'dangerous' | 'blocked';
+
+export interface AgentToolDefinition extends SkillDefinition {
+  inputSchema: Record<string, unknown>;
+  outputSchema: Record<string, unknown>;
+  riskPolicy: { level: AgentRiskLevel; approvalPolicy?: string };
+  rateLimit: { maxCallsPerMinute?: number; maxCallsPerRun?: number };
+  enabled: boolean;
+  owner: string;
+  extensionId?: string | null;
+}
+
+export interface ToolPolicyResult {
+  allowed: boolean;
+  message?: string;
+  risk: AgentRiskLevel;
+  approvalPolicy: string;
+}
+
+function normalizeCapabilities(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
+}
+
+function normalizeRiskPolicy(value: unknown): AgentToolDefinition['riskPolicy'] {
+  if (value && typeof value === 'object') {
+    const raw = value as Record<string, unknown>;
+    const level = raw['level'];
+    if (level === 'safe' || level === 'review_required' || level === 'dangerous' || level === 'blocked') {
+      return {
+        level,
+        approvalPolicy: typeof raw['approvalPolicy'] === 'string' ? raw['approvalPolicy'] : undefined,
+      };
+    }
+  }
+  return { level: 'safe' };
+}
+
+/** Đọc `properties` của một JSON Schema dạng object, hoặc `{}`. */
+function schemaProperties(schema: unknown): Record<string, unknown> {
+  if (!schema || typeof schema !== 'object') return {};
+  const props = (schema as Record<string, unknown>)['properties'];
+  return props && typeof props === 'object' ? (props as Record<string, unknown>) : {};
+}
+
+/** Đọc `required` của một JSON Schema dạng object, hoặc `[]`. */
+function schemaRequired(schema: unknown): string[] {
+  if (!schema || typeof schema !== 'object') return [];
+  const req = (schema as Record<string, unknown>)['required'];
+  return Array.isArray(req) ? req.filter((r): r is string => typeof r === 'string') : [];
+}
+
+/**
+ * Override từ `agent_tools` chỉ được **thu hẹp** contract mà core skill đã khai,
+ * không được mở rộng.
+ *
+ * Vì sao cần: `inputSchema` là thứ `tools/list` quảng bá và (sau task #4) là thứ
+ * harness validate trước khi chạy. Nếu một hàng DB được phép **bỏ** field bắt
+ * buộc hoặc **thêm** property mà handler không đọc, thì override thành đường
+ * vòng qua chính validation đó — đổi contract công khai bằng một lệnh UPDATE.
+ *
+ * Thu hẹp hợp lệ = giữ nguyên hoặc siết thêm:
+ *   - không được bỏ bất kỳ `required` nào của core;
+ *   - không được thêm property mới ngoài `properties` của core.
+ * (Thêm `required` mới hoặc bỏ property là siết — cho phép.)
+ *
+ * Core chưa khai schema (`{}`) thì không có gì để thu hẹp, override đi qua.
+ */
+export function overrideNarrowsSchema(core: unknown, override: unknown): boolean {
+  const coreProps = schemaProperties(core);
+  const coreRequired = schemaRequired(core);
+  if (Object.keys(coreProps).length === 0 && coreRequired.length === 0) return true;
+
+  const overrideRequired = new Set(schemaRequired(override));
+  for (const req of coreRequired) {
+    if (!overrideRequired.has(req)) return false;
+  }
+  const allowed = new Set(Object.keys(coreProps));
+  for (const prop of Object.keys(schemaProperties(override))) {
+    if (!allowed.has(prop)) return false;
+  }
+  return true;
+}
+
+function normalizeRateLimit(value: unknown): AgentToolDefinition['rateLimit'] {
+  if (!value || typeof value !== 'object') {
+    return {};
+  }
+  const raw = value as Record<string, unknown>;
+  return {
+    maxCallsPerMinute: typeof raw['maxCallsPerMinute'] === 'number' ? raw['maxCallsPerMinute'] : undefined,
+    maxCallsPerRun: typeof raw['maxCallsPerRun'] === 'number' ? raw['maxCallsPerRun'] : undefined,
+  };
+}
+
+export class ToolRegistryService {
+  constructor(
+    private readonly db: Database,
+    private readonly siteId: string,
+    private readonly coreSkills: Record<string, SkillDefinition>,
+  ) {}
+
+  coreTool(name: string, skill: SkillDefinition): AgentToolDefinition {
+    const mutatesSchema = skill.requiredCapabilities.some((capability) => capability.startsWith('schema:') && capability !== 'schema:read');
+    const deletes = name.startsWith('delete');
+    // Deployment writes are outward-facing side effects (trigger a build on an
+    // external host), so they are dangerous → HITL before_execute below
+    // autopilot autonomy (deployment-integrations Req 6.2).
+    const mutatesDeployment = skill.requiredCapabilities.includes('deployments:write');
+    const level: AgentRiskLevel = skill.dangerous || mutatesSchema || deletes || mutatesDeployment ? 'dangerous' : 'safe';
+
+    return {
+      ...skill,
+      // Trước đây hai dòng này hardcode `{}` **sau** `...skill`, nên schema mà
+      // skill đã khai bị xoá sạch và `tools/list` chỉ quảng bá `{type:'object'}`.
+      // Giữ đúng thứ gì skill khai; skill chưa khai thì vẫn là `{}`.
+      inputSchema: skill.inputSchema ?? {},
+      outputSchema: skill.outputSchema ?? {},
+      riskPolicy: { level, approvalPolicy: level === 'safe' ? 'none' : 'before_execute' },
+      rateLimit: {},
+      enabled: true,
+      owner: 'core',
+      extensionId: null,
+    };
+  }
+
+  /**
+   * Áp override schema từ `agent_tools`, nhưng **chỉ khi nó thu hẹp** contract
+   * của core skill. Override mở rộng (bỏ `required`, thêm property lạ) bị **từ
+   * chối** và giữ nguyên schema của core — fail-closed, vì override rộng hơn
+   * nghĩa là một hàng DB có thể nới contract công khai và đi vòng qua validation.
+   */
+  private resolveOverrideSchema(
+    coreSchema: Record<string, unknown>,
+    overrideSchema: unknown,
+    toolName: string,
+  ): Record<string, unknown> {
+    if (!overrideSchema || typeof overrideSchema !== 'object') return coreSchema;
+    if (overrideNarrowsSchema(coreSchema, overrideSchema)) {
+      return overrideSchema as Record<string, unknown>;
+    }
+    this.rejectedOverrides.push(toolName);
+    return coreSchema;
+  }
+
+  /** Tên các tool có override bị từ chối vì mở rộng contract (để observability). */
+  readonly rejectedOverrides: string[] = [];
+
+  async getTool(name: string): Promise<AgentToolDefinition | undefined> {
+    const [override] = await this.db
+      .select()
+      .from(agentTools)
+      .where(and(eq(agentTools.siteId, this.siteId), eq(agentTools.name, name)))
+      .orderBy(desc(agentTools.updatedAt))
+      .limit(1);
+
+    const core = this.coreSkills[name];
+    if (!core && !override) {
+      return undefined;
+    }
+
+    const base = core ? this.coreTool(name, core) : {
+      name,
+      description: override?.description ?? name,
+      requiredCapabilities: [],
+      service: 'ai' as const,
+      handler: async () => ({ skipped: true }),
+      inputSchema: {},
+      outputSchema: {},
+      riskPolicy: { level: 'safe' as AgentRiskLevel },
+      rateLimit: {},
+      enabled: true,
+      owner: 'db',
+      extensionId: null,
+    };
+
+    if (!override) {
+      return base;
+    }
+
+    return {
+      ...base,
+      description: override.description,
+      inputSchema: this.resolveOverrideSchema(base.inputSchema, override.inputSchema, override.name),
+      outputSchema: (override.outputSchema as Record<string, unknown>) ?? {},
+      requiredCapabilities: normalizeCapabilities(override.requiredCapabilities),
+      riskPolicy: normalizeRiskPolicy(override.riskPolicy),
+      rateLimit: normalizeRateLimit(override.rateLimit),
+      enabled: override.enabled,
+      owner: override.owner,
+      extensionId: override.extensionId,
+    };
+  }
+
+  async listTools(): Promise<AgentToolDefinition[]> {
+    const coreTools = Object.entries(this.coreSkills).map(([name, skill]) => this.coreTool(name, skill));
+    const overrides = await this.db
+      .select()
+      .from(agentTools)
+      .where(eq(agentTools.siteId, this.siteId));
+    const byName = new Map(coreTools.map((tool) => [tool.name, tool]));
+
+    for (const override of overrides) {
+      const base = byName.get(override.name) ?? this.coreTool(override.name, {
+        name: override.name,
+        description: override.description,
+        requiredCapabilities: [],
+        service: 'ai',
+        handler: async () => ({ skipped: true }),
+      });
+      byName.set(override.name, {
+        ...base,
+        description: override.description,
+        inputSchema: this.resolveOverrideSchema(base.inputSchema, override.inputSchema, override.name),
+        outputSchema: (override.outputSchema as Record<string, unknown>) ?? {},
+        requiredCapabilities: normalizeCapabilities(override.requiredCapabilities),
+        riskPolicy: normalizeRiskPolicy(override.riskPolicy),
+        rateLimit: normalizeRateLimit(override.rateLimit),
+        enabled: override.enabled,
+        owner: override.owner,
+        extensionId: override.extensionId,
+      });
+    }
+
+    return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async evaluatePolicy(tool: AgentToolDefinition, runId: string): Promise<ToolPolicyResult> {
+    if (!tool.enabled) {
+      return { allowed: false, message: `Tool disabled: ${tool.name}`, risk: 'blocked', approvalPolicy: 'none' };
+    }
+
+    const risk = tool.riskPolicy.level;
+    if (risk === 'blocked') {
+      return { allowed: false, message: `Tool blocked by policy: ${tool.name}`, risk, approvalPolicy: 'none' };
+    }
+
+    const maxPerRun = tool.rateLimit.maxCallsPerRun;
+    if (maxPerRun !== undefined) {
+      const calls = await this.db
+        .select({ id: agentToolCalls.id })
+        .from(agentToolCalls)
+        .where(and(eq(agentToolCalls.siteId, this.siteId), eq(agentToolCalls.runId, runId), eq(agentToolCalls.toolName, tool.name)))
+        .limit(maxPerRun + 1);
+      if (calls.length >= maxPerRun) {
+        return { allowed: false, message: `Tool rate limit exceeded for run: ${tool.name}`, risk: 'blocked', approvalPolicy: 'none' };
+      }
+    }
+
+    const maxPerMinute = tool.rateLimit.maxCallsPerMinute;
+    if (maxPerMinute !== undefined) {
+      const since = new Date(Date.now() - 60_000);
+      const calls = await this.db
+        .select({ id: agentToolCalls.id })
+        .from(agentToolCalls)
+        .where(and(eq(agentToolCalls.siteId, this.siteId), eq(agentToolCalls.toolName, tool.name), gte(agentToolCalls.createdAt, since)))
+        .limit(maxPerMinute + 1);
+      if (calls.length >= maxPerMinute) {
+        return { allowed: false, message: `Tool rate limit exceeded per minute: ${tool.name}`, risk: 'blocked', approvalPolicy: 'none' };
+      }
+    }
+
+    return {
+      allowed: true,
+      risk,
+      approvalPolicy: tool.riskPolicy.approvalPolicy ?? (risk === 'safe' ? 'none' : 'before_execute'),
+    };
+  }
+}

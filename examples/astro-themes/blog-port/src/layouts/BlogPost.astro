@@ -1,0 +1,22 @@
+---
+// Was: frontmatter from a content collection and <slot /> for the Markdown body.
+// Now: the item from the page data; the body (sanitised, rel="sponsored" applied) and the disclosure from the kit.
+import type { PageDataPage } from '@heopress/astro-kit';
+import ItemBody from '@heopress/astro-kit/ItemBody.astro';
+import SponsorDisclosure from '@heopress/astro-kit/SponsorDisclosure.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const item = page.vm.item!;
+---
+<article>
+  <div class="prose">
+    <div class="title">
+      {item.publishedAt && <div class="date"><FormattedDate date={item.publishedAt} /></div>}
+      <h1>{item.title}</h1>
+      <hr />
+    </div>
+    {item.sponsor.sponsored && <SponsorDisclosure page={page} id={item.id} />}
+    <ItemBody page={page} />
+  </div>
+</article>

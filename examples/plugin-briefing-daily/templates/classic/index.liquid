@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="{{ page.locale }}">
+<head>
+<meta charset="utf-8">
+{% seo_head %}
+</head>
+<body class="heopress-briefing heopress-briefing-index">
+<main>
+<h1>{{ route.title }}</h1>
+{% if list.size > 0 %}<ul class="heopress-briefing-list">{% for c in list %}<li><a href="{{ c.url | url }}">{{ c.title }}</a>{% if c.excerpt != "" %}<p class="heopress-briefing-excerpt">{{ c.excerpt }}</p>{% endif %}</li>{% endfor %}</ul>{% endif %}
+{% if pagination %}<nav class="heopress-briefing-pages">{% if pagination.prevUrl %}<a href="{{ pagination.prevUrl | url }}" rel="prev">Previous</a>{% endif %}{% if pagination.nextUrl %}<a href="{{ pagination.nextUrl | url }}" rel="next">Next</a>{% endif %}</nav>{% endif %}
+</main>
+</body>
+</html>
