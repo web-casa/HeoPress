@@ -1,0 +1,69 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+# --- HeoPress ---
+node_modules/
+dist/
+.turbo/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+/tmp/
+
+# 第三方研究证据（原始清单、解码结果、测试脚本），不进入仓库
+docs/research/evidence/
+
+# --- 上游 LumiBase（2026-10-15 合并时保留）---
+# Dependencies
+.pnpm-store/
+
+# Build outputs
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Drizzle
+drizzle/
+!packages/database/drizzle/
+
+# Env
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / Editor
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Cloudflare
+.wrangler/
+.dev.vars
+
+# Coverage
+docs/.i18n/code-refs-report.json
+docs/.i18n/parity-report.json
+
+# Agent skills are personal tooling, not project source. `.claude/commands/`
+# and `.claude/settings.json` stay tracked because they encode repo conventions
+# (the release runbook, the git identity hook); skills do not. Vendoring one in
+# put 23 files of third-party MIT code in the tree that nothing here imports —
+# keep them in `~/.claude/skills/` so they follow the developer, not the repo.
+.claude/skills/
+
+# HeoPress 跟踪 OpenSpec 工作流技能（Claude Code 与 Codex 交接共用），覆盖上一条上游规则
+!.claude/skills/
+
+# Studio Playwright output (P04 9.4)
+apps/studio/e2e-results/
+apps/studio/e2e-report/
+packages/public-site/e2e-results/
+packages/public-site/e2e-report/
+
+# Vitest JSON reporter output (never commit: it carries local paths).
+.vitest/

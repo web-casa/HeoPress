@@ -1,0 +1,411 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+/**
+ * Setup wizard HTTP surface (`/api/v1/setup/*`).
+ *
+ * Mounted in `apps/cms/src/index.ts` *outside* the authenticated tenant
+ * stack — these endpoints answer before any user exists. The wizard
+ * needs them to be reachable on a fresh instance, so the router only
+ * relies on `withDb()` for the Drizzle client. The CORS layer is
+ * inherited from the global stack.
+ *
+ * Routes (design §4.1–4.3):
+ *
+ *   GET  /setup/state         — public, rate-limited 60 req/min/IP.
+ *   GET  /setup/capabilities  — public, returns 404 once initialized.
+ *   POST /setup/complete      — public, returns 404 once initialized.
+ *
+ * Error envelope follows the project standard
+ * `{ errors: [{ code, message? }] }`.
+ */
+
+import { invalidateSiteExists } from '../../services/domains/site-exists-cache';
+import { DEFAULT_SITE_ID } from './site-constants';
+import { Hono } from 'hono';
+import { z } from 'zod';
+import { PasswordSchema } from '@heopress/contracts/schemas';
+import type { RateLimiterProvider } from '@heopress/runtime';
+import { MemoryRateLimiter, collectKeys } from '@heopress/runtime';
+import type { AppEnv } from '../../env';
+import { withDb } from '../../middleware/db';
+import { consumeRateLimit } from '../../middleware/rate-limit-helper';
+import {
+  SetupService,
+  type SetupCompleteContext,
+  type SetupServiceError,
+} from './service';
+import { STANDARD_LOCKOUT_POLICY, lockoutPolicySchema } from './policy-codec';
+import { OFFICIAL_KEY_ID } from './official-extensions';
+import { REQUIRE_SETUP_TOKEN_ENV, isSetupTokenRequired } from './setup-token';
+
+// ── input schema ────────────────────────────────────────────────────────
+
+// Exported for unit tests (see __tests__/complete-body-schema.test.ts). Not a
+// public API surface.
+export const completeBodySchema = z.object({
+  setupToken: z.string().min(1).max(256).optional(),
+  account: z.object({
+    email: z.string().email().max(254),
+    // Shared strength policy (min 12 + complexity) — consistent with register
+    // and recovery (CWE-521).
+    password: PasswordSchema,
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+  }),
+  adminPath: z.string().min(1).max(128),
+  // Optional: omit to apply the "Standard" lockout preset. A fresh mutable copy
+  // (incl. a fresh notifyChannels array) is passed so Zod's default never holds
+  // a reference to the frozen preset.
+  // `loginStallMs` has no wizard control yet, so the Studio omits it; the codec
+  // owns its default rather than failing the whole setup.
+  policy: lockoutPolicySchema.extend({
+    loginStallMs: lockoutPolicySchema.shape.loginStallMs.default(STANDARD_LOCKOUT_POLICY.loginStallMs),
+  }).default(() => ({
+    ...STANDARD_LOCKOUT_POLICY,
+    notifyChannels: [...STANDARD_LOCKOUT_POLICY.notifyChannels],
+  })),
+  project: z
+    .object({
+      defaultLanguage: z.string().min(2).max(16),
+      siteUrl: z.string().url().max(2048),
+      displayTitle: z.string().min(2).max(80),
+      theme: z.null().optional(),
+    })
+    .optional(),
+  // Optional teammates to invite alongside the bootstrap admin. Each
+  // becomes a `status: 'invited'` user bound to the default site with the
+  // chosen role preset. Created in the same transaction as the admin, so a
+  // failure rolls them back too (Req 1.5).
+  invites: z
+    .array(
+      z.object({
+        email: z.string().email().max(254),
+        role: z.enum(['admin', 'member']).default('member'),
+      }),
+    )
+    .max(20)
+    .optional(),
+});
+
+// ── rate limit (distributed via RateLimiterProvider) ───────────────────
+
+const STATE_RATE_LIMIT = 60; // req/min/IP
+const STATE_RATE_WINDOW_SECONDS = 60;
+
+const COMPLETE_RATE_LIMIT = 10; // req/min/IP
+const COMPLETE_RATE_WINDOW_SECONDS = 60;
+
+const fallbackSetupLimiter = new MemoryRateLimiter();
+
+export function __resetSetupRateLimitForTests(): void {
+  fallbackSetupLimiter.clear();
+}
+
+async function checkStateRateLimit(
+  rateLimiter: RateLimiterProvider | undefined,
+  ip: string,
+): Promise<boolean> {
+  const limiter = rateLimiter ?? fallbackSetupLimiter;
+  const key = `rl:setup:state:${ip}`;
+  const verdict = await consumeRateLimit(limiter, key, STATE_RATE_LIMIT, STATE_RATE_WINDOW_SECONDS);
+  return verdict.status === 'allow' || verdict.status === 'unavailable';
+}
+
+async function checkCompleteRateLimit(
+  rateLimiter: RateLimiterProvider | undefined,
+  ip: string,
+): Promise<boolean> {
+  const limiter = rateLimiter ?? fallbackSetupLimiter;
+  const key = `rl:setup:complete:${ip || 'unknown'}`;
+  const verdict = await consumeRateLimit(limiter, key, COMPLETE_RATE_LIMIT, COMPLETE_RATE_WINDOW_SECONDS);
+  return verdict.status === 'allow' || verdict.status === 'unavailable';
+}
+
+// ── service factory ─────────────────────────────────────────────────────
+
+/**
+ * Build a SetupService bound to the per-request Drizzle client. Reads
+ * env-driven flags (`HEOPRESS_REQUIRE_SETUP_TOKEN`, `HEOPRESS_SMTP_URL`)
+ * from the runtime context; tests can short-circuit by overriding
+ * `c.set('setupServiceOverride', svc)` before mounting the router.
+ */
+/**
+ * Is any AEAD key resolvable for this deployment?
+ *
+ * Uses the runtime's own `collectKeys` rather than a bare `env.ENCRYPTION_KEY`
+ * check so the answer matches what `KeyProvider` will actually do at enrollment
+ * time — versioned keys (`ENCRYPTION_KEY_v1`) count too.
+ *
+ * `*_FILE` indirections need no special case: `loadSecretFiles` (`serve.ts`
+ * calls it before the server starts listening) has already materialised them
+ * into the direct variable, and Cloudflare Workers have no filesystem to read.
+ *
+ * Cloudflare surfaces secrets on `c.env`; Node reads `process.env`, so both are
+ * merged. Never throws — a capabilities probe must not be able to break setup.
+ */
+function resolveEncryptionAvailable(env: AppEnv['Bindings']): boolean {
+  try {
+    return (
+      collectKeys({
+        ...(typeof process !== 'undefined' ? process.env : {}),
+        ...(env as unknown as Record<string, string | undefined>),
+      }).size > 0
+    );
+  } catch {
+    return false;
+  }
+}
+
+function buildService(c: {
+  env: AppEnv['Bindings'];
+  get: <K extends keyof AppEnv['Variables']>(k: K) => AppEnv['Variables'][K];
+}): SetupService {
+  const db = c.get('db');
+  // Same parser the startup mint uses (`startup.ts`), so the side that checks
+  // a token and the side that prints one can never disagree about the flag.
+  const requireSetupToken = isSetupTokenRequired(
+    c.env as unknown as Readonly<Record<string, unknown>>,
+  );
+  const smtpAvailable = !!readStringEnv(c.env, 'HEOPRESS_SMTP_URL');
+  return new SetupService({
+    db,
+    requireSetupToken,
+    smtpAvailable,
+    encryptionAvailable: resolveEncryptionAvailable(c.env),
+    officialPublisherKey: resolveOfficialPublisherKey(c.env),
+  });
+}
+
+/**
+ * Resolve the official signing key from `MARKETPLACE_PUBLIC_KEYS` (JSON
+ * `{ keyId: pem }`) by the well-known official key id, to seed it into
+ * `lumibase_publisher_keys` at bootstrap. Returns undefined when unconfigured.
+ */
+function resolveOfficialPublisherKey(
+  env: AppEnv['Bindings'],
+): { keyId: string; publicKeyPem: string; publisher: string } | undefined {
+  const raw = (env as unknown as Record<string, string | undefined>).MARKETPLACE_PUBLIC_KEYS;
+  if (!raw) return undefined;
+  try {
+    const map = JSON.parse(raw) as Record<string, string>;
+    const pem = map[OFFICIAL_KEY_ID];
+    if (!pem) return undefined;
+    return { keyId: OFFICIAL_KEY_ID, publicKeyPem: pem, publisher: 'HeoPress' };
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Env lookups go through this tiny helper so the unsafe index access
+ * is contained. `AppEnv['Bindings']` declares only the *known* fields;
+ * the setup wizard reads operator-supplied keys (`HEOPRESS_SMTP_URL`)
+ * that aren't in that interface yet, so we widen to
+ * `Record<string, unknown>` in one place rather than scattering casts
+ * at every call site. When those keys land in `env.ts`, this cast can
+ * collapse to a typed property read. `HEOPRESS_REQUIRE_SETUP_TOKEN` is
+ * parsed by `isSetupTokenRequired` instead, shared with the startup mint.
+ */
+function readStringEnv(env: AppEnv['Bindings'], key: string): string | undefined {
+  const v = (env as unknown as Record<string, unknown>)[key];
+  return typeof v === 'string' && v.length > 0 ? v : undefined;
+}
+
+// ── client IP extraction (mirrors design §6.1) ─────────────────────────
+
+function extractClientIp(req: Request): string {
+  const cf = req.headers.get('cf-connecting-ip');
+  if (cf) return cf;
+  const xff = req.headers.get('x-forwarded-for');
+  if (xff) {
+    const first = xff.split(',')[0]?.trim();
+    if (first) return first;
+  }
+  return 'unknown';
+}
+
+// ── error → HTTP mapping ───────────────────────────────────────────────
+
+function errorToHttp(error: SetupServiceError): { status: number; body: { errors: Array<{ code: string; message?: string; details?: unknown }> } } {
+  switch (error.code) {
+    case 'ALREADY_INITIALIZED':
+      return {
+        status: 404,
+        body: { errors: [{ code: 'NOT_FOUND' }] },
+      };
+    case 'SETUP_IN_PROGRESS':
+      return {
+        status: 409,
+        body: {
+          errors: [
+            { code: 'SETUP_IN_PROGRESS', message: 'Another setup is in progress.' },
+          ],
+        },
+      };
+    case 'SETUP_TOKEN_REQUIRED':
+      return {
+        status: 401,
+        body: { errors: [{ code: 'SETUP_TOKEN_REQUIRED' }] },
+      };
+    case 'SETUP_TOKEN_INVALID':
+      return {
+        status: 401,
+        body: { errors: [{ code: 'SETUP_TOKEN_INVALID' }] },
+      };
+    case 'SETUP_TOKEN_NOT_ISSUED':
+      // Not a client mistake: the gate is on and no token exists to match,
+      // so no request can succeed until the operator acts. The message is
+      // the actionable part — Studio's wizard shows `errors[0].message`.
+      return {
+        status: 503,
+        body: {
+          errors: [
+            {
+              code: 'SETUP_TOKEN_NOT_ISSUED',
+              message:
+                `${REQUIRE_SETUP_TOKEN_ENV} is on, but no setup token has been issued. ` +
+                'The Node/Docker CMS mints one when it starts and prints it as a ' +
+                '"[heopress-cms] SETUP_TOKEN=" line: restart the CMS and read its startup ' +
+                'logs. Cloudflare Workers have no startup step, so the flag is not supported ' +
+                'there: unset it and complete setup right after deploying.',
+            },
+          ],
+        },
+      };
+    case 'VALIDATION_ERROR':
+      return {
+        status: 400,
+        body: {
+          errors: [{ code: 'VALIDATION_ERROR', details: error.issues }],
+        },
+      };
+    case 'PATH_PREDICTABLE':
+      return {
+        status: 422,
+        body: {
+          errors: [{ code: 'PATH_PREDICTABLE', message: error.message }],
+        },
+      };
+    case 'PATH_RESERVED':
+      return {
+        status: 422,
+        body: {
+          errors: [{ code: 'PATH_RESERVED', message: error.message }],
+        },
+      };
+    case 'PATH_TAKEN':
+      return {
+        status: 409,
+        body: { errors: [{ code: 'PATH_TAKEN' }] },
+      };
+    case 'INTERNAL':
+    default:
+      return {
+        status: 500,
+        body: { errors: [{ code: 'INTERNAL' }] },
+      };
+  }
+}
+
+// ── router ──────────────────────────────────────────────────────────────
+
+export const setupRouter = new Hono<AppEnv>();
+
+// All setup routes need the per-request Drizzle client.
+setupRouter.use('*', withDb());
+
+setupRouter.get('/state', async (c) => {
+  const ip = extractClientIp(c.req.raw);
+  if (!(await checkStateRateLimit(c.get('runtime')?.rateLimiter, ip))) {
+    return c.json(
+      { errors: [{ code: 'RATE_LIMITED' }] },
+      429,
+      { 'retry-after': String(STATE_RATE_WINDOW_SECONDS) },
+    );
+  }
+
+  const svc = buildService(c);
+  const state = await svc.getState();
+  // Don't leak version, hostname, or tenant id (Req 1.6).
+  return c.json(state, 200);
+});
+
+setupRouter.get('/capabilities', async (c) => {
+  const svc = buildService(c);
+  // Capabilities only matter while uninitialized — once setup is done
+  // every /setup/* path 404s indistinguishably (Req 1.4).
+  const state = await svc.getState();
+  if (state.state === 'initialized') {
+    return c.json({ errors: [{ code: 'NOT_FOUND' }] }, 404);
+  }
+  const caps = await svc.getCapabilities();
+  return c.json(caps, 200);
+});
+
+setupRouter.post('/complete', async (c) => {
+  // Rate-brake *before* parsing the body or hashing a password, so a
+  // blocked request costs nothing (CWE-770; analog of Strapi #26494).
+  const ip = extractClientIp(c.req.raw);
+  if (!(await checkCompleteRateLimit(c.get('runtime')?.rateLimiter, ip))) {
+    return c.json(
+      { errors: [{ code: 'RATE_LIMITED' }] },
+      429,
+      { 'retry-after': String(COMPLETE_RATE_WINDOW_SECONDS) },
+    );
+  }
+
+  // Parse body first so a malformed payload yields a clean 400 before
+  // we touch the DB.
+  let raw: unknown;
+  try {
+    raw = await c.req.json();
+  } catch {
+    return c.json(
+      { errors: [{ code: 'VALIDATION_ERROR', message: 'invalid JSON' }] },
+      400,
+    );
+  }
+
+  const parsed = completeBodySchema.safeParse(raw);
+  if (!parsed.success) {
+    return c.json(
+      {
+        errors: [
+          {
+            code: 'VALIDATION_ERROR',
+            details: parsed.error.issues.map((i) => ({
+              path: i.path,
+              message: i.message,
+            })),
+          },
+        ],
+      },
+      400,
+    );
+  }
+
+  // Honor the test-only injection seam (mirrors recoveryServiceOverride);
+  // falls back to a real SetupService bound to the request db.
+  const svc = c.get('setupServiceOverride') ?? buildService(c);
+  const ctx: SetupCompleteContext = {
+    requestId: c.get('requestId'),
+    ip, // reuse the IP computed for the rate brake
+    userAgent: c.req.header('user-agent') ?? undefined,
+  };
+
+  const outcome = await svc.complete(parsed.data, ctx);
+
+  if (!outcome.ok) {
+    // `outcome.error` is `SetupServiceError` from the real service; the
+    // override seam types it as `unknown`, so narrow at this one call site.
+    const mapped = errorToHttp(outcome.error as SetupServiceError);
+    // mapped.status is 4xx/5xx in our taxonomy.
+    return c.json(mapped.body, mapped.status as 400 | 401 | 404 | 409 | 422 | 500 | 503);
+  }
+
+  // Requests made before setup cached "no such site" for the default site;
+  // drop that so the new administrator can sign in at once, not after the
+  // negative TTL.
+  await invalidateSiteExists(c.get('runtime')?.cache, DEFAULT_SITE_ID).catch(() => undefined);
+
+  return c.json(outcome.value, 201);
+});
