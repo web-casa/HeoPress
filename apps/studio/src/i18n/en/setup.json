@@ -1,0 +1,559 @@
+{
+  "login": {
+    "title": "HeoPress Login",
+    "subtitle": "Sign in to continue to Studio.",
+    "mfaSubtitle": "Enter your authentication code.",
+    "email": "Email",
+    "password": "Password",
+    "signingIn": "Signing in",
+    "signIn": "Sign in",
+    "totpCode": "Authentication code",
+    "recoveryCode": "Recovery code",
+    "useTotp": "Use authenticator code instead",
+    "useRecovery": "Use a recovery code instead",
+    "verifying": "Verifying",
+    "verify": "Verify",
+    "back": "Back to sign in",
+    "forgot": "Forgot password?",
+    "failed": "Login failed.",
+    "verifyFailed": "Verification failed.",
+    "sessionNotSaved": "The session could not be saved in this browser.",
+    "unreachable": "Could not reach the login service.",
+    "notFoundTitle": "Not found",
+    "notFoundBody": "This admin URL is not valid."
+  },
+  "backupCode": {
+    "title": "Recover with a backup code",
+    "intro": "Enter the admin email and one of the backup codes you saved during setup. We’ll clear the lockout and show you your admin path.",
+    "email": "Admin email",
+    "code": "Backup code",
+    "checking": "Checking…",
+    "submit": "Recover access",
+    "lostPath": "Lost your admin path?",
+    "lostPathLink": "Recover it by email",
+    "sentenceEnd": ".",
+    "invalidEmail": "Enter a valid email address.",
+    "codeRequired": "Enter one of your backup codes.",
+    "passwordMismatch": "Passwords do not match.",
+    "errors": {
+      "network": "Network error while contacting the server.",
+      "unparsable": "The server response could not be parsed.",
+      "missingDetails": "The server response was missing recovery details.",
+      "mismatch": "That email and backup code didn’t match.",
+      "rateLimited": "Too many recovery attempts.",
+      "invalidRequest": "The recovery request was rejected as invalid.",
+      "unexpected": "Recovery failed with an unexpected response (HTTP {{status}})."
+    },
+    "banner": {
+      "mismatch": "That email and backup code didn’t match. Check them and try again.",
+      "rateLimitedWait": "Too many recovery attempts. Try again in about {{wait}}.",
+      "rateLimited": "Too many recovery attempts. Try again later.",
+      "generic": "We couldn’t complete recovery right now. Check your connection and try again."
+    },
+    "reset": {
+      "network": "Network error while resetting password.",
+      "expired": "This recovery session expired or was already used.",
+      "weak": "Choose a stronger password.",
+      "unexpected": "Password reset failed with an unexpected response (HTTP {{status}}).",
+      "doneTitle": "Password reset",
+      "doneBody": "Your password was updated. Sign in with the new password.",
+      "newPassword": "New password",
+      "hideNew": "Hide new password",
+      "showNew": "Show new password",
+      "confirmPassword": "Confirm new password",
+      "hideConfirm": "Hide confirmation password",
+      "showConfirm": "Show confirmation password",
+      "updating": "Updating…",
+      "submit": "Set new password"
+    },
+    "goToLogin": "Go to admin login",
+    "successTitle": "Recovery successful",
+    "successBody": "The backup code was accepted. Set a new password, then sign in.",
+    "adminPath": "Your admin path",
+    "invalidPath": "The recovered admin path is invalid. Contact an operator before signing in.",
+    "rules": {
+      "length_one": "At least {{count}} character.",
+      "length_other": "At least {{count}} characters.",
+      "lowercase": "Includes a lowercase letter.",
+      "uppercase": "Includes an uppercase letter.",
+      "digit": "Includes a digit.",
+      "special": "Includes a special character ({{chars}}).",
+      "met": "Met: ",
+      "notMet": "Not met: "
+    },
+    "back": "Back",
+    "wait": {
+      "seconds_one": "{{count}} second",
+      "seconds_other": "{{count}} seconds",
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes"
+    },
+    "codePlaceholder": "XXXX-XXXX"
+  },
+  "forgotPath": {
+    "title": "Recover your admin path",
+    "intro": "Enter the admin email. If it matches the admin account, we’ll email you instructions to get back in.",
+    "sending": "Sending…",
+    "submit": "Send recovery instructions",
+    "haveCode": "Have a backup code?",
+    "sentTitle": "Check your inbox",
+    "sentBody": "If that email belongs to the admin account, we’ve sent recovery instructions. Check your inbox (and spam folder).",
+    "haveCodeInstead": "Have a backup code instead?"
+  },
+  "gate": {
+    "checking": "Checking setup status",
+    "unreachableTitle": "Couldn’t reach the server",
+    "unreachableBody": "We couldn’t check whether this instance has finished setup yet. Make sure the HeoPress backend is running, then try again.",
+    "unreachableBodySetup": "We couldn’t check whether this instance has been set up yet. Make sure the HeoPress backend is running, then try again.",
+    "retrying": "Checking…",
+    "retry": "Try again",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The page you’re looking for doesn’t exist.",
+    "tokenTitle": "Setup token required",
+    "tokenBodyBefore": "This instance was started with",
+    "tokenBodyAfter": ". Paste the one-time setup token printed in the CMS startup logs to continue.",
+    "tokenLabel": "Setup token",
+    "continue": "Continue"
+  },
+  "readyGate": {
+    "signInTitle": "Sign in to continue",
+    "signInBody": "You need to sign in to open the Studio.",
+    "goToSignIn": "Go to sign in",
+    "openAdminUrl": "Open the admin URL saved at the end of setup, then sign in."
+  },
+  "layout": {
+    "eyebrow": "Advanced setup",
+    "title": "Set up HeoPress with full controls",
+    "description": "Use the full wizard when you want to tune admin path, security policy, project identity, and recovery settings one screen at a time.",
+    "quickSetup": "Quick setup",
+    "progress": "Setup progress",
+    "editStep": "Edit {{step}}",
+    "steps": {
+      "account": {
+        "label": "Account",
+        "description": "Create the first administrator account."
+      },
+      "path": {
+        "label": "Path",
+        "description": "Pick a private URL for the Studio admin surface."
+      },
+      "security": {
+        "label": "Security",
+        "description": "Configure login lockout and anomaly detection."
+      },
+      "project": {
+        "label": "Project",
+        "description": "Set language, site URL, title, and theme direction."
+      },
+      "recovery": {
+        "label": "Recovery",
+        "description": "Save backup codes for emergency access."
+      },
+      "done": {
+        "label": "Done",
+        "description": "Setup complete — bookmark your admin URL."
+      }
+    }
+  },
+  "wizard": {
+    "eyebrow": "Quick setup",
+    "title": "Set up HeoPress in 3 steps",
+    "description": "The quick path applies the same production defaults as the full wizard. Before anything is created, the review step lists every default that will be applied.",
+    "advancedSetup": "Advanced setup",
+    "presetInvalid": "The selected security preset is invalid.",
+    "completeFailed": "Setup could not be completed.",
+    "invalidValue": "Invalid value.",
+    "badResponse": "Setup completed, but the response shape was unexpected.",
+    "httpFailed": "Setup failed with HTTP {{status}}.",
+    "editStep": "Edit {{step}}",
+    "steps": {
+      "essentials": "Essentials",
+      "review": "Security review",
+      "recovery": "Recovery codes"
+    },
+    "passwordRules": {
+      "length": "At least {{count}} characters",
+      "lowercase": "Includes a lowercase letter",
+      "uppercase": "Includes an uppercase letter",
+      "digit": "Includes a digit",
+      "special": "Includes a special character"
+    },
+    "presets": {
+      "standard": "Standard",
+      "strict": "Strict",
+      "lenient": "Lenient"
+    },
+    "presetDescriptions": {
+      "strict": "Tighter lockouts and all anomaly checks.",
+      "lenient": "Lower-friction lockouts for private dev instances.",
+      "standard": "Recommended defaults for new production projects."
+    },
+    "duration": {
+      "hours": "{{count}}h",
+      "minutes": "{{count}}m",
+      "seconds": "{{count}}s"
+    },
+    "essentials": {
+      "title": "Account and admin URL",
+      "description": "These are the setup values that cannot be inferred safely. Project identity uses HeoPress defaults in quick setup and can be tuned in Advanced setup.",
+      "email": "Admin email",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "hidePassword": "Hide password",
+      "showPassword": "Show password",
+      "adminPath": "Private admin path",
+      "adminPathHelp": "Bookmark this URL after setup. It replaces the predictable /admin path.",
+      "generate": "Generate",
+      "preview": "Preview:",
+      "continueAdvanced": "Continue in advanced setup",
+      "review": "Review security defaults"
+    },
+    "review": {
+      "title": "Review what quick setup will apply",
+      "description": "Nothing has been written yet. Switch to advanced setup now if you want to tune individual lockout, anomaly, or notification fields.",
+      "preset": "Security preset",
+      "presetDocs": "How to choose a preset",
+      "adminPath": "Admin path",
+      "securityDefaults": "Security defaults",
+      "userLockout": "User lockout",
+      "ipLockout": "IP lockout",
+      "lockoutValue_one": "{{count}} failed attempt, {{duration}} lockout",
+      "lockoutValue_other": "{{count}} failed attempts, {{duration}} lockout",
+      "detection": "Detection",
+      "detectionGeo": "geo",
+      "detectionTime": "time",
+      "detectionDevice": "device",
+      "detectionNone": "none",
+      "listSeparator": ", ",
+      "notification": "Notification",
+      "channels": {
+        "email": "email",
+        "webhook": "webhook"
+      },
+      "advancedTitle": "Advanced settings are still available.",
+      "advancedBody": "Quick setup lists every hidden default here. Use Advanced setup when you need custom webhook notifications, anomaly thresholds, or exact lockout windows before the first admin account is created.",
+      "openAdvanced": "Open advanced setup instead",
+      "back": "Back",
+      "creating": "Creating setup...",
+      "create": "Create setup"
+    },
+    "invites": {
+      "title": "Invite teammates (optional)",
+      "description": "They're added as invited users and appear under Users after they sign in. You can also do this later.",
+      "docs": "Roles & access",
+      "emailPlaceholder": "teammate@example.com",
+      "emailLabel": "Invite email {{index}}",
+      "emailInvalid": "Enter a valid email address.",
+      "roleLabel": "Invite role {{index}}",
+      "roles": {
+        "member": "Member",
+        "admin": "Admin"
+      },
+      "remove": "Remove invite {{index}}",
+      "add": "Add teammate"
+    },
+    "recovery": {
+      "created": "Setup created",
+      "title": "Save your recovery codes",
+      "description": "These codes are shown once. Save them before opening the admin login.",
+      "codes": "Backup codes",
+      "copy": "Copy",
+      "download": "Download",
+      "copyFailed": "Could not copy automatically. Use Download or select the codes.",
+      "invited_one": "{{count}} teammate invited — they'll appear under Users after they sign in.",
+      "invited_other": "{{count}} teammates invited — they'll appear under Users after they sign in.",
+      "confirm": "I have saved these backup codes and my private admin path.",
+      "docs": "View docs",
+      "goToLogin": "Go to admin login"
+    }
+  },
+  "hooks": {
+    "complete": {
+      "invalid": "The setup request was rejected as invalid.",
+      "alreadyInitialized": "This instance has already been set up.",
+      "inProgress": "Another setup attempt is already in progress.",
+      "pathPredictable": "The chosen admin path is too predictable.",
+      "pathReserved": "The chosen admin path conflicts with a reserved prefix.",
+      "validation": "The setup request failed validation.",
+      "unexpected": "Setup failed with an unexpected response (HTTP {{status}}).",
+      "network": "Network error while completing setup.",
+      "unparsable": "Setup succeeded but the response could not be parsed.",
+      "badShape": "Setup succeeded but the response shape was unexpected."
+    }
+  },
+  "schemas": {
+    "project": {
+      "languageTag": "Use a language tag like en, vi, or en-US.",
+      "siteUrlRequired": "Site URL is required.",
+      "siteUrlProtocol": "Site URL must start with http:// or https://.",
+      "siteUrlInvalid": "Enter a valid site URL.",
+      "titleMin": "Display title must be at least {{count}} characters.",
+      "titleMax": "Display title must be {{count}} characters or fewer."
+    },
+    "account": {
+      "emailRequired": "Email is required.",
+      "emailMax": "Email must be {{count}} characters or fewer.",
+      "emailInvalid": "Enter a valid email address.",
+      "passwordLength": "Password must be at least {{count}} characters.",
+      "passwordLower": "Password must include a lowercase letter.",
+      "passwordUpper": "Password must include an uppercase letter.",
+      "passwordDigit": "Password must include a digit.",
+      "passwordSpecial": "Password must include a special character.",
+      "passwordMismatch": "Passwords do not match.",
+      "firstNameRequired": "First name is required.",
+      "lastNameRequired": "Last name is required.",
+      "firstNameMax": "First name must be {{count}} characters or fewer.",
+      "lastNameMax": "Last name must be {{count}} characters or fewer."
+    },
+    "policy": {
+      "integer": "Must be a whole number.",
+      "min": "Must be at least {{min}}.",
+      "max": "Must be at most {{max}}.",
+      "integerSeconds": "Must be a whole number of seconds.",
+      "minSeconds": "Must be at least {{min}} seconds.",
+      "maxDay": "Must be at most 86400 seconds (1 day).",
+      "scoreMin": "Must be 0.00 or greater.",
+      "scoreMax": "Must be 1.00 or less.",
+      "decimals": "Must have at most 2 decimal places.",
+      "channelRequired": "Select at least one notification channel.",
+      "integerMs": "Must be a whole number of milliseconds.",
+      "nonNegative": "Must be 0 or greater.",
+      "maxMs": "Must be at most {{max}} milliseconds.",
+      "urlInvalid": "Enter a valid URL.",
+      "urlMax": "URL must be {{count}} characters or fewer.",
+      "secretRequired": "Webhook secret is required.",
+      "secretMax": "Webhook secret must be {{count}} characters or fewer.",
+      "webhookUrlRequired": "Webhook URL is required when the webhook channel is selected.",
+      "webhookSecretRequired": "Webhook secret is required when the webhook channel is selected."
+    },
+    "adminPath": {
+      "required": "Admin path is required.",
+      "invalid": "Invalid path format.",
+      "format": "Use /<slug> with 4–64 lowercase alphanumeric or hyphen characters, starting and ending with a letter or digit.",
+      "predictable": "This path is too predictable. Choose another.",
+      "reserved": "Path conflicts with reserved prefix '{{prefix}}'."
+    }
+  },
+  "steps": {
+    "continue": "Continue",
+    "project": {
+      "title": "Configure your project",
+      "description": "Set the default identity for this HeoPress project. Theme customization is visible here as a preview and will unlock in a future release.",
+      "language": {
+        "label": "Default language",
+        "help": "Use a language tag such as en, vi, or en-US.",
+        "en": "English (en)",
+        "vi": "Vietnamese (vi)",
+        "ja": "Japanese (ja)",
+        "fr": "French (fr)",
+        "enUS": "English, US (en-US)"
+      },
+      "displayTitle": {
+        "label": "Display title",
+        "help": "Shown in Studio and project metadata.",
+        "placeholder": "HeoPress"
+      },
+      "siteUrl": {
+        "label": "Site URL",
+        "help": "Canonical public URL used for metadata and future links.",
+        "placeholder": "https://example.com",
+        "preview": "Preview:"
+      },
+      "theme": {
+        "title": "Theme",
+        "description": "Horizon preview. Theme customization is coming in a future release.",
+        "disabled": "Disabled",
+        "horizon": "Horizon",
+        "horizonName": "Solar Modernism",
+        "horizonDescription": "Luminous surfaces, warm orange actions, and soft glass-like depth."
+      }
+    },
+    "done": {
+      "title": "Setup complete",
+      "description": "Your HeoPress instance is initialised. Save the admin URL below before navigating away.",
+      "adminUrl": "Your admin URL",
+      "invalidPathShort": "Invalid admin path",
+      "copyLabel": "Copy admin URL",
+      "copied": "Copied",
+      "copy": "Copy",
+      "copiedStatus": "Copied admin URL to clipboard.",
+      "copyFailed": "Couldn’t copy automatically. Select the path above and copy it manually.",
+      "bookmark": "Save this URL as a bookmark. Without it, you’ll need to run the recovery flow with one of your backup codes.",
+      "goToLogin": "Go to admin login",
+      "invalidPath": "The saved admin path is invalid. Run setup again before using this instance.",
+      "resetWizard": "Reset wizard (dev)",
+      "noSetup": {
+        "title": "No setup in progress",
+        "body": "We couldn’t find a completed setup in this browser session. Start the wizard from the beginning to configure your instance.",
+        "back": "Return to setup"
+      }
+    },
+    "path": {
+      "generateFailed": "Couldn't generate a unique path. Try again or enter one manually.",
+      "title": "Choose a private admin path",
+      "description": "Pick a URL slug that bots won’t guess. The Studio will only respond at this path; everything else returns 404.",
+      "label": "Admin path",
+      "help": "Use lowercase letters, digits, and hyphens. 4–64 characters after the leading slash.",
+      "placeholder": "/lumi-7f3a9c",
+      "generate": "Generate random",
+      "warningTitle": "Save this path.",
+      "warningBody": "Losing it means running the recovery flow with one of your backup codes. Bookmark the URL, store it in your password manager, or write it down somewhere safe before continuing.",
+      "confirm": "I have saved my admin path. I understand losing it requires the recovery flow.",
+      "preview": "Preview:",
+      "invalidFormat": "(invalid format)"
+    },
+    "recovery": {
+      "fileHeader": "HeoPress backup codes — store securely. Each code works once.",
+      "title": "Save your recovery codes",
+      "description": "Save these recovery codes. Each can be used once to regain access if you’re locked out. They won’t be shown again.",
+      "codesLabel": "Your backup codes",
+      "copyLabel": "Copy backup codes",
+      "copied": "Copied",
+      "copy": "Copy",
+      "downloadLabel": "Download backup codes as a text file",
+      "download": "Download .txt",
+      "copiedStatus": "Copied backup codes to clipboard.",
+      "copyFailed": "Couldn’t copy automatically. Select the codes above and copy them manually, or use Download .txt.",
+      "storeSafely": "Store these somewhere safe and offline — a password manager or a printout. Without them (or your admin path) you’ll need the email recovery flow to get back in.",
+      "confirm": "I have saved these backup codes",
+      "finish": "Finish setup",
+      "noCodes": {
+        "title": "No backup codes to display",
+        "body": "Your recovery codes are shown only once, right after setup completes, and aren’t stored in this browser. Return to setup to generate a fresh set."
+      }
+    },
+    "account": {
+      "title": "Create the admin account",
+      "description": "This account becomes the bootstrap administrator for the instance. Pick a strong, unique password — it can’t be reset without recovery codes.",
+      "email": "Email",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "hidePassword": "Hide password",
+      "showPassword": "Show password",
+      "hideConfirm": "Hide confirm password",
+      "showConfirm": "Show confirm password",
+      "requirements": "Password requirements",
+      "rules": {
+        "length": "At least {{min}} characters",
+        "lowercase": "Includes a lowercase letter",
+        "uppercase": "Includes an uppercase letter",
+        "digit": "Includes a digit",
+        "special": "Includes a special character ({{chars}})"
+      },
+      "checkingStrength": "Checking strength…",
+      "ruleMet": "Met: ",
+      "ruleNotMet": "Not met: ",
+      "checkingPasswordStrength": "Checking password strength…",
+      "strengthNone": "Password strength: none",
+      "strength": {
+        "veryWeak": "Very weak",
+        "weak": "Weak",
+        "fair": "Fair",
+        "strong": "Strong",
+        "veryStrong": "Very strong"
+      },
+      "tooWeak": "Choose a password rated “Strong” or better to continue."
+    },
+    "security": {
+      "title": "Configure login security",
+      "description": "Set thresholds for failed login attempts and choose how to be notified about security events.",
+      "noEncryptionKey": "No encryption key is configured on this instance, so two-factor authentication cannot be enrolled and encrypted fields cannot be written. Set <code>{{name}}</code> and restart the CMS — the rest of setup is unaffected.",
+      "preset": {
+        "legend": "Preset",
+        "help": "Apply default values to every group below. You can fine-tune after picking a preset.",
+        "ariaLabel": "Lockout policy preset"
+      },
+      "presets": {
+        "standard": {
+          "label": "Standard",
+          "description": "Balanced defaults suitable for most teams."
+        },
+        "strict": {
+          "label": "Strict",
+          "description": "Lower thresholds and longer lockouts."
+        },
+        "lenient": {
+          "label": "Lenient",
+          "description": "Higher thresholds for low-risk environments."
+        }
+      },
+      "failed": {
+        "legend": "Failed Attempts",
+        "help": "How many failed sign-ins to tolerate before locking a user or blocking an IP.",
+        "withRange": "{{help}} Range {{min}}–{{max}}.",
+        "fields": {
+          "userMaxFailedAttempts": {
+            "label": "Per-user max attempts",
+            "help": "Lock a user after this many failed attempts within the window."
+          },
+          "userLockoutDurationSeconds": {
+            "label": "User lockout duration (seconds)",
+            "help": "How long to keep a user locked."
+          },
+          "ipMaxFailedAttempts": {
+            "label": "Per-IP max attempts",
+            "help": "Block an IP after this many failed attempts within the window."
+          },
+          "ipLockoutDurationSeconds": {
+            "label": "IP lockout duration (seconds)",
+            "help": "How long to keep an IP blocked."
+          },
+          "lockoutWindowSeconds": {
+            "label": "Sliding window (seconds)",
+            "help": "Counter window for tallying failed attempts."
+          }
+        }
+      },
+      "geo": {
+        "legend": "Geographic Anomaly",
+        "help": "Flag sign-ins from countries the user hasn't logged in from before.",
+        "enable": "Enable geographic anomaly detection",
+        "unavailable": "GeoIP database is unavailable on this instance; geographic anomaly detection will stay off until you install it.",
+        "dismissLabel": "Dismiss GeoIP availability warning",
+        "dismiss": "Dismiss"
+      },
+      "time": {
+        "legend": "Time Anomaly",
+        "help": "Flag sign-ins at hours the user rarely logs in.",
+        "enable": "Enable time-of-day anomaly detection"
+      },
+      "device": {
+        "legend": "Device Anomaly",
+        "help": "Flag sign-ins from a User-Agent or device fingerprint the user hasn't used before.",
+        "enable": "Enable device anomaly detection"
+      },
+      "action": {
+        "legend": "Anomaly Action",
+        "help": "What the system should do when a sign-in's anomaly score crosses the threshold.",
+        "threshold": "Anomaly score threshold",
+        "thresholdHelp": "Range 0.00–1.00 with two decimal places. Default 0.70.",
+        "label": "Action",
+        "unavailableOption": "{{label}} (unavailable)",
+        "mfaUnavailable": "MFA module is not installed; the \"Require MFA\" option is unavailable for now.",
+        "options": {
+          "notify_only": "Notify only",
+          "lock": "Lock the account",
+          "require_mfa": "Require MFA"
+        }
+      },
+      "notify": {
+        "legend": "Notifications",
+        "help": "Where to send security event notifications. At least one channel must be selected.",
+        "channelsLabel": "Notification channels",
+        "channels": {
+          "email": "Email",
+          "webhook": "Webhook"
+        },
+        "webhookUrl": "Webhook URL",
+        "webhookUrlHelp": "HTTPS endpoint that will receive security event POSTs.",
+        "webhookUrlPlaceholder": "https://example.com/heopress/security",
+        "webhookSecret": "Webhook secret",
+        "webhookSecretHelp": "Used to sign webhook payloads with HMAC-SHA256. Keep this safe."
+      }
+    }
+  }
+}

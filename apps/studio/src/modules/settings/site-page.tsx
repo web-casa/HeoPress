@@ -1,0 +1,465 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link } from '@tanstack/react-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { SiteConfigUpdateSchema, normalizeSiteUrl } from '@heopress/contracts/schemas';
+import type { SiteResource } from '@heopress/sdk';
+import { Globe, Palette, Code2, Save, Check, AlertTriangle } from 'lucide-react';
+import { useEffect, useId, useMemo, type ReactNode } from 'react';
+import { useForm, type Resolver, type SubmitHandler } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { getApiClient } from '@/lib/api';
+import { useSaveHandler } from '@/lib/keybindings/use-keybindings';
+
+/** The few theme tokens we surface as color pickers in the UI. */
+const EDITABLE_TOKENS: { token: string; label: string }[] = [
+  { token: '--primary', label: 'site.tokens.primary' },
+  { token: '--accent', label: 'site.tokens.accent' },
+  { token: '--background', label: 'site.tokens.background' },
+  { token: '--foreground', label: 'site.tokens.foreground' },
+];
+
+interface SiteFormValues {
+  displayTitle: string;
+  siteUrl: string;
+  domain: string;
+  descriptor: string;
+  defaultLanguage: string;
+  defaultAppearance: 'auto' | 'light' | 'dark';
+  defaultSaveAction: 'stay' | 'return' | 'create_new';
+  branding: { logoUrl: string; faviconUrl: string; brandColor: string };
+  themeOverrides: { light: Record<string, string>; dark: Record<string, string> };
+  customCss: string;
+}
+
+function toFormValues(site: SiteResource): SiteFormValues {
+  return {
+    displayTitle: site.displayTitle ?? '',
+    siteUrl: site.siteUrl ?? '',
+    domain: site.domain ?? '',
+    descriptor: site.descriptor ?? '',
+    defaultLanguage: site.defaultLanguage ?? 'en',
+    defaultAppearance: (site.defaultAppearance as SiteFormValues['defaultAppearance']) ?? 'auto',
+    defaultSaveAction: (site.defaultSaveAction as SiteFormValues['defaultSaveAction']) ?? 'stay',
+    branding: {
+      logoUrl: site.branding?.logoUrl ?? '',
+      faviconUrl: site.branding?.faviconUrl ?? '',
+      brandColor: site.branding?.brandColor ?? '',
+    },
+    themeOverrides: {
+      light: site.themeOverrides?.light ?? {},
+      dark: site.themeOverrides?.dark ?? {},
+    },
+    customCss: site.customCss ?? '',
+  };
+}
+
+export function SiteSettingsPage() {
+  const { t } = useTranslation('siteOps');
+  const client = getApiClient();
+  const qc = useQueryClient();
+
+  const siteQuery = useQuery({
+    queryKey: ['site-config'],
+    queryFn: async () => (await client.site.get()).data,
+  });
+
+  const mutation = useMutation({
+    mutationFn: (patch: Partial<SiteFormValues>) => client.site.update(patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['site-config'] });
+    },
+  });
+
+  if (siteQuery.isLoading) {
+    return <div className="mx-auto max-w-3xl p-6 text-muted-foreground">{t('common:loading')}</div>;
+  }
+  if (siteQuery.isError || !siteQuery.data) {
+    return (
+      <div className="mx-auto max-w-3xl p-6 text-destructive">
+        {t('site.loadFailed')}
+      </div>
+    );
+  }
+
+  return (
+    <SiteSettingsForm
+      site={siteQuery.data}
+      onSave={(patch) => mutation.mutateAsync(patch)}
+      saving={mutation.isPending}
+      saved={mutation.isSuccess}
+      errorCode={extractDomainTaken(mutation.error)}
+    />
+  );
+}
+
+/** Pull a friendly error code out of the SDK error (e.g. DOMAIN_TAKEN). */
+function extractDomainTaken(err: unknown): string | null {
+  if (!err) return null;
+  const message = err instanceof Error ? err.message : String(err);
+  return /DOMAIN_TAKEN/i.test(message) ? 'DOMAIN_TAKEN' : 'GENERIC';
+}
+
+interface FormProps {
+  site: SiteResource;
+  onSave: (patch: Partial<SiteFormValues>) => Promise<unknown>;
+  saving: boolean;
+  saved: boolean;
+  errorCode: string | null;
+}
+
+// The PATCH schema is lenient on shape; we validate the editable identity
+// fields with the shared rules so Studio and the CMS agree on what's valid.
+function SiteSettingsForm({ site, onSave, saving, saved, errorCode }: FormProps) {
+  const { t } = useTranslation('siteOps');
+  const titleId = useId();
+  const urlId = useId();
+  const domainId = useId();
+  const descId = useId();
+  const langId = useId();
+  const appearanceId = useId();
+  const saveActionId = useId();
+
+  // Zod 4 + @hookform/resolvers distinguish input vs output when schemas use
+  // `.default()` / partials; this form always supplies full defaultValues, so
+  // pin both sides to SiteFormValues.
+  const form = useForm<SiteFormValues>({
+    resolver: zodResolver(SiteConfigUpdateSchema) as Resolver<SiteFormValues>,
+    mode: 'onBlur',
+    defaultValues: toFormValues(site),
+  });
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors, isDirty },
+  } = form;
+
+  useEffect(() => {
+    reset(toFormValues(site));
+  }, [site, reset]);
+
+  const watched = watch();
+  const urlPreview = useMemo(() => {
+    if (!watched.siteUrl?.trim()) return null;
+    try {
+      return normalizeSiteUrl(watched.siteUrl);
+    } catch {
+      return null;
+    }
+  }, [watched.siteUrl]);
+
+  const onSubmit: SubmitHandler<SiteFormValues> = async (values) => {
+    // Send only changed top-level keys; empty strings clear nullable fields.
+    await onSave({
+      displayTitle: values.displayTitle,
+      siteUrl: values.siteUrl,
+      domain: values.domain,
+      descriptor: values.descriptor,
+      defaultLanguage: values.defaultLanguage,
+      defaultAppearance: values.defaultAppearance,
+      defaultSaveAction: values.defaultSaveAction,
+      branding: values.branding,
+      themeOverrides: values.themeOverrides,
+      customCss: values.customCss,
+    });
+  };
+
+  // Cmd/Ctrl+S → submit the form in place (save and stay).
+  useSaveHandler(() => void handleSubmit(onSubmit)(), isDirty && !saving);
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-3xl space-y-8 p-6">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-semibold tracking-tight">{t('site.title')}</h1>
+        <p className="text-sm text-muted-foreground">
+          {t('site.description')}
+        </p>
+      </header>
+
+      {/* ── Identity ───────────────────────────────────────────── */}
+      <Section icon={<Globe className="h-4 w-4" />} title={t('site.identity')}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id={titleId} label={t('site.displayTitle')} error={errors.displayTitle?.message}>
+            <input id={titleId} className={inputClass(!!errors.displayTitle)} placeholder={t('site.placeholders.title')} {...register('displayTitle')} />
+          </Field>
+          <Field id={langId} label={t('site.defaultLanguage')} error={errors.defaultLanguage?.message}>
+            <select id={langId} className={inputClass(!!errors.defaultLanguage)} {...register('defaultLanguage')}>
+              <option value="en">{t('site.languages.en')}</option>
+              <option value="vi">{t('site.languages.vi')}</option>
+              <option value="ja">{t('site.languages.ja')}</option>
+              <option value="fr">{t('site.languages.fr')}</option>
+              <option value="en-US">{t('site.languages.enUS')}</option>
+            </select>
+          </Field>
+        </div>
+        <Field
+          id={urlId}
+          label={t('site.siteUrl')}
+          error={errors.siteUrl?.message}
+          help={t('site.siteUrlHelp')}
+        >
+          <input id={urlId} type="url" className={inputClass(!!errors.siteUrl)} placeholder={t('site.placeholders.url')} {...register('siteUrl')} />
+          {urlPreview ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t('site.preview')} <code className="font-mono text-foreground">{urlPreview}</code>
+            </p>
+          ) : null}
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            id={domainId}
+            label={t('site.customDomain')}
+            error={errors.domain?.message ?? (errorCode === 'DOMAIN_TAKEN' ? t('site.domainTaken') : undefined)}
+            help={t('site.customDomainHelp')}
+          >
+            <input id={domainId} className={inputClass(!!errors.domain || errorCode === 'DOMAIN_TAKEN')} placeholder={t('site.placeholders.domain')} {...register('domain')} />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t('site.domainsLinkBefore')}{' '}
+              <Link to="/settings/domains" className="text-primary hover:underline">
+                {t('site.domainsLink')}
+              </Link>
+              {t('site.domainsLinkAfter')}
+            </p>
+          </Field>
+          <Field id={descId} label={t('site.descriptor')} error={errors.descriptor?.message} help={t('site.descriptorHelp')}>
+            <input id={descId} className={inputClass(!!errors.descriptor)} {...register('descriptor')} />
+          </Field>
+        </div>
+      </Section>
+
+      {/* ── Branding ───────────────────────────────────────────── */}
+      <Section icon={<Palette className="h-4 w-4" />} title={t('site.branding')}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id={`${titleId}-logo`} label={t('site.logoUrl')}>
+            <input id={`${titleId}-logo`} type="url" className={inputClass(false)} placeholder={t('site.placeholders.logo')} {...register('branding.logoUrl')} />
+          </Field>
+          <Field id={`${titleId}-favicon`} label={t('site.faviconUrl')}>
+            <input id={`${titleId}-favicon`} type="url" className={inputClass(false)} placeholder={t('site.placeholders.favicon')} {...register('branding.faviconUrl')} />
+          </Field>
+        </div>
+        <Field id={`${titleId}-brand`} label={t('site.brandColor')} error={errors.branding?.brandColor?.message} help={t('site.brandColorHelp')}>
+          <ColorInput
+            value={watched.branding?.brandColor ?? ''}
+            onChange={(hsl) => setValue('branding.brandColor', hsl, { shouldDirty: true })}
+          />
+        </Field>
+      </Section>
+
+      {/* ── Theme ──────────────────────────────────────────────── */}
+      <Section icon={<Palette className="h-4 w-4" />} title={t('site.theme')}>
+        <Field id={appearanceId} label={t('site.defaultAppearance')} help={t('site.defaultAppearanceHelp')}>
+          <select id={appearanceId} className={inputClass(false)} {...register('defaultAppearance')}>
+            <option value="auto">{t('site.appearance.auto')}</option>
+            <option value="light">{t('site.appearance.light')}</option>
+            <option value="dark">{t('site.appearance.dark')}</option>
+          </select>
+        </Field>
+        <Field id={saveActionId} label={t('site.defaultSaveAction')} help={t('site.defaultSaveActionHelp')}>
+          <select id={saveActionId} className={inputClass(false)} {...register('defaultSaveAction')}>
+            <option value="stay">{t('site.saveAction.stay')}</option>
+            <option value="return">{t('site.saveAction.return')}</option>
+            <option value="create_new">{t('site.saveAction.createNew')}</option>
+          </select>
+        </Field>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <ThemeModeEditor
+            mode="light"
+            values={watched.themeOverrides?.light ?? {}}
+            onChange={(token, hsl) => setValue(`themeOverrides.light.${token}`, hsl, { shouldDirty: true })}
+          />
+          <ThemeModeEditor
+            mode="dark"
+            values={watched.themeOverrides?.dark ?? {}}
+            onChange={(token, hsl) => setValue(`themeOverrides.dark.${token}`, hsl, { shouldDirty: true })}
+          />
+        </div>
+      </Section>
+
+      {/* ── Custom CSS ─────────────────────────────────────────── */}
+      <Section icon={<Code2 className="h-4 w-4" />} title={t('site.customCss')}>
+        <div className="mb-2 flex items-start gap-2 rounded-md border border-amber-300/60 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>{t('site.customCssWarning')}</span>
+        </div>
+        <textarea
+          className={`${inputClass(!!errors.customCss)} h-40 font-mono text-xs`}
+          placeholder={t('site.placeholders.css')}
+          {...register('customCss')}
+        />
+        {errors.customCss?.message ? (
+          <p className="mt-1 text-xs text-destructive">{errors.customCss.message}</p>
+        ) : null}
+      </Section>
+
+      <div className="flex items-center justify-end gap-3 border-t pt-4">
+        {saved && !isDirty ? (
+          <span className="inline-flex items-center gap-1 text-sm text-emerald-600">
+            <Check className="h-4 w-4" /> {t('site.saved')}
+          </span>
+        ) : null}
+        {errorCode === 'GENERIC' ? (
+          <span className="text-sm text-destructive">{t('site.saveFailed')}</span>
+        ) : null}
+        <button
+          type="submit"
+          disabled={saving || !isDirty}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Save className="h-4 w-4" />
+          {saving ? t('site.saving') : t('site.saveChanges')}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function ThemeModeEditor({
+  mode,
+  values,
+  onChange,
+}: {
+  mode: 'light' | 'dark';
+  values: Record<string, string>;
+  onChange: (token: string, hsl: string) => void;
+}) {
+  const { t } = useTranslation('siteOps');
+  return (
+    <div className="space-y-3 rounded-lg border p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t(mode === 'light' ? 'site.lightMode' : 'site.darkMode')}</p>
+      {EDITABLE_TOKENS.map(({ token, label }) => (
+        <div key={token} className="flex items-center justify-between gap-3">
+          <span className="text-sm">{t(label)}</span>
+          <ColorInput value={values[token] ?? ''} onChange={(hsl) => onChange(token, hsl)} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * A color input that round-trips between a `<input type=color>` (#rrggbb) and
+ * the `H S% L%` triple Tailwind tokens expect. Empty value = "use default".
+ */
+function ColorInput({ value, onChange }: { value: string; onChange: (hsl: string) => void }) {
+  const { t } = useTranslation('siteOps');
+  const hex = hslTripleToHex(value);
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="color"
+        value={hex}
+        onChange={(e) => onChange(hexToHslTriple(e.target.value))}
+        className="h-7 w-9 cursor-pointer rounded border bg-background"
+        aria-label={t('site.pickColor')}
+      />
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="240 5.9% 10%"
+        className="w-32 rounded-md border bg-background px-2 py-1 font-mono text-xs"
+      />
+    </div>
+  );
+}
+
+// ── Color helpers (hex ⇄ HSL triple) ──────────────────────────────
+function hslTripleToHex(triple: string): string {
+  const m = triple.trim().match(/^([\d.]+)\s+([\d.]+)%\s+([\d.]+)%$/);
+  if (!m) return '#000000';
+  const h = parseFloat(m[1] ?? '0');
+  const s = parseFloat(m[2] ?? '0') / 100;
+  const l = parseFloat(m[3] ?? '0') / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const mm = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  const to = (n: number) =>
+    Math.round((n + mm) * 255)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${to(r)}${to(g)}${to(b)}`;
+}
+
+function hexToHslTriple(hex: string): string {
+  const m = hex.replace('#', '');
+  const r = parseInt(m.slice(0, 2), 16) / 255;
+  const g = parseInt(m.slice(2, 4), 16) / 255;
+  const b = parseInt(m.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+    else if (max === g) h = ((b - r) / d + 2) * 60;
+    else h = ((r - g) / d + 4) * 60;
+  }
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  return `${Math.round(h)} ${round1(s * 100)}% ${round1(l * 100)}%`;
+}
+
+// ── Layout primitives ─────────────────────────────────────────────
+function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <section className="space-y-4">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <span className="text-muted-foreground">{icon}</span>
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function Field({
+  id,
+  label,
+  error,
+  help,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  help?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <label htmlFor={id} className="block text-sm font-medium text-foreground">
+        {label}
+      </label>
+      {children}
+      {help ? <p className="text-xs text-muted-foreground">{help}</p> : null}
+      {error ? (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function inputClass(hasError: boolean): string {
+  const base =
+    'block w-full rounded-md border bg-background px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-primary/30';
+  return `${base} ${hasError ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : 'border-input focus:border-primary'}`;
+}
+
+export default SiteSettingsPage;

@@ -1,0 +1,164 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { describe, it, expect, vi } from 'vitest';
+import * as fc from 'fast-check';
+import { AISecureHarness, CORE_SKILLS } from '../ai-harness';
+import type { Database } from '@heopress/database';
+// The subject here is risk classification, not input shape. Since #454 the
+// harness refuses arguments that violate a skill's canonical schema, so the
+// generated dictionaries would classify every schema-bearing skill as `denied`
+// regardless of its risk. `argsForProperty` keeps the property measuring risk.
+import { argsForProperty } from '../../test-utils/agent-tool-args';
+
+/**
+ * Feature: ai-first-cms-engine, Property 3: Risk classification và execution flow
+ *
+ * With any valid skill where the user has sufficient capabilities:
+ * - If the skill requires a mutating `schema:*` capability OR its name starts with 'delete',
+ *   the result must have status === 'pending_approval' with a valid approvalId.
+ * - Otherwise, the result must have status === 'executed' with data.
+ *
+ * **Validates: Requirements 2.5, 2.6, 2.7**
+ */
+
+// All valid skill names from CORE_SKILLS. Deployment and cdc-feed skills are
+// excluded because they have no offline behaviour: their handlers require a
+// runtime KeyProvider / real tenant db (absent in this harness) and
+// deliberately error rather than stub. They are covered by their own unit
+// tests (deployment/__tests__, cdc-feed-skills-hitl.test.ts), including the
+// dangerous→HITL classification of triggerDeployment/deleteCdcSubscription.
+/**
+ * Since #453 the same "no offline behaviour" rule covers every WRITE handler:
+ * without its service it throws `*_NOT_CONFIGURED` instead of returning a
+ * success-shaped stub, so a serviceless harness cannot execute it. Probed by
+ * behaviour rather than by name so a newly added skill classifies itself; the
+ * missing-service contract is asserted in g1-missing-service.test.ts.
+ */
+async function hasNoOfflineBehaviour(name: string): Promise<boolean> {
+  try {
+    await CORE_SKILLS[name]!.handler({});
+    return false;
+  } catch (err) {
+    return /NOT_CONFIGURED/.test(err instanceof Error ? err.message : String(err));
+  }
+}
+
+const noOfflineSkills = new Set<string>(
+  (await Promise.all(
+    Object.keys(CORE_SKILLS).map(async (name) => ((await hasNoOfflineBehaviour(name)) ? name : '')),
+  )).filter(Boolean),
+);
+
+const validSkillNames = Object.keys(CORE_SKILLS).filter(
+  (name) =>
+    !['deployments', 'cdc-feed'].includes(CORE_SKILLS[name]?.service ?? '') &&
+    !noOfflineSkills.has(name),
+);
+
+// Arbitrary: pick a valid skill name from CORE_SKILLS
+const validSkillNameArb = fc.constantFrom(...validSkillNames);
+
+// Arbitrary: generate random arguments (Record<string, unknown>)
+const argsArb = fc.dictionary(
+  fc.string({ minLength: 1, maxLength: 10 }),
+  fc.oneof(fc.string(), fc.integer(), fc.boolean()),
+  { minKeys: 0, maxKeys: 5 },
+);
+
+// Helper: determine if a skill is dangerous based on the risk rules
+function isDangerousSkill(skillName: string): boolean {
+  const skill = CORE_SKILLS[skillName];
+  if (!skill) return false;
+  // Governed namespaces (access:*, intents:*, flows:*) opt in explicitly.
+  if (skill.dangerous) return true;
+  if (skill.requiredCapabilities.some((capability) => capability.startsWith('schema:') && capability !== 'schema:read')) return true;
+  if (skill.requiredCapabilities.includes('deployments:write')) return true;
+  if (skillName.startsWith('delete')) return true;
+  return false;
+}
+
+// Mock database that simulates insert into aiApprovals and returns an approvalId
+function createMockDb(): Database {
+  const mockReturning = vi.fn().mockResolvedValue([{ id: 'mock-approval-id-001' }]);
+  const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
+  const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
+
+  return { insert: mockInsert } as unknown as Database;
+}
+
+describe('Feature: ai-first-cms-engine, Property 3: Risk classification và execution flow', () => {
+  it('dangerous skills (mutating schema capability or delete*) should return pending_approval with approvalId', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        validSkillNameArb.filter((name) => isDangerousSkill(name)),
+        argsArb,
+        async (skillName, args) => {
+          const mockDb = createMockDb();
+          const harness = new AISecureHarness({
+            db: mockDb,
+            siteId: 'test-site-risk',
+          });
+
+          // Use wildcard '*' so capability check always passes
+          const result = await harness.execute(skillName, argsForProperty(skillName, args), ['*']);
+
+          // Property: dangerous skill → pending_approval with valid approvalId
+          expect(result.status).toBe('pending_approval');
+          expect(result.approvalId).toBeDefined();
+          expect(typeof result.approvalId).toBe('string');
+          expect(result.approvalId!.length).toBeGreaterThan(0);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+
+  it('safe skills (no mutating schema capability, name does not start with delete) should return executed with data', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        validSkillNameArb.filter((name) => !isDangerousSkill(name)),
+        argsArb,
+        async (skillName, args) => {
+          const mockDb = createMockDb();
+          const harness = new AISecureHarness({
+            db: mockDb,
+            siteId: 'test-site-risk',
+          });
+
+          // Use wildcard '*' so capability check always passes
+          const result = await harness.execute(skillName, argsForProperty(skillName, args), ['*']);
+
+          // Property: safe skill → executed with data
+          expect(result.status).toBe('executed');
+          expect(result.data).toBeDefined();
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+
+  it('risk classification is consistent: evaluateRisk matches execute behavior', async () => {
+    await fc.assert(
+      fc.asyncProperty(validSkillNameArb, argsArb, async (skillName, args) => {
+        const mockDb = createMockDb();
+        const harness = new AISecureHarness({
+          db: mockDb,
+          siteId: 'test-site-risk',
+        });
+
+        const skill = CORE_SKILLS[skillName]!;
+        const riskResult = harness.evaluateRisk(skill, skillName);
+        const executeResult = await harness.execute(skillName, argsForProperty(skillName, args), ['*']);
+
+        // Property: evaluateRisk(true) ↔ pending_approval, evaluateRisk(false) ↔ executed
+        if (riskResult) {
+          expect(executeResult.status).toBe('pending_approval');
+          expect(executeResult.approvalId).toBeDefined();
+        } else {
+          expect(executeResult.status).toBe('executed');
+          expect(executeResult.data).toBeDefined();
+        }
+      }),
+      { numRuns: 100 },
+    );
+  });
+});

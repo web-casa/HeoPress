@@ -1,0 +1,43 @@
+{
+  "title": "Files & Media",
+  "root": "Root",
+  "newFolder": "New Folder",
+  "upload": "Upload",
+  "deleteFolder": "Delete folder?",
+  "deleteFile": "Delete file?",
+  "emptyFolder": "This folder is empty.",
+  "createFolder": "Create Folder",
+  "folderName": "Folder name",
+  "create": "Create",
+  "tooLarge": "\"{{name}}\" exceeds the {{mb}} MB upload limit.",
+  "badType": "\"{{name}}\" is not an allowed file type. Allowed: {{allowed}}.",
+  "requestFailed": "Request failed: {{status}}",
+  "focal": {
+    "set": "Set focal point",
+    "preview": "Focal preview"
+  },
+  "presets": {
+    "title": "Transform presets",
+    "new": "New preset",
+    "key": "key (slug)",
+    "name": "Name",
+    "width": "width",
+    "height": "height",
+    "empty": "No presets yet.",
+    "copyUrlFor": "Copy URL for {{key}}",
+    "deleteKey": "Delete {{key}}"
+  },
+  "transform": {
+    "presetOnly": "Custom transforms are disabled; use a preset.",
+    "width": "Width",
+    "height": "Height",
+    "quality": "Quality",
+    "format": "Format",
+    "fit": "Fit",
+    "auto": "auto",
+    "default": "default",
+    "copied": "Copied",
+    "copyUrl": "Copy URL"
+  },
+  "sizeKb": "{{size}} KB"
+}
