@@ -1,0 +1,637 @@
+# Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24
+
+jobs:
+  checks:
+    name: Version, typecheck, tests, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare cache directories
+        shell: bash
+        run: |
+          mkdir -p "${{ steps.pnpm-store.outputs.path }}"
+          mkdir -p .turbo
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm-
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v6
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-turbo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # One aggregate step so the local pre-commit hook and CI cannot drift
+      # apart: `.husky/pre-commit` runs this same `pnpm check:all`. Adding a
+      # guard to the script therefore arms it in both places at once. Covers
+      # version:check, registry:check, settings:check, drift:check, tauri:check,
+      # scripts:test.
+      #
+      # Why each one earns its place:
+      #  - settings:check — pnpm 9 reads install settings from package.json;
+      #    pnpm 10+ reads them from pnpm-workspace.yaml. Both copies exist
+      #    during the transition (#295), so fail fast when they drift instead
+      #    of discovering it as a wall of audit failures after a pnpm bump.
+      #  - drift:check — an override applies to direct dependencies too, so it
+      #    can silently overrule what a manifest declares: `overrides.vite` sat
+      #    at ^7.3.5 while apps/studio and apps/docs declared ^8.1.3, and both
+      #    shipped Vite 7 builds under manifests claiming Vite 8. The parity
+      #    check cannot see this — the two override copies agreed with each
+      #    other, they were only both wrong relative to the manifests.
+      #  - tauri:check — Dependabot bumps @tauri-apps/* on the npm side only;
+      #    `tauri build` refuses mismatched major/minor against Cargo.lock, and
+      #    only release-apps.yml runs it, so the drift surfaced at release
+      #    time (v0.26.0 → v1.0.0-rc.3) instead of on the bump PR.
+      - name: Check repo guards (versions, registry, pnpm settings, override drift, tauri, scripts)
+        run: pnpm check:all
+
+      # `pnpm -r` runs tsc in every workspace package directly — no turbo cache
+      # in between — so a stale cache can never mask a type error on CI.
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  e2e-golden-path:
+    name: E2E golden path
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # v1 release criteria §3: the content happy path must never be verified by
+    # hand. Boots the CMS against a real Postgres and drives, over HTTP through
+    # the full middleware stack: setup wizard → create collection → create item
+    # → publish → read back, plus a two-site tenant-isolation check.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: heopress
+          POSTGRES_PASSWORD: heopress_ci
+          POSTGRES_DB: heopress
+        ports:
+          - 5432:5432
+        # Gate the job start on the DB actually accepting connections.
+        options: >-
+          --health-cmd "pg_isready -U heopress"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      # The docker runtime uses Redis for cache + the BullMQ queue; the login
+      # and audit paths enqueue work, so a reachable Redis is required or those
+      # awaits stall. Provide one rather than mock the runtime.
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://heopress:heopress_ci@localhost:5432/heopress
+      REDIS_URL: redis://localhost:6379
+      HEOPRESS_RUNTIME: docker
+      HEOPRESS_ENV: development
+      # Non-secret CI-only signing key: the test logs in as the bootstrap admin
+      # and reuses the returned JWT. Never a real deployment secret.
+      JWT_SECRET: ci_e2e_golden_path_secret
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare cache directories
+        shell: bash
+        run: |
+          mkdir -p "${{ steps.pnpm-store.outputs.path }}"
+          mkdir -p .turbo
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply database migrations
+        run: pnpm --filter @heopress/database migrate
+
+      - name: Run golden-path E2E
+        run: pnpm --filter @heopress/cms exec vitest --run src/__tests__/golden-path.e2e.test.ts
+
+      # v1 release criteria §4: the 0.x → 1.0 upgrade path must be tested for
+      # real, not verified by hand. Seeds a pre-policy (0.6.x-shape) RBAC
+      # fixture and runs the actual role→policy backfill + documented
+      # post-check against the same Postgres. Sequential with the golden-path
+      # step on purpose — both suites share the database.
+      - name: Run upgrade-path E2E (0.x → 1.0 RBAC backfill)
+        run: pnpm --filter @heopress/cms exec vitest --run src/__tests__/upgrade-path.e2e.test.ts
+
+  db-integration:
+    name: DB integration suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The 19 `*.db.integration.test.ts` suites self-skip without DATABASE_URL,
+    # so before this job existed they were green-by-absence in CI: `pnpm test`
+    # in `checks` has no database, every one of them skipped, and nothing they
+    # assert could ever fail a PR. They ran only on a developer's machine.
+    #
+    # A separate job rather than adding services to `checks`: vitest turns off
+    # file parallelism whenever DATABASE_URL is set (see apps/cms/vitest.config.ts
+    # — the suites share one database and reset shared tables), so folding them
+    # into `checks` would serialize the whole 2400-test suite on every PR. Here
+    # the cost runs alongside `checks` instead of on top of it.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: heopress
+          POSTGRES_PASSWORD: heopress_ci
+          POSTGRES_DB: heopress
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U heopress"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      # Same reason as the E2E job: the login and audit paths enqueue work
+      # through Redis, so suites that touch them stall or 500 without one.
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://heopress:heopress_ci@localhost:5432/heopress
+      REDIS_URL: redis://localhost:6379
+      HEOPRESS_RUNTIME: docker
+      HEOPRESS_ENV: development
+      # Non-secret CI-only signing key — several auth suites read it off c.env.
+      JWT_SECRET: ci_db_integration_secret
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare cache directories
+        shell: bash
+        run: |
+          mkdir -p "${{ steps.pnpm-store.outputs.path }}"
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply database migrations
+        run: pnpm --filter @heopress/database migrate
+
+      # Fail loudly if the filter stops matching. A rename that made this
+      # select zero files would otherwise reproduce exactly the silence this
+      # job exists to end.
+      - name: Assert the integration suites are discoverable
+        run: |
+          count=$(find apps/cms/src -name '*.integration.test.ts' | wc -l)
+          echo "found $count integration suite(s)"
+          test "$count" -ge 20
+
+      - name: Run integration suites against Postgres
+        run: pnpm --filter @heopress/cms exec vitest --run integration
+
+  lint-allowlist:
+    name: Lint stable packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # `secrets` context is not allowed in step-level `if:`, so surface the token's
+    # presence as an env var the steps below can gate on.
+    env:
+      MARKETPLACE_SUBMODULE_TOKEN: ${{ secrets.MARKETPLACE_SUBMODULE_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # marketplace (apps/marketplace) lives in the private heopress-ai/marketplace
+      # repo; without it the `--filter @heopress/marketplace` lint target resolves
+      # to an empty directory and pnpm silently skips it. The runner's GITHUB_TOKEN
+      # can't read another org's repo, so authenticate with the
+      # MARKETPLACE_SUBMODULE_TOKEN PAT via a scoped insteadOf rewrite. Init ONLY
+      # this path — enterprise/extensions are private too and a blanket
+      # `submodules: true` checkout would abort with "repository not found".
+      #
+      # Dependabot runs and forked-PR runs do NOT receive repository secrets, so
+      # the token is empty there and the private clone would fail. Skip the fetch
+      # (and the marketplace lint below) in that case — the workspace packages
+      # still lint fine without it.
+      - name: Fetch marketplace submodule
+        if: ${{ env.MARKETPLACE_SUBMODULE_TOKEN != '' }}
+        run: |
+          git config --global url."https://x-access-token:${MARKETPLACE_SUBMODULE_TOKEN}@github.com/heopress-ai/".insteadOf "https://github.com/heopress-ai/"
+          git submodule update --init --depth=1 apps/marketplace
+          git config --global --unset url."https://x-access-token:${MARKETPLACE_SUBMODULE_TOKEN}@github.com/heopress-ai/".insteadOf
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare cache directories
+        shell: bash
+        run: |
+          mkdir -p "${{ steps.pnpm-store.outputs.path }}"
+          mkdir -p .turbo
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-pnpm-
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v6
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-node${{ env.NODE_VERSION }}-turbo-lint-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-turbo-lint-
+            ${{ runner.os }}-node${{ env.NODE_VERSION }}-turbo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint allowlisted packages
+        run: pnpm --filter @heopress/landing --filter @heopress/studio --filter @heopress/docs --filter @heopress/cms lint
+
+      # marketplace is excluded from the pnpm workspace (see pnpm-workspace.yaml),
+      # so a root `--filter @heopress/marketplace` never matches — it must be
+      # linted standalone with its own deps, exactly as pages-deploy.yml builds
+      # it. The Fetch marketplace submodule step above makes its source present.
+      - name: Lint marketplace (standalone submodule)
+        if: ${{ env.MARKETPLACE_SUBMODULE_TOKEN != '' }}
+        working-directory: apps/marketplace
+        run: |
+          pnpm install --no-frozen-lockfile --ignore-workspace
+          pnpm lint
+
+  dependency-audit:
+    name: Dependency vulnerability audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+          run_install: false
+
+      # Report the full audit for visibility (never fails the build) …
+      - name: Audit (report, non-blocking)
+        run: pnpm audit --prod || true
+
+      # … then fail only on HIGH/CRITICAL advisories so a known-exploitable
+      # dependency blocks the merge while noisy low/moderate transitive
+      # advisories do not (CWE-1104).
+      #
+      # Advisories deliberately excluded from this gate live in
+      # `auditConfig.ignoreGhsas` — declared in BOTH root package.json (pnpm 9)
+      # and pnpm-workspace.yaml (pnpm 10+), kept in step by
+      # `pnpm settings:check`. Each entry needs a
+      # written justification + revisit trigger in the "Audit ignore registry"
+      # of `docs/en/security/dependency-overrides.md` — never add one just to
+      # make CI green.
+      - name: Audit (fail on high/critical)
+        run: pnpm audit --prod --audit-level high
+
+  workflow-lint:
+    name: Workflow files are valid
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # A workflow file with an invalid expression does not degrade gracefully:
+    # GitHub cannot parse it, so it never resolves `name:` or any job, and it
+    # records a bare failed run against whatever event fired. `perf-k6.yml`
+    # sat in exactly that state for weeks — `env.PERF_K6_FULL_RUN` in a
+    # job-level `if:`, where the `env` context is not available — failing on
+    # every single push. Nothing was watching, because nothing lints the
+    # workflows themselves. This job is that watcher.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # Pinned by version AND checksum rather than pulling a third-party
+      # action: one fewer `uses:` SHA to keep current, and the binary is
+      # verified before it runs.
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.10
+          ACTIONLINT_SHA256: f4c76b71db5755a713e6055cbb0857ed07e103e028bda117817660ebadb4386f
+        run: |
+          set -euo pipefail
+          curl -fsSL -o actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  actionlint.tar.gz" | sha256sum --check --strict
+          tar xzf actionlint.tar.gz actionlint
+          ./actionlint --version
+
+      # actionlint runs shellcheck over `run:` blocks only when the binary is
+      # on PATH, and it *skips silently* when it is not — which is how a local
+      # run can report clean while this job finds five issues. ubuntu-latest
+      # ships shellcheck, so assert it rather than trust it: if a future runner
+      # image drops it, the gate would quietly stop checking the `run:` blocks
+      # that drive Postgres, Redis and the deploy steps.
+      - name: Assert shellcheck is available
+        run: shellcheck --version
+
+      - name: Lint workflow files
+        run: ./actionlint
+
+  worker-bundle:
+    name: Worker bundle excludes Docker adapters
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # `pnpm build` runs `wrangler deploy --dry-run`, which bundles the Worker
+    # WITHOUT instantiating it. A module that throws at top level therefore
+    # builds green and then fails when Cloudflare starts it. That is exactly what
+    # happened: BullMQ 6 arrived through `@heopress/runtime`'s barrel, its
+    # Postgres `sql-loader` resolves its own directory at module scope, and every
+    # deploy was rejected with validation error 10021 while CI stayed green.
+    #
+    # The reliable fence is bundle composition, not a local boot: with the Docker
+    # adapters re-added, `wrangler dev` still booted fine — the throw only
+    # happens in a deployed Worker, which has no `file:///` stack frames for
+    # BullMQ's fallback to find. So the bundle assertion below is the gate; the
+    # startup probe is a complementary check for eagerly-thrown errors.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build all three Worker environments: the alias that keeps the Docker
+      # subtree out is declared once at the top level of wrangler.toml, so a
+      # future env block overriding it would only show up here.
+      - name: Build Worker (default env) and assert bundle composition
+        run: |
+          pnpm --filter @heopress/cms build
+          pnpm verify:worker-bundle
+
+      - name: Build Worker (staging) and assert bundle composition
+        run: |
+          pnpm --filter @heopress/cms build:staging
+          pnpm verify:worker-bundle
+
+      - name: Build Worker (production) and assert bundle composition
+        run: |
+          pnpm --filter @heopress/cms build:production
+          pnpm verify:worker-bundle
+
+      # Complementary, and deliberately last: proves the module graph evaluates
+      # under workerd. See the SCOPE note in the script for what it cannot catch.
+      - name: Boot the Worker under workerd
+        run: pnpm verify:worker-startup
+
+  scaffold-smoke:
+    name: Scaffolded starters install and typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # #450: the Cloudflare template declared `@cloudflare/workers-types@^4.0.0`
+    # while the `wrangler@^4` beside it had moved its peer to `^5.<date>`, so
+    # every `npm install` of a freshly scaffolded Cloudflare project died with
+    # ERESOLVE. The repo could not see it because no test installed a generated
+    # project — `create-heopress`'s unit tests cover argument parsing and file
+    # emission, and a peer conflict only exists once something resolves a graph.
+    #
+    # Both package managers are exercised on purpose. npm fails hard on a bad
+    # peer graph and is what catches this class; pnpm only warns and installed
+    # the very same wrong graph with exit 0, so verifying pnpm alone would have
+    # declared #450 fixed while it was not.
+    #
+    # Scoped to changes under the scaffolder: this job reaches the npm registry
+    # for each template and package manager; making every unrelated PR depend on that would trade one
+    # flake class for another.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Does this change touch the scaffolder?
+        id: scope
+        shell: bash
+        # Values arrive through env, not `${{ }}` interpolated into the script.
+        # A branch name is attacker-controllable on a fork PR, and splicing it
+        # into a shell line is the standard Actions injection hole.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch --quiet origin "$BASE_REF"
+            base="origin/$BASE_REF"
+          else
+            base="$PUSH_BEFORE"
+          fi
+          # A first push or a force-push leaves no usable base — `before` comes
+          # through as forty zeros. Run the smoke rather than skip it: a false
+          # run costs minutes, a false skip lets the regression through.
+          #
+          # `cat-file -e`, not `rev-parse --verify`: the latter accepts any
+          # 40-hex string as syntactically valid and exits 0 for objects that do
+          # not exist, so it would wave the all-zero SHA straight through into a
+          # `git diff` that then fails the job under `set -e`.
+          if ! git cat-file -e "${base}^{commit}" 2> /dev/null; then
+            echo "no usable base ref; running the smoke"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --name-only "$base"...HEAD | grep -q '^packages/create-heopress/'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "packages/create-heopress is untouched; skipping the install smoke"
+          fi
+
+      - name: Setup Node
+        if: steps.scope.outputs.changed == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Enable Corepack
+        if: steps.scope.outputs.changed == 'true'
+        run: corepack enable
+
+      - name: Setup pnpm
+        if: steps.scope.outputs.changed == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.12.0
+          run_install: false
+
+      - name: Install dependencies
+        if: steps.scope.outputs.changed == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # The scaffolder's bin shim loads `dist/`, so the smoke needs a build of
+      # the working tree — the point is to test these templates, not the ones
+      # already published to npm.
+      - name: Build create-heopress
+        if: steps.scope.outputs.changed == 'true'
+        run: pnpm --filter create-heopress build
+
+      - name: Smoke-test all templates with npm and pnpm
+        if: steps.scope.outputs.changed == 'true'
+        run: pnpm --filter create-heopress smoke
