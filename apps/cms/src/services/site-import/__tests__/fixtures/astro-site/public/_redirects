@@ -1,0 +1,4 @@
+# old paths
+/old-post /blog/post/ 301
+/feed/* /rss.xml 301
+/posts/[slug] /blog/[slug] 301

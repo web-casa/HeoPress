@@ -1,0 +1,66 @@
+{
+  "loading": "加载中…",
+  "retry": "重试",
+  "cancel": "取消",
+  "save": "保存",
+  "discard": "放弃",
+  "undo": "撤销",
+  "close": "关闭",
+  "noPermission": "无权限",
+  "unavailable": "暂不可用",
+  "mfaRequired": "需要二次验证",
+  "noDomain": "未绑定域名",
+  "noPrimaryDomain": "未设置主域名",
+  "incomplete": "不完整",
+  "allSites": "全部站点",
+  "currentSite": "当前站点",
+  "relativeExact": "{{relative}}（{{exact}}）",
+  "health": {
+    "ok": "正常",
+    "warn": "警告",
+    "bad": "异常",
+    "unknown": "未知"
+  },
+  "empty": {
+    "title": "这里还没有内容",
+    "body": "当前视图没有可显示的内容。"
+  },
+  "errors": {
+    "load": "无法加载。",
+    "fixCount_one": "先修正 {{count}} 处错误",
+    "fixCount_other": "先修正 {{count}} 处错误"
+  },
+  "languageNames": {
+    "zhCN": "简体中文",
+    "en": "English"
+  },
+  "switchPendingWrites": "仍有修改正在保存，结果未知。仍要切换吗？",
+  "changeVsPrevious": "较上一周期 {{value}}%",
+  "noPrevious": "没有可比较的上一周期",
+  "sitesExcluded": {
+    "mfa_one": "{{count}} 个站点需要二次验证",
+    "mfa_other": "{{count}} 个站点需要二次验证",
+    "unavailable_one": "{{count}} 个站点暂不可用",
+    "unavailable_other": "{{count}} 个站点暂不可用",
+    "noPermission_one": "{{count}} 个站点无权查看",
+    "noPermission_other": "{{count}} 个站点无权查看",
+    "partial_one": "{{count}} 个站点仅含可读集合",
+    "partial_other": "{{count}} 个站点仅含可读集合"
+  },
+  "open": "打开",
+  "switchAndVerify": "切换并验证",
+  "reasons": {
+    "reachability_errors_one": "{{count}} 个可达性错误",
+    "reachability_errors_other": "{{count}} 个可达性错误",
+    "reachability_warnings_one": "{{count}} 个可达性警告",
+    "reachability_warnings_other": "{{count}} 个可达性警告",
+    "domain_failed": "域名 {{host}} 失败",
+    "domain_pending": "域名 {{host}} 超过 24 小时未验证",
+    "audit_errors_one": "{{count}} 个错误级审计问题",
+    "audit_errors_other": "{{count}} 个错误级审计问题",
+    "audit_failed": "最近一次审计运行失败",
+    "no_primary_domain": "未设置主域名",
+    "not_checked": "尚未检查",
+    "not_readable": "按你的权限无法读取"
+  }
+}
