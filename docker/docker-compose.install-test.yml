@@ -1,0 +1,10 @@
+# Test installations only (docker/scripts/accept-install.sh, the CI job `install` and the v1 scale benchmark):
+# passed to docker/install.sh with --extra-compose. Free subdomains of a reserved test suffix are live at once,
+# without a DNS check, so sites can be created and served through Caddy without real domains. Never in production.
+services:
+  cms:
+    environment:
+      HEOPRESS_FREE_DOMAIN_SUFFIX: sites.example.test
+  cms-worker:
+    environment:
+      HEOPRESS_FREE_DOMAIN_SUFFIX: sites.example.test
