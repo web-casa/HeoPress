@@ -1,0 +1,108 @@
+{
+  "title": "Review workspace",
+  "description": "Everything waiting for a decision, in one list.",
+  "views": {
+    "title": "Views",
+    "inbox": "Inbox",
+    "mine": "My items",
+    "pending": "Waiting for review",
+    "scheduled": "Scheduled",
+    "published": "Published",
+    "drafts": "Drafts"
+  },
+  "filters": {
+    "collection": "Collection",
+    "allCollections": "All collections",
+    "author": "Author",
+    "anyAuthor": "Anyone",
+    "locale": "Language",
+    "anyLocale": "Any language",
+    "search": "Search titles"
+  },
+  "list": {
+    "empty": "Nothing in this view.",
+    "more": "Load more",
+    "updated": "Updated"
+  },
+  "state": {
+    "draft": "Draft",
+    "in_review": "Waiting for review",
+    "approved": "Approved",
+    "rejected": "Sent back",
+    "scheduled": "Scheduled",
+    "published": "Published"
+  },
+  "detail": {
+    "empty": "Select an item to review it.",
+    "properties": "Properties",
+    "status": "Status",
+    "author": "Author",
+    "length": "Length",
+    "words_one": "{{count}} word",
+    "words_other": "{{count}} words",
+    "publishAt": "Scheduled for",
+    "indexing": "Indexing",
+    "preview": "Preview",
+    "checks": "Pre-publish checks",
+    "history": "History",
+    "noHistory": "No review yet.",
+    "openEditor": "Open in editor",
+    "approve": "Approve",
+    "approveAnyway": "Approve anyway",
+    "reject": "Send back",
+    "rejectReason": "Why is it sent back?",
+    "rejectRequired": "Write a reason the author can act on.",
+    "confirmReject": "Send back",
+    "publish": "Publish",
+    "schedule": "Schedule",
+    "scheduleAt": "Publish at",
+    "approvePublish": "Approve and publish",
+    "retryPublish": "Retry publishing",
+    "publishFailed": "Approved, but publishing failed: {{reason}}",
+    "noReview": "Needs an administrator or a role with the review permission.",
+    "noPublish": "Publishing needs update permission on this collection.",
+    "failingChecks_one": "{{count}} check did not pass:",
+    "failingChecks_other": "{{count}} checks did not pass:",
+    "cancel": "Cancel"
+  },
+  "history": {
+    "submitted": "Submitted",
+    "approved": "Approved",
+    "rejected": "Sent back"
+  },
+  "checks": {
+    "title": "Title length",
+    "description": "Description length",
+    "indexing": "Indexing",
+    "structured_data": "Structured data",
+    "links": "Links in the text",
+    "images": "Image text alternatives",
+    "status": {
+      "pass": "Passed",
+      "warn": "Check",
+      "fail": "Not passed",
+      "not_checked": "Not checked",
+      "no_permission": "No permission to view"
+    },
+    "reason": {
+      "missing": "Missing",
+      "too_short": "Too short ({{value}})",
+      "too_long": "Too long ({{value}})",
+      "noindex_by_item": "Not indexed (set on the item)",
+      "noindex_by_collection": "Not indexed (collection setting)",
+      "noindex_by_page_type": "Not indexed (page type setting)",
+      "noindex_by_site": "Not indexed (site setting)",
+      "generated_on_publish": "Generated when published",
+      "see_audit": "See the audit",
+      "broken_internal": "Links to pages that do not answer",
+      "missing_alt": "{{value}} without alternative text"
+    },
+    "link": {
+      "ok": "OK",
+      "broken": "Broken",
+      "redirected": "Redirected",
+      "not_checked": "Not checked",
+      "no_alt": "No alternative text"
+    }
+  }
+}

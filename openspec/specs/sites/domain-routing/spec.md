@@ -1,0 +1,46 @@
+# sites/domain-routing Specification
+
+## Purpose
+定义站点与公开域名的绑定、验证、主域名规范化，以及自动签发 HTTPS 证书前的域名校验，使新站点无需手工修改服务器配置即可上线。
+
+## Requirements
+
+### Requirement: 域名验证后生效
+站点 SHALL 可以绑定多个域名，其中恰好一个为主域名。新绑定的域名 MUST 通过 DNS TXT 或 HTTP 文件验证后才生效。
+
+#### Scenario: 未验证的域名
+- **WHEN** 站点新增域名但尚未完成验证，访问者请求该域名
+- **THEN** 系统不为该域名提供站点内容
+
+#### Scenario: 验证通过
+- **WHEN** 域名的 DNS TXT 记录与系统下发的令牌一致并触发验证
+- **THEN** 域名状态变为 active，访问该域名返回对应站点的内容
+
+### Requirement: 主域名规范化
+对站点非主域名中的普通别名请求 SHALL 以 301 跳转到主域名的相同路径与查询参数。显式配置为语言入口的已验证域名 MUST 保留其语言路由；主域名按语言配置确定。
+
+#### Scenario: 访问备用域名
+- **WHEN** 访问者请求 `www.example.com/a?x=1`，而主域名是 `example.com`
+- **THEN** 返回 301，Location 为 `https://example.com/a?x=1`
+
+### Requirement: 证书签发前的域名校验
+系统 SHALL 提供仅内网可访问的域名校验端点，供反向代理在签发证书前查询。只有 active 域名 SHALL 返回成功；该端点 MUST 限速。
+
+#### Scenario: 已生效域名
+- **WHEN** 反向代理查询一个 active 域名
+- **THEN** 返回 200
+
+#### Scenario: 未知域名
+- **WHEN** 反向代理查询一个未绑定或未验证的域名
+- **THEN** 返回非 200，证书不会被签发
+
+#### Scenario: 公网访问校验端点
+- **WHEN** 从公网地址请求该端点
+- **THEN** 请求被拒绝
+
+### Requirement: 域名归属与可信 Host
+同一域名 SHALL 只能绑定一个站点；验证令牌 MUST 绑定域名、站点及有效期。未知或停用 Host MUST 被拒绝，不得回退到默认站点；只有可信代理 SHALL 能提供转发 Host。
+
+#### Scenario: 伪造转发主机
+- **WHEN** 公网请求携带指向其他站点的转发 Host，或另一个站点复用验证令牌
+- **THEN** 请求不改变站点解析结果，复用令牌不能激活域名
