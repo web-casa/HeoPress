@@ -1,0 +1,10 @@
+# The v1 scale benchmark (HeoPress P13 task 3.2; docs/benchmarks/v1-scale.md), passed to docker/install.sh with
+# --extra-compose after docker-compose.install-test.yml (free test subdomains). One benchmark principal writes
+# 100,000 articles through the API: its per-principal API budget (default 600/min) is raised instead of switching
+# the limiter off, so every request still pays for its counter in PostgreSQL, as in docker-compose.bench.yml.
+# Nothing else differs from an installation: no resource limits here (the simulated VPS has the budget), default
+# PostgreSQL and rendering service settings. Never in production.
+services:
+  cms:
+    environment:
+      HEOPRESS_API_RATE_LIMIT: "10000000"
