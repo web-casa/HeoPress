@@ -1,0 +1,85 @@
+{
+  "title": "审计",
+  "description": "已发布站点上发现的问题，逐条处理——是清单，不是分数。",
+  "views": {
+    "title": "视图",
+    "open": "未处理",
+    "ignored": "已忽略",
+    "resolved": "已解决",
+    "categories": "按规则",
+    "links": "链接",
+    "meta": "重复元数据",
+    "hreflang": "hreflang 回链",
+    "jsonld": "结构化数据",
+    "markdown": "Markdown 副本"
+  },
+  "run": {
+    "title": "上次审计",
+    "never": "尚未审计",
+    "done": "已完成",
+    "failed": "失败",
+    "truncated": "因问题过多被截断，清单不完整",
+    "running": "已排队或进行中",
+    "rerun": "重新审计",
+    "requested": "已请求审计"
+  },
+  "severity": {
+    "error": "错误",
+    "warning": "警告",
+    "notice": "提示"
+  },
+  "list": {
+    "pages_one": "{{count}} 个页面",
+    "pages_other": "{{count}} 个页面",
+    "emptyOpen": "此视图没有未处理的问题。",
+    "emptyIgnored": "没有已忽略的问题。忽略的问题到期后会自动恢复。",
+    "emptyResolved": "近 90 天没有已解决的问题。",
+    "nextAudit": "审计每天运行，下一次会发现新的问题。"
+  },
+  "detail": {
+    "empty": "选择一个问题查看证据与处理方式。",
+    "rule": "规则",
+    "firstSeen": "首次发现",
+    "lastSeen": "最近检测",
+    "evidence": "证据",
+    "pages": "受影响页面",
+    "open": "在编辑器打开",
+    "ignore": "忽略",
+    "ignoreReason": "原因（可选）",
+    "ignoreDays": "期限",
+    "days": "{{count}} 天",
+    "confirmIgnore": "忽略此问题",
+    "restore": "恢复",
+    "ignoredBy": "由 {{who}} 忽略，到 {{until}} 为止",
+    "reason": "原因：{{reason}}",
+    "ignoredToast": "已忽略问题",
+    "resolvedAt": "解决于",
+    "adminOnly": "只有站点管理员可以忽略或重新审计。"
+  },
+  "fix": {
+    "title": "为旧地址添加重定向",
+    "explain": "链接指向 {{from}}，该地址已无法访问。添加重定向后，读者与爬虫会被带到你指定的新地址，下一次审计后问题即解决。",
+    "to": "新地址",
+    "check": "检查",
+    "before": "现在",
+    "after": "之后",
+    "pagesAffected_one": "{{count}} 个页面链接到此地址",
+    "pagesAffected_other": "{{count}} 个页面链接到此地址",
+    "conflicts": "该地址仍是一个页面，重定向无法生效。",
+    "loops": "这会形成重定向循环。",
+    "apply": "添加重定向",
+    "done": "已添加重定向，立即生效。"
+  },
+  "rules": {
+    "links~broken": "站内链接失效",
+    "links~broken-anchor": "锚点失效",
+    "meta~duplicate-title": "标题重复",
+    "meta~duplicate-description": "描述重复",
+    "meta~duplicate-canonical": "canonical 重复",
+    "hreflang~missing-return": "缺少 hreflang 回链",
+    "jsonld~invalid": "结构化数据无效",
+    "jsonld~site-invalid": "站点级结构化数据无效",
+    "markdown~inconsistent": "Markdown 副本与页面不一致",
+    "markdown~address-taken": "Markdown 副本地址被占用"
+  }
+}

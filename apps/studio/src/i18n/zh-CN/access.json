@@ -1,0 +1,474 @@
+{
+  "apiKeys": {
+    "title": "API 密钥",
+    "description": "签发限定范围的 Bearer 令牌，并挂载角色或策略来控制数据访问。",
+    "new": "新建 API 密钥",
+    "loadFailed": "无法加载 API 密钥。",
+    "loading": "正在加载 API 密钥…",
+    "emptyTitle": "还没有 API 密钥",
+    "emptyBody": "创建密钥以授予程序访问权限。",
+    "columns": {
+      "name": "名称",
+      "prefix": "前缀",
+      "status": "状态",
+      "lastUsed": "最近使用"
+    },
+    "publishable": "可公开",
+    "anyOrigin": "任意来源",
+    "rotateLabel": "轮换 API 密钥 {{name}}",
+    "confirmRotate": "轮换 API 密钥“{{name}}”？",
+    "revokeLabel": "吊销 API 密钥 {{name}}",
+    "confirmRevoke": "吊销 API 密钥“{{name}}”？",
+    "info": {
+      "created": "创建时间",
+      "expires": "过期时间",
+      "rotated": "轮换时间",
+      "lastIp": "最近 IP"
+    },
+    "roles": "角色",
+    "noRoles": "未挂载角色。",
+    "attachRole": "挂载角色…",
+    "newRole": "新建角色",
+    "directPolicies": "直接策略",
+    "noPolicies": "未直接挂载策略。",
+    "attachPolicy": "挂载策略…",
+    "newPolicy": "新建策略",
+    "newGeneric": "新建",
+    "errors": {
+      "selectFirst": "请先选择一个 API 密钥。",
+      "conflicts": "挂载前必须先解决策略冲突。",
+      "attachCancelled": "已取消挂载。"
+    },
+    "confirmAttachRole_one": "挂载该角色会带来 {{count}} 条权限警告，仍要挂载吗？",
+    "confirmAttachRole_other": "挂载该角色会带来 {{count}} 条权限警告，仍要挂载吗？",
+    "confirmAttachPolicy_one": "挂载该策略会带来 {{count}} 条权限警告，仍要挂载吗？",
+    "confirmAttachPolicy_other": "挂载该策略会带来 {{count}} 条权限警告，仍要挂载吗？",
+    "status": {
+      "active": "有效",
+      "expired": "已过期",
+      "revoked": "已吊销"
+    },
+    "allowedOrigins": "允许的来源",
+    "allowedOriginsLabel": "允许的来源，每行一个",
+    "allowedOriginsHelp": "每行一个。留空表示<strong>任意来源</strong>。不带 Origin 的请求（原生或服务端调用方）始终放行，因此这无法防御 <code>curl</code>。",
+    "confirmRemoveOrigins": "移除来源白名单？之后任何网站都能使用此密钥。",
+    "saving": "保存中…",
+    "saveOrigins": "保存来源",
+    "reset": "重置",
+    "detach": "卸载 {{name}}",
+    "preview": {
+      "title": "有效权限预览",
+      "description": "通过直接策略和已挂载角色可达的策略规则。",
+      "rows_one": "{{count}} 条规则",
+      "rows_other": "{{count}} 条规则",
+      "loading": "正在加载预览…",
+      "empty": "未挂载任何权限规则。",
+      "collection": "集合"
+    },
+    "actions": {
+      "create": "创建",
+      "read": "读取",
+      "update": "更新",
+      "delete": "删除",
+      "share": "分享"
+    },
+    "form": {
+      "name": "名称",
+      "description": "描述",
+      "expires": "过期时间",
+      "publishable": "可公开（可安全嵌入浏览器或应用）",
+      "publishableHelp": "签发 <code>lbk_pub_…</code> 令牌。它<strong>不是</strong>机密：任何加载你应用的人都能读到，请按已公开的前提设定其范围。它带来的是按密钥的配额、轮换与审计，而不是保密性。",
+      "allowedOrigins": "允许的来源（每行一个，可选）",
+      "allowedOriginsHelp": "阻止其他网站在浏览器中使用此密钥。留空表示不限制。不带 Origin 的请求（原生或服务端调用方）始终放行，因此这无法防御 <code>curl</code>。",
+      "adminAccess": "管理员权限",
+      "adminAccessHint": "（跳过所有权限检查）",
+      "appAccess": "应用访问",
+      "appAccessHint": "（可登录 Studio）"
+    },
+    "creating": "创建中…",
+    "create": "创建",
+    "createAndAttach": "创建并挂载",
+    "token": "API 密钥令牌",
+    "copied": "已复制",
+    "copy": "复制",
+    "done": "完成",
+    "accessReview": "访问审查",
+    "placeholders": {
+      "origin": "https://app.example.com",
+      "name": "production-sync"
+    }
+  },
+  "importExport": {
+    "title": "导入 / 导出",
+    "description": "在不同环境之间迁移角色、策略、绑定关系以及 API 密钥的访问元数据。",
+    "exporting": "导出中…",
+    "export": "导出",
+    "import": "导入",
+    "capabilities": {
+      "portableTitle": "可移植清单",
+      "portableText": "JSON 包含访问引用与绑定优先级。",
+      "dryRunTitle": "先试运行",
+      "dryRunText": "写入前先检查差异、警告和阻断性冲突。",
+      "auditedTitle": "可审计的应用",
+      "auditedText": "导入成功后会刷新访问相关数据。"
+    },
+    "errors": {
+      "chooseManifest": "请先选择清单文件。",
+      "notManifest": "所选文件不是 HeoPress 访问清单。",
+      "readFailed": "无法读取文件。"
+    },
+    "dialog": {
+      "title": "导入访问清单",
+      "description": "选择有效的 JSON 文件后会立即试运行。",
+      "close": "关闭导入对话框",
+      "manifestJson": "清单 JSON",
+      "parseFailed": "无法解析清单",
+      "dryRunFailed": "试运行失败",
+      "running": "正在试运行…",
+      "blocking": "阻断性冲突",
+      "warnings": "警告",
+      "applyMode": "应用方式",
+      "importFailed": "导入失败",
+      "applied": "导入已应用",
+      "appliedBody": "访问数据已成功更新。",
+      "applying": "应用中…",
+      "apply": "应用导入",
+      "diff": "试运行差异"
+    },
+    "status": {
+      "create": "新建",
+      "update": "更新",
+      "unchanged": "未变",
+      "delete": "删除"
+    },
+    "modes": {
+      "merge": {
+        "label": "合并",
+        "hint": "更新或插入受管引用，保留现有访问规则。"
+      },
+      "replaceManaged": {
+        "label": "替换受管项",
+        "hint": "替换清单中出现的引用。"
+      },
+      "replaceAll": {
+        "label": "全部替换",
+        "hint": "替换本站点所有可导入的访问规则。"
+      }
+    },
+    "sections": {
+      "roles": "角色",
+      "policies": "策略",
+      "apiKeys": "API 密钥",
+      "rolePolicies": "角色策略",
+      "userRoles": "用户角色",
+      "userPolicies": "用户策略",
+      "apiKeyRoles": "API 密钥角色",
+      "apiKeyPolicies": "API 密钥策略"
+    },
+    "titleCount": "{{title}}（{{count}}）",
+    "dryRun": {
+      "passed": "试运行通过",
+      "passedBody": "没有阻断性冲突或校验错误。",
+      "warnings": "试运行通过，但有警告",
+      "warningsBody": "应用前请检查警告。",
+      "blocked": "试运行受阻",
+      "blockedBody": "应用前请先解决阻断性冲突。"
+    }
+  },
+  "publicAccess": {
+    "actions": {
+      "read": "读取",
+      "create": "创建",
+      "update": "更新",
+      "delete": "删除"
+    },
+    "requestFailed": "请求失败。",
+    "loading": "正在加载访问授权…",
+    "loadFailed": "无法加载访问授权。",
+    "intro": "为非员工访客授予内容访问权限。未在此列出的一律拒绝，两个范围初始均为空。",
+    "noCollections": "本站点还没有内容集合。请先创建集合，再为其授权。",
+    "disable": "关闭公开访问",
+    "enable": "开启公开访问",
+    "publicWarning": "互联网上任何人无需凭据即可读取下方勾选的内容。在前端放置令牌也改变不了这一点，请把这些授权视为完全公开。",
+    "off": "公开访问已关闭，未认证的请求会被拒绝。开启后即可选择访客能读取的内容。",
+    "collection": "集合",
+    "rowScope": "行范围",
+    "checkboxLabel": "{{realm}}：{{collection}} {{action}}",
+    "actionPrefix": "{{action}}：",
+    "publishedOnly": "仅已发布",
+    "ownOnly": "仅自己的行"
+  },
+  "layout": {
+    "title": "访问控制",
+    "description": "角色由策略组成，策略由权限规则组成。用权限矩阵审查，用测试沙盒排查判定结果。",
+    "tabs": {
+      "roles": "角色",
+      "policies": "策略",
+      "public": "公开与订阅者",
+      "apiKeys": "API 密钥",
+      "importExport": "导入 / 导出",
+      "matrix": "权限矩阵",
+      "sandbox": "测试沙盒"
+    }
+  },
+  "systemCollections": {
+    "content": {
+      "label": "内容集合",
+      "hint": "schema API 返回的项目内容与自定义集合。"
+    },
+    "schema": {
+      "label": "结构构建器",
+      "hint": "决定数据模型的集合、字段与关联。"
+    },
+    "access": {
+      "label": "访问控制",
+      "hint": "角色、策略、绑定关系与权限行。"
+    },
+    "extension": {
+      "label": "扩展访问",
+      "hint": "扩展的安装/配置授权、模块可见性、端点与操作。"
+    },
+    "sensitive": {
+      "label": "敏感系统数据",
+      "hint": "安全状态、审计记录、备用码与 API 密钥元数据。"
+    }
+  },
+  "roles": {
+    "title": "角色",
+    "description": "每个用户在每个站点有一个主角色。为角色分配策略即可授予集合权限。",
+    "new": "新建角色",
+    "loadFailed": "无法加载角色。",
+    "emptyTitle": "还没有角色",
+    "emptyBody": "创建一个角色，开始分配权限。",
+    "columns": {
+      "name": "名称",
+      "admin": "管理员",
+      "appAccess": "应用访问",
+      "description": "描述"
+    },
+    "yes": "是",
+    "no": "否",
+    "deleteLabel": "删除角色 {{name}}",
+    "deleteConfirm": "删除角色“{{name}}”？",
+    "adminAccessHint": "管理员访问（跳过所有权限检查）",
+    "appAccessHint": "应用访问（成员可登录 Studio）",
+    "creating": "创建中…",
+    "create": "创建",
+    "namePlaceholder": "editor"
+  },
+  "policies": {
+    "title": "策略",
+    "description": "每个策略由若干权限行（集合 × 操作）组成。把策略附加到角色或用户；优先级数值越小越先执行。",
+    "new": "新建策略",
+    "loadFailed": "无法加载策略。",
+    "emptyTitle": "还没有策略",
+    "emptyBody": "创建一个策略并为其添加权限规则。",
+    "columns": {
+      "name": "名称",
+      "description": "描述",
+      "guards": "限制条件"
+    },
+    "deleteLabel": "删除策略 {{name}}",
+    "deleteConfirm": "删除策略“{{name}}”？",
+    "guard": {
+      "from": "自 {{date}} 起",
+      "until": "至 {{date}} 止",
+      "allowIp_one": "允许 {{count}} 个 IP",
+      "allowIp_other": "允许 {{count}} 个 IP",
+      "denyIp_one": "拒绝 {{count}} 个 IP",
+      "denyIp_other": "拒绝 {{count}} 个 IP"
+    },
+    "creating": "创建中…",
+    "create": "创建",
+    "namePlaceholder": "content-editors"
+  },
+  "roleDetail": {
+    "conflictsBlock": "附加前必须先解决策略冲突。",
+    "attachWithWarnings_one": "附加该策略会产生 {{count}} 条权限警告，仍要附加吗？",
+    "attachWithWarnings_other": "附加该策略会产生 {{count}} 条权限警告，仍要附加吗？",
+    "attachCancelled": "已取消附加。",
+    "loading": "正在加载角色…",
+    "notFound": "找不到该角色。",
+    "back": "返回角色列表",
+    "descriptionPlaceholder": "添加描述…",
+    "delete": "删除",
+    "adminAccess": "管理员访问",
+    "adminAccessHint": "成员跳过所有权限检查。",
+    "appAccess": "应用访问",
+    "appAccessHint": "成员可以登录 Studio。",
+    "attachedPolicies": "已附加的策略",
+    "attachedCount_one": "已附加 {{count}} 个",
+    "attachedCount_other": "已附加 {{count}} 个",
+    "noPolicies": "尚未附加任何策略。",
+    "priority": "优先级 {{priority}}",
+    "detachPolicy": "移除策略",
+    "attachPlaceholder": "附加已有策略…",
+    "managePolicies": "管理策略",
+    "members": "成员",
+    "assignedCount_one": "已分配 {{count}} 人",
+    "assignedCount_other": "已分配 {{count}} 人",
+    "noMembers": "尚未分配用户。在下方填写用户 ID 即可分配。",
+    "removeUser": "移除用户",
+    "conflict": {
+      "none": "未检测到权限冲突。",
+      "preview": "权限冲突预览",
+      "blocking": "阻断",
+      "warnings": "警告"
+    },
+    "userIdPlaceholder": "用户 ID",
+    "assign": "分配"
+  },
+  "policyDetail": {
+    "loading": "正在加载策略…",
+    "notFound": "找不到该策略。",
+    "back": "返回策略列表",
+    "rows": "权限行",
+    "rowsHint": "每一行授予（集合, 操作）权限，可附带行级规则、字段白名单、校验与预设值。",
+    "addPermission": "添加权限",
+    "noRows": "还没有权限。添加一条以授予访问。",
+    "guards": {
+      "title": "限制条件",
+      "hint": "时间范围与 IP 允许/拒绝列表，在任何权限行之前判定。",
+      "gui": "图形界面",
+      "json": "JSON",
+      "validFrom": "生效时间",
+      "validUntil": "失效时间",
+      "ipAllow": "IP 允许列表（逗号分隔）",
+      "ipDeny": "IP 拒绝列表（逗号分隔）"
+    },
+    "collection": "集合",
+    "collectionPlaceholder": "posts",
+    "sensitiveHidden": "除非当前主体拥有管理员跳过权限，否则敏感系统集合不会显示。",
+    "action": "操作",
+    "adding": "添加中…",
+    "add": "添加",
+    "groupLabel": "{{label}}："
+  },
+  "matrix": {
+    "actions": {
+      "create": "创建",
+      "read": "读取",
+      "update": "更新",
+      "delete": "删除",
+      "share": "分享",
+      "review": "审核",
+      "read_decrypted": "读取解密内容"
+    },
+    "loading": "正在加载权限矩阵…",
+    "loadFailed": "无法加载权限矩阵。",
+    "title": "权限矩阵",
+    "description": "当前主体编译后的权限集合。点击单元格查看详情。",
+    "adminActive": "管理员跳过已启用：所有单元格均允许",
+    "noCollections": "还没有集合。",
+    "cellAllowed": "{{collection}} 的{{action}}：允许",
+    "cellDenied": "{{collection}} 的{{action}}：拒绝",
+    "adminBypass": "管理员跳过",
+    "conditional": "有条件",
+    "inspector": {
+      "admin": "管理员跳过：所有字段，无规则限制。",
+      "compiled": "由已附加策略中的一条或多条权限行编译而来。",
+      "denied": "没有匹配的权限行：拒绝。",
+      "close": "关闭详情",
+      "sources": "来源策略",
+      "unknown": "未知",
+      "fields": "字段",
+      "none": "无",
+      "rule": "规则（permissions）",
+      "presets": "预设值 / 校验"
+    }
+  },
+  "sandbox": {
+    "notObject": "条目数据必须是 JSON 对象。",
+    "invalidJson": "JSON 无效：{{message}}",
+    "title": "测试沙盒",
+    "description": "为当前主体模拟一次权限判定。可附带条目数据以评估行级规则。",
+    "checking": "检查中…",
+    "run": "运行检查",
+    "includeItem": "附带条目数据（评估行级规则）",
+    "allowed": "允许",
+    "denied": "拒绝",
+    "rule": "规则",
+    "presets": "预设值"
+  },
+  "rowEditor": {
+    "noFields": "无字段",
+    "allFields": "全部字段",
+    "fieldCount_one": "{{count}} 个字段",
+    "fieldCount_other": "{{count}} 个字段",
+    "deleteRow": "删除权限行",
+    "deleteConfirm": "删除“{{collection}}”的{{action}}权限？",
+    "ruleTitle": "行级规则（permissions）",
+    "ruleHint": "留空表示无条件。可使用 $CURRENT_USER / $CURRENT_SITE / $NOW / $IP / $HEADERS.* 等内置变量。",
+    "topLevelObject": "顶层值必须是 JSON 对象。",
+    "validation": "校验",
+    "validationHint": "按操作覆盖的校验规则（类 Zod 的 JSONata）。",
+    "presetsHint": "由服务器应用的默认值，例如 {\"updated_by\": \"$CURRENT_USER\"}。",
+    "saving": "保存中…",
+    "saveChanges": "保存更改",
+    "saved": "已保存",
+    "fieldsHint": "* 表示全部，-name 表示排除。",
+    "allFieldsButton": "全部字段",
+    "removeField": "移除 {{field}}",
+    "addField": "添加字段…",
+    "mustBeObject": "必须是 JSON 对象。",
+    "nested": "此规则使用了 _or / _not 嵌套，请切换到 JSON 模式编辑。",
+    "noConditions": "没有条件：拥有此权限行的任何人都能通过规则检查。",
+    "fieldPlaceholder": "字段",
+    "magicValuePlaceholder": "$变量或值",
+    "valuePlaceholder": "值",
+    "magicVar": "$变量…",
+    "removeCondition": "移除条件",
+    "addCondition": "+ 添加条件"
+  },
+  "users": {
+    "title": "用户",
+    "invite": "邀请用户",
+    "noRole": "无角色",
+    "unknownRole": "未知",
+    "columns": {
+      "user": "用户",
+      "role": "角色",
+      "status": "状态",
+      "lastSeen": "最近活动",
+      "actions": "操作"
+    },
+    "empty": "没有找到用户。",
+    "never": "从未",
+    "confirmRemove": "确定要将此用户从站点中移除吗？",
+    "edit": "编辑用户",
+    "remove": "移除用户",
+    "status": {
+      "active": "正常",
+      "invited": "已邀请",
+      "suspended": "已停用"
+    },
+    "inviteTitle": "邀请用户",
+    "email": "邮箱地址",
+    "emailPlaceholder": "user@example.com",
+    "assignRole": "分配角色",
+    "inviting": "正在邀请…",
+    "sendInvite": "发送邀请",
+    "editTitle": "编辑用户：{{email}}",
+    "saving": "正在保存…"
+  },
+  "teams": {
+    "title": "团队",
+    "create": "创建团队",
+    "empty": "没有找到团队。",
+    "noDescription": "暂无描述。",
+    "manageMembers": "管理成员",
+    "confirmDelete": "删除此团队？",
+    "edit": "编辑团队",
+    "delete": "删除团队",
+    "editTitle": "编辑团队",
+    "name": "名称",
+    "description": "描述",
+    "saving": "正在保存…",
+    "membersTitle": "{{name}} 的成员",
+    "selectUser": "选择要添加的用户…",
+    "add": "添加",
+    "noMembers": "暂无成员。",
+    "confirmRemoveMember": "将该用户移出团队？",
+    "removeMember": "移出团队"
+  }
+}
