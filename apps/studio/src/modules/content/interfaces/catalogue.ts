@@ -1,0 +1,266 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import i18n from 'i18next';
+
+export type InterfaceGroup =
+  | 'Text'
+  | 'Number'
+  | 'Choice'
+  | 'Boolean'
+  | 'Date'
+  | 'Relation'
+  | 'File'
+  | 'Content'
+  | 'Special';
+
+export interface InterfaceCatalogueItem {
+  id: string;
+  label: string;
+  description: string;
+  type: string;
+  group: InterfaceGroup;
+  defaultOptions?: Record<string, unknown>;
+  defaultSpecial?: string[];
+  defaultDisplay?: string | null;
+  width?: 'half' | 'full' | 'fill';
+}
+
+export const INTERFACE_GROUPS: InterfaceGroup[] = [
+  'Text',
+  'Number',
+  'Choice',
+  'Boolean',
+  'Date',
+  'Relation',
+  'File',
+  'Content',
+  'Special',
+];
+
+export const INTERFACE_CATALOGUE: InterfaceCatalogueItem[] = [
+  {
+    id: 'input',
+    label: 'Input',
+    description: 'Single-line text, uuid, or scalar value.',
+    type: 'string',
+    group: 'Text',
+    defaultOptions: { trim: true, clear: true },
+  },
+  {
+    id: 'input-multiline',
+    label: 'Textarea',
+    description: 'Multi-line plain text editor.',
+    type: 'text',
+    group: 'Text',
+    defaultOptions: { rows: 4, trim: true },
+    width: 'full',
+  },
+  { id: 'wysiwyg', label: 'WYSIWYG', description: 'Rich HTML editor.', type: 'text', group: 'Text' },
+  { id: 'markdown', label: 'Markdown', description: 'Markdown editor.', type: 'text', group: 'Text' },
+  { id: 'code', label: 'Code', description: 'Monospace code editor.', type: 'text', group: 'Text' },
+  { id: 'input-hash', label: 'Hash', description: 'Secret input hashed on save.', type: 'string', group: 'Text', defaultSpecial: ['hash'] },
+  {
+    id: 'input-autocomplete-api',
+    label: 'Autocomplete (API)',
+    description: 'Text input with suggestions fetched from an API.',
+    type: 'string',
+    group: 'Text',
+    defaultOptions: { url: '', resultsPath: '', valuePath: '', textPath: '' },
+  },
+  {
+    id: 'slug',
+    label: 'Slug',
+    description: 'URL-safe text derived from another field.',
+    type: 'string',
+    group: 'Text',
+    defaultOptions: { source: 'title' },
+    defaultDisplay: 'text',
+  },
+  { id: 'color', label: 'Color', description: 'Color picker.', type: 'string', group: 'Text', defaultDisplay: 'color-swatch' },
+  { id: 'input-number', label: 'Number', description: 'Integer input.', type: 'integer', group: 'Number' },
+  { id: 'rating', label: 'Rating', description: 'Star rating.', type: 'integer', group: 'Number', defaultOptions: { max: 5 } },
+  { id: 'slider', label: 'Slider', description: 'Range slider with min/max/step.', type: 'integer', group: 'Number', defaultOptions: { min: 0, max: 100, step: 1 } },
+  {
+    id: 'select-dropdown',
+    label: 'Dropdown',
+    description: 'Single choice dropdown.',
+    type: 'string',
+    group: 'Choice',
+    defaultOptions: { choices: [] },
+    defaultDisplay: 'labels',
+  },
+  {
+    id: 'select-multiple-dropdown',
+    label: 'Dropdown (multiple)',
+    description: 'Multi-choice dropdown.',
+    type: 'json',
+    group: 'Choice',
+    defaultOptions: { choices: [] },
+    defaultDisplay: 'labels',
+  },
+  {
+    id: 'select-radio',
+    label: 'Radio buttons',
+    description: 'Single choice via radio buttons.',
+    type: 'string',
+    group: 'Choice',
+    defaultOptions: { choices: [] },
+    defaultDisplay: 'labels',
+  },
+  {
+    id: 'select-multiple-checkbox',
+    label: 'Checkboxes',
+    description: 'Multi-choice checkbox list.',
+    type: 'json',
+    group: 'Choice',
+    defaultOptions: { choices: [] },
+    defaultDisplay: 'labels',
+  },
+  {
+    id: 'select-multiple-checkbox-tree',
+    label: 'Checkboxes (tree)',
+    description: 'Hierarchical multi-choice checkboxes.',
+    type: 'json',
+    group: 'Choice',
+    defaultOptions: { choices: [] },
+    defaultDisplay: 'labels',
+  },
+  { id: 'select-icon', label: 'Icon', description: 'Pick an icon from a curated set.', type: 'string', group: 'Choice' },
+  { id: 'tags', label: 'Tags', description: 'Free-form tag list.', type: 'json', group: 'Choice', defaultDisplay: 'tags-pills' },
+  { id: 'toggle', label: 'Toggle', description: 'Boolean switch.', type: 'boolean', group: 'Boolean', defaultDisplay: 'boolean-icon' },
+  { id: 'datetime', label: 'Date/time', description: 'Date and time picker.', type: 'datetime', group: 'Date', defaultDisplay: 'formatted-date' },
+  {
+    id: 'relation-m2o',
+    label: 'Many-to-one',
+    description: 'Select one related item.',
+    type: 'uuid',
+    group: 'Relation',
+    defaultOptions: { collection: '', displayField: 'title' },
+    defaultSpecial: ['m2o'],
+    defaultDisplay: 'relation',
+  },
+  {
+    id: 'relation-o2m',
+    label: 'One-to-many',
+    description: 'Show many related items through an alias field.',
+    type: 'alias',
+    group: 'Relation',
+    defaultOptions: { collection: '', displayField: 'title' },
+    defaultSpecial: ['o2m'],
+    defaultDisplay: 'relation',
+  },
+  {
+    id: 'relation-m2m',
+    label: 'Many-to-many',
+    description: 'Manage related items through a junction collection.',
+    type: 'alias',
+    group: 'Relation',
+    defaultOptions: { collection: '', displayField: 'title', junctionCollection: '' },
+    defaultSpecial: ['m2m'],
+    defaultDisplay: 'relation',
+  },
+  {
+    id: 'relation-m2a',
+    label: 'Builder (M2A)',
+    description: 'Link to records across multiple collections (many-to-any).',
+    type: 'json',
+    group: 'Relation',
+    defaultOptions: { collections: [], displayFields: {} },
+    defaultSpecial: ['m2a'],
+    defaultDisplay: 'relation-m2a',
+  },
+  {
+    id: 'collection-item-dropdown',
+    label: 'Collection item',
+    description: 'Pick a single record from one of several collections.',
+    type: 'json',
+    group: 'Relation',
+    defaultOptions: { collections: [], displayFields: {} },
+  },
+  {
+    id: 'relation-o2m-tree-view',
+    label: 'Tree view',
+    description: 'Self-referencing one-to-many rendered as an expandable tree.',
+    type: 'alias',
+    group: 'Relation',
+    defaultOptions: { collection: '', displayField: 'title', parentField: 'parent' },
+    defaultSpecial: ['o2m'],
+    defaultDisplay: 'relation',
+  },
+  {
+    id: 'file',
+    label: 'File',
+    description: 'Single file upload and picker.',
+    type: 'uuid',
+    group: 'File',
+    defaultOptions: { accept: 'image/*,application/pdf' },
+    defaultSpecial: ['file'],
+    defaultDisplay: 'image',
+  },
+  {
+    id: 'files',
+    label: 'Files',
+    description: 'Multiple file upload and picker.',
+    type: 'alias',
+    group: 'File',
+    defaultOptions: { accept: 'image/*,application/pdf', limit: 15 },
+    defaultSpecial: ['files'],
+    defaultDisplay: 'relation',
+  },
+  {
+    id: 'seo',
+    label: 'SEO',
+    description: 'Title, description, canonical URL, robots, and social image.',
+    type: 'json',
+    group: 'Content',
+    defaultOptions: {
+      titleMaxLength: 70,
+      descriptionMaxLength: 160,
+      imageAccept: 'image/*',
+    },
+    width: 'full',
+  },
+  {
+    id: 'aio',
+    label: 'AIO',
+    description: 'AI overview prompts, entity hints, tone, and answer summary.',
+    type: 'json',
+    group: 'Content',
+    defaultOptions: { tones: ['neutral', 'expert', 'friendly'], summaryMaxLength: 300 },
+    width: 'full',
+  },
+  {
+    id: 'json-raw',
+    label: 'JSON (raw)',
+    description: 'Raw JSON editor.',
+    type: 'json',
+    group: 'Special',
+  },
+  { id: 'repeater', label: 'Repeater', description: 'Repeat nested field groups.', type: 'json', group: 'Special' },
+  { id: 'map', label: 'Map', description: 'GeoJSON point / geometry editor.', type: 'geometry', group: 'Special', defaultDisplay: 'raw' },
+  { id: 'presentation-divider', label: 'Presentation: divider', description: 'Visual divider only.', type: 'alias', group: 'Special' },
+  { id: 'presentation-notice', label: 'Presentation: notice', description: 'Inline editorial notice.', type: 'alias', group: 'Special' },
+  { id: 'presentation-header', label: 'Presentation: header', description: 'Section heading with subtitle.', type: 'alias', group: 'Special' },
+  { id: 'presentation-links', label: 'Presentation: links', description: 'Row of link buttons.', type: 'alias', group: 'Special', defaultOptions: { links: [] } },
+  { id: 'group-raw', label: 'Group: raw', description: 'Group fields with no visual chrome.', type: 'alias', group: 'Special' },
+  { id: 'group-detail', label: 'Group: detail', description: 'Group fields inside a bordered fieldset.', type: 'alias', group: 'Special' },
+  { id: 'group-accordion', label: 'Group: accordion', description: 'Collapsible group of fields.', type: 'alias', group: 'Special', defaultOptions: { start: 'open' } },
+];
+
+export function findInterfaceCatalogueItem(id: string): InterfaceCatalogueItem | undefined {
+  return INTERFACE_CATALOGUE.find((item) => item.id === id);
+}
+
+/** The catalogue entry's label in the interface language (`label` stays the English fallback). */
+export function interfaceLabel(item: { id: string; label: string }): string {
+  return i18n.t(`items:catalogue.interfaces.${item.id}.label`, { defaultValue: item.label });
+}
+
+/** The catalogue entry's description in the interface language. */
+export function interfaceDescription(item: { id: string; description: string }): string {
+  return i18n.t(`items:catalogue.interfaces.${item.id}.description`, { defaultValue: item.description });
+}
+
+/** An interface group's heading in the interface language. */
+export function interfaceGroupLabel(group: InterfaceGroup): string {
+  return i18n.t(`items:catalogue.groups.${group}`, { defaultValue: group });
+}

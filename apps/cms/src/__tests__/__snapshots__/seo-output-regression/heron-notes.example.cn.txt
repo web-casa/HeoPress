@@ -1,0 +1,520 @@
+# heron-notes.example.cn (site_p07_seo_reg_zh)
+
+## GET https://heron-notes.example.cn/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>鹭鸟笔记</title>
+<link rel="canonical" href="https://heron-notes.example.cn/">
+<meta name="robots" content="max-snippet:160, max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="鹭鸟笔记">
+<meta property="og:url" content="https://heron-notes.example.cn/">
+<meta property="og:site_name" content="鹭鸟笔记">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://heron-notes.example.cn/#identity",
+      "name": "李明",
+      "url": "https://heron-notes.example.cn/",
+      "sameAs": [
+        "https://social.example.cn/liming"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.cn/#website",
+      "url": "https://heron-notes.example.cn/",
+      "name": "鹭鸟笔记",
+      "inLanguage": "zh-CN",
+      "publisher": {
+        "@id": "https://heron-notes.example.cn/#identity"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://heron-notes.example.cn/#webpage",
+      "url": "https://heron-notes.example.cn/",
+      "name": "鹭鸟笔记",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.cn/#website"
+      },
+      "inLanguage": "zh-CN",
+      "about": {
+        "@id": "https://heron-notes.example.cn/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://heron-notes.example.cn/heron-watching/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>黎明观鹭 · 鹭鸟笔记</title>
+<meta name="description" content="何时何地观察鹭鸟觅食。">
+<link rel="canonical" href="https://heron-notes.example.cn/heron-watching/">
+<meta name="robots" content="max-snippet:160, max-image-preview:large">
+<link rel="alternate" hreflang="en" href="https://heron-notes.example.com/heron-watching/">
+<link rel="alternate" hreflang="x-default" href="https://heron-notes.example.com/heron-watching/">
+<link rel="alternate" hreflang="zh-CN" href="https://heron-notes.example.cn/heron-watching/">
+<link rel="alternate" type="text/markdown" href="https://heron-notes.example.cn/heron-watching.md">
+<link rel="alternate" type="application/rss+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/atom.xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="黎明观鹭 · 鹭鸟笔记">
+<meta property="og:description" content="何时何地观察鹭鸟觅食。">
+<meta property="og:url" content="https://heron-notes.example.cn/heron-watching/">
+<meta property="og:site_name" content="鹭鸟笔记">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-01T08:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-01T08:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://heron-notes.example.cn/#identity",
+      "name": "李明",
+      "url": "https://heron-notes.example.cn/",
+      "sameAs": [
+        "https://social.example.cn/liming"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.cn/#website",
+      "url": "https://heron-notes.example.cn/",
+      "name": "鹭鸟笔记",
+      "inLanguage": "zh-CN",
+      "publisher": {
+        "@id": "https://heron-notes.example.cn/#identity"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://heron-notes.example.cn/heron-watching/#webpage",
+      "url": "https://heron-notes.example.cn/heron-watching/",
+      "name": "黎明观鹭",
+      "description": "何时何地观察鹭鸟觅食。",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.cn/#website"
+      },
+      "inLanguage": "zh-CN",
+      "breadcrumb": {
+        "@id": "https://heron-notes.example.cn/heron-watching/#breadcrumb"
+      },
+      "datePublished": "2026-10-01T08:00:00.000Z",
+      "dateModified": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://heron-notes.example.cn/heron-watching/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "鹭鸟笔记",
+          "item": "https://heron-notes.example.cn/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "观鸟指南",
+          "item": "https://heron-notes.example.cn/category/guides/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "黎明观鹭",
+          "item": "https://heron-notes.example.cn/heron-watching/"
+        }
+      ]
+    },
+    {
+      "@type": "BlogPosting",
+      "@id": "https://heron-notes.example.cn/heron-watching/#article",
+      "headline": "黎明观鹭",
+      "description": "何时何地观察鹭鸟觅食。",
+      "datePublished": "2026-10-01T08:00:00.000Z",
+      "dateModified": "2026-10-01T08:00:00.000Z",
+      "author": {
+        "@type": "Person",
+        "name": "李明",
+        "url": "https://heron-notes.example.cn/author/li-ming/"
+      },
+      "publisher": {
+        "@id": "https://heron-notes.example.cn/#identity"
+      },
+      "mainEntityOfPage": {
+        "@id": "https://heron-notes.example.cn/heron-watching/#webpage"
+      },
+      "inLanguage": "zh-CN"
+    }
+  ]
+}
+
+## GET https://heron-notes.example.cn/category/guides/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>观鸟指南 · 鹭鸟笔记</title>
+<link rel="canonical" href="https://heron-notes.example.cn/category/guides/">
+<meta name="robots" content="max-snippet:160, max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="观鸟指南 · 鹭鸟笔记">
+<meta property="og:url" content="https://heron-notes.example.cn/category/guides/">
+<meta property="og:site_name" content="鹭鸟笔记">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://heron-notes.example.cn/#identity",
+      "name": "李明",
+      "url": "https://heron-notes.example.cn/",
+      "sameAs": [
+        "https://social.example.cn/liming"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.cn/#website",
+      "url": "https://heron-notes.example.cn/",
+      "name": "鹭鸟笔记",
+      "inLanguage": "zh-CN",
+      "publisher": {
+        "@id": "https://heron-notes.example.cn/#identity"
+      }
+    },
+    {
+      "@type": "CollectionPage",
+      "@id": "https://heron-notes.example.cn/category/guides/#webpage",
+      "url": "https://heron-notes.example.cn/category/guides/",
+      "name": "观鸟指南",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.cn/#website"
+      },
+      "inLanguage": "zh-CN",
+      "breadcrumb": {
+        "@id": "https://heron-notes.example.cn/category/guides/#breadcrumb"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://heron-notes.example.cn/category/guides/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "鹭鸟笔记",
+          "item": "https://heron-notes.example.cn/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "观鸟指南",
+          "item": "https://heron-notes.example.cn/category/guides/"
+        }
+      ]
+    }
+  ]
+}
+
+## GET https://heron-notes.example.cn/author/li-ming/
+status: 200
+content-type: text/html; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>李明 · 鹭鸟笔记</title>
+<link rel="canonical" href="https://heron-notes.example.cn/author/li-ming/">
+<meta name="robots" content="max-snippet:160, max-image-preview:large">
+<link rel="alternate" type="application/rss+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/atom.xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="李明 · 鹭鸟笔记">
+<meta property="og:url" content="https://heron-notes.example.cn/author/li-ming/">
+<meta property="og:site_name" content="鹭鸟笔记">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://heron-notes.example.cn/#identity",
+      "name": "李明",
+      "url": "https://heron-notes.example.cn/",
+      "sameAs": [
+        "https://social.example.cn/liming"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.cn/#website",
+      "url": "https://heron-notes.example.cn/",
+      "name": "鹭鸟笔记",
+      "inLanguage": "zh-CN",
+      "publisher": {
+        "@id": "https://heron-notes.example.cn/#identity"
+      }
+    },
+    {
+      "@type": "CollectionPage",
+      "@id": "https://heron-notes.example.cn/author/li-ming/#webpage",
+      "url": "https://heron-notes.example.cn/author/li-ming/",
+      "name": "李明",
+      "isPartOf": {
+        "@id": "https://heron-notes.example.cn/#website"
+      },
+      "inLanguage": "zh-CN",
+      "breadcrumb": {
+        "@id": "https://heron-notes.example.cn/author/li-ming/#breadcrumb"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://heron-notes.example.cn/author/li-ming/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "鹭鸟笔记",
+          "item": "https://heron-notes.example.cn/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "李明",
+          "item": "https://heron-notes.example.cn/author/li-ming/"
+        }
+      ]
+    }
+  ]
+}
+
+## GET https://heron-notes.example.cn/private-zh/
+status: 200
+content-type: text/html; charset=utf-8
+x-robots-tag: noindex
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>内部笔记 · 鹭鸟笔记</title>
+<meta name="robots" content="noindex">
+<link rel="alternate" type="application/rss+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="鹭鸟笔记" href="https://heron-notes.example.cn/atom.xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="内部笔记 · 鹭鸟笔记">
+<meta property="og:site_name" content="鹭鸟笔记">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-20T00:00:00.000Z">
+<meta property="article:modified_time" content="2026-09-20T00:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">#1</script>
+--- JSON-LD #1
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://heron-notes.example.cn/#identity",
+      "name": "李明",
+      "url": "https://heron-notes.example.cn/",
+      "sameAs": [
+        "https://social.example.cn/liming"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://heron-notes.example.cn/#website",
+      "url": "https://heron-notes.example.cn/",
+      "name": "鹭鸟笔记",
+      "inLanguage": "zh-CN",
+      "publisher": {
+        "@id": "https://heron-notes.example.cn/#identity"
+      }
+    }
+  ]
+}
+
+## GET https://heron-notes.example.cn/robots.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+User-agent: *
+Allow: /
+
+Sitemap: https://heron-notes.example.cn/sitemap.xml
+# Feed: https://heron-notes.example.cn/feed.xml
+# Feed: https://heron-notes.example.cn/atom.xml
+
+## GET https://heron-notes.example.cn/sitemap.xml
+status: 200
+content-type: application/xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<sitemap><loc>https://heron-notes.example.cn/sitemap-1.xml</loc><lastmod>2026-10-01T08:00:00.000Z</lastmod></sitemap>
+</sitemapindex>
+
+## GET https://heron-notes.example.cn/sitemap-1.xml
+status: 200
+content-type: application/xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<url><loc>https://heron-notes.example.cn/</loc></url>
+<url><loc>https://heron-notes.example.cn/author/li-ming/</loc><lastmod>2026-09-01T00:00:00.000Z</lastmod></url>
+<url><loc>https://heron-notes.example.cn/category/guides/</loc><lastmod>2026-09-01T00:00:00.000Z</lastmod></url>
+<url><loc>https://heron-notes.example.cn/heron-watching/</loc><lastmod>2026-10-01T08:00:00.000Z</lastmod><xhtml:link rel="alternate" hreflang="en" href="https://heron-notes.example.com/heron-watching/"/><xhtml:link rel="alternate" hreflang="x-default" href="https://heron-notes.example.com/heron-watching/"/><xhtml:link rel="alternate" hreflang="zh-CN" href="https://heron-notes.example.cn/heron-watching/"/></url>
+</urlset>
+
+## GET https://heron-notes.example.cn/sitemap.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+https://heron-notes.example.cn/
+https://heron-notes.example.cn/author/li-ming/
+https://heron-notes.example.cn/category/guides/
+https://heron-notes.example.cn/heron-watching/
+
+## GET https://heron-notes.example.cn/news-sitemap.xml
+status: 404
+content-type: text/plain; charset=UTF-8
+
+Not found
+
+## GET https://heron-notes.example.cn/feed.xml
+status: 200
+content-type: application/rss+xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel><title>鹭鸟笔记</title><link>https://heron-notes.example.cn/</link><description>鹭鸟笔记</description><language>zh-CN</language><lastBuildDate>Thu, 01 Oct 2026 08:00:00 GMT</lastBuildDate><atom:link href="https://heron-notes.example.cn/feed.xml" rel="self" type="application/rss+xml"/>
+<item><title>黎明观鹭</title><link>https://heron-notes.example.cn/heron-watching/</link><guid isPermaLink="true">https://heron-notes.example.cn/heron-watching/</guid><pubDate>Thu, 01 Oct 2026 08:00:00 GMT</pubDate><description>何时何地观察鹭鸟觅食。</description><content:encoded>&lt;h2 data-block-id=&quot;<block:1>&quot;&gt;日出之前&lt;/h2&gt;&lt;p data-block-id=&quot;<block:2>&quot;&gt;鹭鸟在浅水中觅食。&lt;/p&gt;</content:encoded></item>
+</channel>
+</rss>
+
+## GET https://heron-notes.example.cn/atom.xml
+status: 200
+content-type: application/atom+xml; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh-CN">
+<id>https://heron-notes.example.cn/atom.xml</id><title>鹭鸟笔记</title><subtitle>鹭鸟笔记</subtitle><updated>2026-10-01T08:00:00.000Z</updated><author><name>李明</name></author><link rel="self" type="application/atom+xml" href="https://heron-notes.example.cn/atom.xml"/><link rel="alternate" type="text/html" href="https://heron-notes.example.cn/"/>
+<entry><id>https://heron-notes.example.cn/heron-watching/</id><title>黎明观鹭</title><link rel="alternate" type="text/html" href="https://heron-notes.example.cn/heron-watching/"/><published>2026-10-01T08:00:00.000Z</published><updated>2026-10-01T08:00:00.000Z</updated><summary>何时何地观察鹭鸟觅食。</summary><content type="html">&lt;h2 data-block-id=&quot;<block:1>&quot;&gt;日出之前&lt;/h2&gt;&lt;p data-block-id=&quot;<block:2>&quot;&gt;鹭鸟在浅水中觅食。&lt;/p&gt;</content></entry>
+</feed>
+
+## GET https://heron-notes.example.cn/llms.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+# 鹭鸟笔记
+
+> 鹭鸟笔记, by 李明.
+
+## Recent
+- [黎明观鹭](https://heron-notes.example.cn/heron-watching/): 何时何地观察鹭鸟觅食。
+
+## Optional
+- [RSS feed](https://heron-notes.example.cn/feed.xml)
+- [Atom feed](https://heron-notes.example.cn/atom.xml)
+- [Sitemap](https://heron-notes.example.cn/sitemap.xml)
+- [Full text](https://heron-notes.example.cn/llms-full.txt)
+
+## GET https://heron-notes.example.cn/llms-full.txt
+status: 200
+content-type: text/plain; charset=utf-8
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+# 鹭鸟笔记
+
+> 鹭鸟笔记, by 李明.
+
+(Full text of https://heron-notes.example.cn/ — pages, then the newest articles.)
+
+---
+
+# 黎明观鹭
+
+> 何时何地观察鹭鸟觅食。
+
+- URL: <https://heron-notes.example.cn/heron-watching/>
+- Published: 2026-10-01T08:00:00.000Z
+- Modified: 2026-10-01T08:00:00.000Z
+
+## 日出之前
+
+鹭鸟在浅水中觅食。
+
+## GET https://heron-notes.example.cn/heron-watching.md
+status: 200
+content-type: text/markdown; charset=utf-8
+x-robots-tag: noindex
+link: <https://heron-notes.example.cn/heron-watching/>; rel="canonical"
+cache-control: public, max-age=0, must-revalidate, s-maxage=5
+etag: <present>
+
+# 黎明观鹭
+
+> 何时何地观察鹭鸟觅食。
+
+- URL: <https://heron-notes.example.cn/heron-watching/>
+- Published: 2026-10-01T08:00:00.000Z
+- Modified: 2026-10-01T08:00:00.000Z
+
+## 日出之前
+
+鹭鸟在浅水中觅食。
