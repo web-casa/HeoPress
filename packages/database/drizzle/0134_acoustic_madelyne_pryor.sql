@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "glossary_entry_unique" ON "lumibase_glossary" USING btree ("site_id","source_lang","target_lang","term");
