@@ -1,0 +1,8 @@
+# Image runtime acceptance (HeoPress P13 task 6.2; docker/scripts/accept-image-runtime.sh), on top of
+# docker-compose.yml and docker-compose.sites.yml. Test stacks only: the CMS's Prometheus metrics are on, behind a
+# test token, so the acceptance can read the API process's event-loop delay and memory under load.
+services:
+  cms:
+    environment:
+      HEOPRESS_ENABLE_METRICS: "true"
+      METRICS_TOKEN: ${ACCEPT_METRICS_TOKEN:-accept_metrics}

@@ -1,0 +1,6 @@
+@heopress/plugin-glossary
+Copyright 2026 The HeoPress Authors
+
+This package is licensed under the Apache License, Version 2.0 (see LICENSE),
+separately from HeoPress itself (AGPL-3.0-only). It is built only on the
+HeoPress Extension SDK (@heopress/extension-sdk, Apache-2.0).
