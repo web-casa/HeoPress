@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HeoPress test schema (written for this project from the published news sitemap format, not a copy of a schema):
+  publication name and language, publication date, title.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:n="http://www.google.com/schemas/sitemap-news/0.9"
+           targetNamespace="http://www.google.com/schemas/sitemap-news/0.9"
+           elementFormDefault="qualified">
+  <xs:element name="news">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="publication">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="name"><xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="1"/></xs:restriction></xs:simpleType></xs:element>
+              <xs:element name="language"><xs:simpleType><xs:restriction base="xs:string"><xs:pattern value="[a-z]{2,3}|zh-cn|zh-tw"/></xs:restriction></xs:simpleType></xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="publication_date">
+          <xs:simpleType><xs:restriction base="xs:string"><xs:pattern value="\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+\-]\d{2}:\d{2}))?"/></xs:restriction></xs:simpleType>
+        </xs:element>
+        <xs:element name="title"><xs:simpleType><xs:restriction base="xs:string"><xs:minLength value="1"/></xs:restriction></xs:simpleType></xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

@@ -1,0 +1,166 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { describe, expect, it } from 'vitest';
+import { Hono } from 'hono';
+import { SignJWT } from 'jose';
+import type { Database } from '@heopress/database';
+import type { AppEnv } from '../../env';
+import { withAuth } from '../auth';
+
+async function signToken(payload: Record<string, unknown>, secret = 'test-secret') {
+  // Session tokens must carry a realm audience (`studio`/`frontend`);
+  // `verifyCustomJwt` pins it so single-purpose tokens can't be replayed.
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setAudience('studio')
+    .setIssuedAt()
+    .setExpirationTime('24h')
+    .sign(new TextEncoder().encode(secret));
+}
+
+function makeSelectOnlyDb(selectResults: unknown[][]): Database {
+  const queue = [...selectResults];
+  const fluent = {
+    from: () => fluent,
+    leftJoin: () => fluent,
+    where: () => fluent,
+    limit: () => Promise.resolve(queue.shift() ?? []),
+  };
+
+  return {
+    select: () => fluent,
+  } as unknown as Database;
+}
+
+function buildApp(db: Database, siteId: string): Hono<AppEnv> {
+  const app = new Hono<AppEnv>();
+  app.use('*', async (c, next) => {
+    c.set('db', db);
+    c.set('siteId', siteId);
+    await next();
+  });
+  app.use('*', withAuth());
+  app.get('/protected', (c) => c.json({ data: c.get('auth') }));
+  return app;
+}
+
+describe('withAuth custom JWT tenant binding', () => {
+  it('rejects a custom JWT when its siteId does not match the selected tenant', async () => {
+    const token = await signToken({ userId: 'user-1', email: 'user@example.com', roles: ['member'], siteId: 'site-a' });
+    const app = buildApp(makeSelectOnlyDb([[]]), 'site-b');
+
+    const res = await app.request(
+      '/protected',
+      { headers: { Authorization: `Bearer ${token}` } },
+      { JWT_SECRET: 'test-secret' },
+    );
+
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a custom JWT for a user who is not a member of the selected tenant', async () => {
+    const token = await signToken({ userId: 'user-1', email: 'user@example.com', roles: ['member'], siteId: 'site-a' });
+    const app = buildApp(
+      makeSelectOnlyDb([
+        [],
+        [{ id: 'user-1', status: 'active', isBootstrap: false, sessionLive: true }],
+        [],
+      ]),
+      'site-a',
+    );
+
+    const res = await app.request(
+      '/protected',
+      { headers: { Authorization: `Bearer ${token}` } },
+      { JWT_SECRET: 'test-secret' },
+    );
+
+    expect(res.status).toBe(401);
+  });
+
+  it('accepts a custom JWT only when the token and user membership match the selected tenant', async () => {
+    const token = await signToken({ userId: 'user-1', email: 'user@example.com', roles: ['member'], siteId: 'site-a' });
+    const app = buildApp(
+      makeSelectOnlyDb([
+        [],
+        [{ id: 'user-1', status: 'active', isBootstrap: false, sessionLive: true }],
+        [{ roleId: 'member' }],
+      ]),
+      'site-a',
+    );
+
+    const res = await app.request(
+      '/protected',
+      { headers: { Authorization: `Bearer ${token}` } },
+      { JWT_SECRET: 'test-secret' },
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json() as { data: { userId: string; roles: string[] } };
+    expect(body.data.userId).toBe('user-1');
+    expect(body.data.roles).toEqual(['member']);
+  });
+
+  it('rejects a token whose tokenVersion is older than the stored one (CWE-613 revocation)', async () => {
+    const token = await signToken({
+      userId: 'user-1',
+      email: 'user@example.com',
+      roles: ['member'],
+      siteId: 'site-a',
+      tokenVersion: 0,
+    });
+    // Stored user is now on tokenVersion 1 (e.g. after a password change).
+    const app = buildApp(
+      makeSelectOnlyDb([
+        [],
+        [{ id: 'user-1', status: 'active', isBootstrap: false, sessionLive: true, tokenVersion: 1 }],
+        [{ roleId: 'member' }],
+      ]),
+      'site-a',
+    );
+
+    const res = await app.request(
+      '/protected',
+      { headers: { Authorization: `Bearer ${token}` } },
+      { JWT_SECRET: 'test-secret' },
+    );
+
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a token whose login session has ended (P04: logout ends access tokens on every site)', async () => {
+    const token = await signToken({ userId: 'user-1', email: 'user@example.com', roles: ['member'], siteId: 'site-a', sid: 'sess-1' });
+    const app = buildApp(
+      makeSelectOnlyDb([[], [{ id: 'user-1', status: 'active', isBootstrap: false, sessionLive: false, tokenVersion: 0 }], [{ roleId: 'role-1' }]]),
+      'site-a',
+    );
+    const res = await app.request('/protected', { headers: { Authorization: `Bearer ${token}` } }, { JWT_SECRET: 'test-secret' });
+    expect(res.status).toBe(401);
+    expect(((await res.json()) as { errors: Array<{ message: string }> }).errors[0]!.message).toMatch(/Session ended/);
+  });
+
+  it('accepts a token whose tokenVersion matches the stored one', async () => {
+    const token = await signToken({
+      userId: 'user-1',
+      email: 'user@example.com',
+      roles: ['member'],
+      siteId: 'site-a',
+      tokenVersion: 2,
+    });
+    const app = buildApp(
+      makeSelectOnlyDb([
+        [],
+        [{ id: 'user-1', status: 'active', isBootstrap: false, sessionLive: true, tokenVersion: 2 }],
+        [{ roleId: 'member' }],
+      ]),
+      'site-a',
+    );
+
+    const res = await app.request(
+      '/protected',
+      { headers: { Authorization: `Bearer ${token}` } },
+      { JWT_SECRET: 'test-secret' },
+    );
+
+    expect(res.status).toBe(200);
+  });
+});

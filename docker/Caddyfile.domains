@@ -1,0 +1,88 @@
+# Caddy for a site network (HeoPress P04, P06): the administration host goes to
+# the CMS; every verified site domain — and the preview origin — goes to the
+# rendering service, each with its own certificate obtained on first visit
+# (on-demand TLS). See docs/en/deployment/custom-domains.md and
+# docs/zh-CN/rendering/site-classic.md.
+#
+# Before Caddy asks an ACME CA for a certificate for a name it has not seen,
+# it asks the CMS. Only a domain that is verified and active (or the preview
+# origin's host) gets 200, so nobody can make this server request certificates
+# for arbitrary names.
+{
+	email {$ACME_EMAIL}
+	on_demand_tls {
+		ask http://cms:1989/internal/tls/ask
+	}
+}
+
+(headers) {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+	}
+
+	# The certificate gate and the preview reads are for the services only;
+	# never serve them to visitors.
+	@internal path /internal /internal/*
+	respond @internal 404
+}
+
+# The admin/API host: a certificate obtained at startup, as in ./Caddyfile.
+{$PUBLIC_DOMAIN} {
+	import headers
+	header Referrer-Policy "strict-origin-when-cross-origin"
+
+	@not_media {
+		not path /api/v1/media* /api/v1/files*
+	}
+	request_body @not_media {
+		max_size 10MB
+	}
+	@media {
+		path /api/v1/media* /api/v1/files*
+	}
+	request_body @media {
+		max_size 50MB
+	}
+
+	reverse_proxy cms:1989
+}
+
+# Every other name — the sites' domains and the preview origin: a certificate
+# on first visit, if the CMS says the name is active. Nothing of the
+# administration is reachable here: those paths are answered at the edge and
+# never forwarded (the rendering service refuses them as well).
+https:// {
+	tls {
+		on_demand
+	}
+	import headers
+
+	@admin path /admin /admin/* /api /api/*
+	respond @admin 404
+
+	# Public pages are small requests; nothing is uploaded here.
+	request_body {
+		max_size 1MB
+	}
+
+	# Plugin public endpoints (HeoPress P12): `/_ext/<plugin>/<endpoint>` on the
+	# site's own domain is answered by the CMS (the site comes from the host;
+	# forms are checked against the site's origins, callbacks by signature).
+	# Plain path-matched directives, not `handle`: `handle` would run before the
+	# `respond` rules above and forward /admin, /api and /internal.
+	@plugin_endpoint path /_ext/*
+	request_body @plugin_endpoint {
+		max_size 64KB
+	}
+	reverse_proxy @plugin_endpoint cms:1989
+
+	reverse_proxy site-classic:2027
+}
+
+# Plain HTTP goes to HTTPS (ACME HTTP challenges are answered before this).
+http:// {
+	redir https://{host}{uri} 308
+}

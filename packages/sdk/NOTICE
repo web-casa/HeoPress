@@ -1,0 +1,12 @@
+@heopress/sdk
+Copyright 2026 The HeoPress Authors
+
+This package is licensed under the Apache License, Version 2.0 (see LICENSE),
+separately from HeoPress itself (AGPL-3.0-only), so that extensions, themes
+and other programs that depend on it are not bound by the AGPL.
+
+This package includes software developed by the LumiBase project
+(https://github.com/khuepm/LumiBase).
+Copyright 2024-present LumiBase Contributors
+Licensed under the Apache License, Version 2.0. Files modified by the HeoPress
+project are marked as modified.
