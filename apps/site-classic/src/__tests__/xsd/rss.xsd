@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HeoPress test schema for the RSS 2.0 feeds this project writes (from the RSS 2.0 specification's text): a channel with
+  title, link and description; items with title, absolute link, a permalink guid and an RFC 822 date; the full text in
+  `content:encoded`, the feed's own address in `atom:link rel="self"`.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:atom="http://www.w3.org/2005/Atom"
+           xmlns:content="http://purl.org/rss/1.0/modules/content/"
+           xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <xs:import namespace="http://www.w3.org/2005/Atom" schemaLocation="atom.xsd"/>
+  <xs:import namespace="http://purl.org/rss/1.0/modules/content/" schemaLocation="content.xsd"/>
+  <xs:import namespace="http://purl.org/dc/elements/1.1/" schemaLocation="dc.xsd"/>
+  <xs:simpleType name="absolute"><xs:restriction base="xs:anyURI"><xs:pattern value="https?://[^\s]+"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="rfc822">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="rss">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="channel">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="title" type="xs:string"/>
+              <xs:element name="link" type="absolute"/>
+              <xs:element name="description" type="xs:string"/>
+              <xs:element name="language" type="xs:string"/>
+              <xs:element name="lastBuildDate" type="rfc822" minOccurs="0"/>
+              <xs:element ref="atom:link"/>
+              <xs:element name="item" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="title" type="xs:string"/>
+                    <xs:element name="link" type="absolute"/>
+                    <xs:element name="guid">
+                      <xs:complexType>
+                        <xs:simpleContent>
+                          <xs:extension base="absolute">
+                            <xs:attribute name="isPermaLink" type="xs:boolean" use="required"/>
+                          </xs:extension>
+                        </xs:simpleContent>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="pubDate" type="rfc822" minOccurs="0"/>
+                    <xs:element name="description" type="xs:string" minOccurs="0"/>
+                    <xs:element ref="dc:creator" minOccurs="0"/>
+                    <xs:element ref="content:encoded"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" use="required">
+        <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="2.0"/></xs:restriction></xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
