@@ -1,0 +1,70 @@
+{
+  "source": "Netlify API reference and 'Get started with the Netlify API' file digest method (POST /sites/{id}/deploys, PUT /deploys/{id}/files/{path}, GET /sites/{id}/deploys/{id}), 2026-10-28. Refresh from a real deployment: apps/cms/scripts/p11-deploy-smoke.ts --transcript.",
+  "interactions": [
+    {
+      "method": "POST",
+      "url": "https://api.netlify.com/api/v1/sites/3970e0fe-8564-4903-9a55-c5f8de49fb8b/deploys",
+      "status": 200,
+      "response": {
+        "id": "5f2a1b0c9d8e7f6a5b4c3d2e",
+        "site_id": "3970e0fe-8564-4903-9a55-c5f8de49fb8b",
+        "state": "prepared",
+        "required": "$REQUIRED_FIRST",
+        "deploy_ssl_url": "https://5f2a1b0c9d8e7f6a5b4c3d2e--heo-docs.netlify.app",
+        "title": "heopress-site_a-dep3"
+      }
+    },
+    {
+      "method": "PUT",
+      "url": "https://api.netlify.com/api/v1/deploys/5f2a1b0c9d8e7f6a5b4c3d2e/files/index.html",
+      "status": 200,
+      "response": {
+        "id": "5f2a1b0c9d8e7f6a5b4c3d2e",
+        "path": "/index.html"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.netlify.com/api/v1/sites/3970e0fe-8564-4903-9a55-c5f8de49fb8b/deploys/5f2a1b0c9d8e7f6a5b4c3d2e",
+      "status": 200,
+      "response": {
+        "id": "5f2a1b0c9d8e7f6a5b4c3d2e",
+        "state": "ready",
+        "ssl_url": "https://heo-docs.netlify.app",
+        "deploy_ssl_url": "https://5f2a1b0c9d8e7f6a5b4c3d2e--heo-docs.netlify.app"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.netlify.com/api/v1/sites/3970e0fe-8564-4903-9a55-c5f8de49fb8b/deploys?per_page=20",
+      "status": 200,
+      "response": [
+        {
+          "id": "5f2a1b0c9d8e7f6a5b4c3d2e",
+          "state": "ready",
+          "title": "heopress-site_a-dep3"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "url": "https://api.netlify.com/api/v1/sites/3970e0fe-8564-4903-9a55-c5f8de49fb8b/deploys/err1",
+      "status": 200,
+      "response": {
+        "id": "err1",
+        "state": "error",
+        "error_message": "Failed during stage 'deploying site': upload interrupted",
+        "summary": {
+          "status": "error",
+          "messages": [
+            {
+              "type": "error",
+              "title": "Deploy failed",
+              "description": "upload interrupted"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
