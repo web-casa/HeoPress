@@ -1,0 +1,497 @@
+# HeoPress CI (P01 task 4.3). Upstream LumiBase workflows are archived under
+# docs/legacy/upstream/workflows/ and do not run here.
+name: CI
+
+on:
+  push:
+    # ci/** — private commits mirrored to the public repository for CI (ADR-0018, scripts/ci-mirror.mjs).
+    branches: [main, 'ci/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+# Third-party actions are pinned to full commit SHAs (the comment names the tag
+# they resolved from on 2026-10-16). Update them deliberately, never via a tag.
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24
+  PNPM_VERSION: 9.12.0
+  HUSKY: 0
+  OPENSPEC_TELEMETRY: 0
+  # The same pinned gitleaks as security.yml (version and SHA-256 of the release tarball): the export tests run it.
+  GITLEAKS_VERSION: 8.30.1
+  GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+
+jobs:
+  checks:
+    name: Repo guards, typecheck, lint, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout (full history for the upstream modification-notice check)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The public export tests scan with the real gitleaks (skipped without it): installed here, checksum verified.
+      - name: Install gitleaks ${{ env.GITLEAKS_VERSION }} (checksum verified)
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/bin"
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP/bin" gitleaks
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      # The modification-notice check compares with the upstream base commit. The private repository has it in its
+      # history; a public mirror (ADR-0018) has no history, so it fetches that one public LumiBase commit.
+      - name: Fetch the upstream LumiBase base commit (public mirror)
+        if: github.repository != 'yeagoo/heopress-private'
+        run: git fetch --no-tags --depth=1 https://github.com/khuepm/LumiBase.git 93936ef0a4ce215e436beffe0cde6828fc8ff76e
+      - name: Repo guards (modification notices, docs-check, dependency licenses, docs code references, upstream guards, script tests)
+        run: pnpm check:all
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - name: Unit tests (DB suites skip here and run in db-suites)
+        run: pnpm test
+      - run: pnpm build
+
+  # P07 task 7.9 (ADR-0008 §4): the permissive boundary itself (Apache-2.0, no AGPL package in the SDK tree) is
+  # checked by `pnpm check:all` (licenses:check) in `checks`; here a plugin is built with nothing but the packed SDK.
+  plugin-template:
+    name: Plugin template builds with only the packed Extension SDK (no AGPL package in its tree)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/verify-plugin-template.mjs
+
+  openspec:
+    name: OpenSpec strict validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: npx -y @fission-ai/openspec@1.14.1 validate --all --strict
+
+  studio-e2e:
+    name: Studio browser scenarios on the build output (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: heopress
+          POSTGRES_PASSWORD: heopress_ci
+          POSTGRES_DB: heopress
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U heopress"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_OWNER_URL: postgresql://heopress:heopress_ci@localhost:5432/heopress
+      # The built server runs as the application role, like production.
+      DATABASE_URL: postgresql://heopress_app:heopress_app_ci@localhost:5432/heopress
+      HEOPRESS_E2E_DISPOSABLE_DB: 'true'
+      JWT_SECRET: ci_studio_e2e_secret
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Migrate as the owner, then create the application role
+        run: |
+          DATABASE_URL="$DATABASE_OWNER_URL" pnpm --filter @heopress/database migrate
+          DATABASE_URL="$DATABASE_OWNER_URL" HEOPRESS_APP_PASSWORD=heopress_app_ci pnpm --filter @heopress/database app-role --test-database
+      - name: Build the Studio and the CMS bundle
+        run: |
+          pnpm --filter @heopress/studio build
+          pnpm --filter @heopress/cms build
+      - name: Install Chromium
+        run: pnpm --filter @heopress/studio exec playwright install --with-deps chromium
+      - name: Run the scenarios (the CMS bundle serves the built Studio)
+        run: pnpm --filter @heopress/studio e2e
+      - name: Keep the report and traces of a failed run
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: studio-e2e-report
+          path: |
+            apps/studio/e2e-report
+            apps/studio/e2e-results
+          retention-days: 7
+
+  studio-visual:
+    name: Studio screenshots of the eight modules, light and dark, 1440 and 390 px (recorded API, no server)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The image the baselines were made in (apps/studio/playwright.visual.config.ts): same browser, fonts and rendering.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @heopress/studio build
+      - name: Compare with the committed baselines
+        run: pnpm --filter @heopress/studio visual
+      - name: Keep the differences of a failed run
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: studio-visual-report
+          path: |
+            apps/studio/e2e-visual-report
+            apps/studio/e2e-visual-results
+          retention-days: 7
+
+  starter-themes:
+    name: Starter themes in a browser (desktop, phone, 320 px; screenshots, no overflow, no axe WCAG 2 A/AA finding)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @heopress/public-site exec playwright install --with-deps chromium
+      - name: Every page type of every starter theme, desktop and phone
+        run: pnpm --filter @heopress/public-site e2e
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: starter-themes-screenshots
+          path: |
+            packages/public-site/e2e-results
+            packages/public-site/e2e-report
+          retention-days: 14
+
+  db-suites:
+    name: Database suites incl. golden-path and upgrade-path E2E (PostgreSQL 18; version check against 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: heopress
+          POSTGRES_PASSWORD: heopress_ci
+          POSTGRES_DB: heopress
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U heopress"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      postgres17:
+        image: postgres:17
+        env:
+          POSTGRES_USER: heopress
+          POSTGRES_PASSWORD: heopress_pg17
+          POSTGRES_DB: heopress
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U heopress"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Migrations run as the owner (the image's superuser); every suite runs as
+      # the application role — no superuser, no BYPASSRLS — so RLS applies (P03 7.1).
+      DATABASE_OWNER_URL: postgresql://heopress:heopress_ci@localhost:5432/heopress
+      DATABASE_URL: postgresql://heopress_app:heopress_app_ci@localhost:5432/heopress
+      HEOPRESS_TEST_APP_ROLE: heopress_app
+      HEOPRESS_TEST_PG17_URL: postgresql://heopress:heopress_pg17@localhost:5433/heopress
+      HEOPRESS_RUNTIME: docker
+      HEOPRESS_ENV: development
+      JWT_SECRET: ci_db_suites_secret
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Migrate as the owner, then create the application role
+        run: |
+          DATABASE_URL="$DATABASE_OWNER_URL" pnpm --filter @heopress/database migrate
+          DATABASE_URL="$DATABASE_OWNER_URL" HEOPRESS_APP_PASSWORD=heopress_app_ci pnpm --filter @heopress/database app-role --test-database
+      - name: The suites really run as a role RLS applies to
+        run: |
+          test "$(psql "$DATABASE_URL" -tAc 'SELECT rolsuper OR rolbypassrls FROM pg_roles WHERE rolname = current_user')" = f
+      # Whole suites, not a name filter: every test that reads DATABASE_URL runs
+      # here (integration, e2e, property, timing and perf suites alike). With
+      # DATABASE_URL set the CMS config runs files one at a time.
+      - name: Database package suites
+        run: pnpm --filter @heopress/database exec vitest --run
+      # S3-compatible store for the S3 adapter suite. SeaweedFS: MinIO images
+      # are no longer freely pullable (Docker Hub and quay.io both refuse).
+      - name: Start an S3-compatible store (SeaweedFS)
+        run: |
+          # With an identity file: without one SeaweedFS accepts any key pair,
+          # and the suite checks that a wrong secret is refused.
+          echo '{"identities":[{"name":"ci","credentials":[{"accessKey":"heopress_ci","secretKey":"heopress_ci_s3_secret"}],"actions":["Admin","Read","Write","List","Tagging"]}]}' > "$RUNNER_TEMP/s3.json"
+          # Small volumes, and room for many: each bucket grows its own volumes, and on the
+          # runner's disk the default 1 GB volumes leave too few for a second bucket.
+          docker run -d --name s3 -p 9000:8333 -v "$RUNNER_TEMP/s3.json:/etc/s3.json:ro" chrislusf/seaweedfs:3.97 server -s3 -s3.config=/etc/s3.json -volume.max=100 -master.volumeSizeLimitMB=64
+          for i in $(seq 1 60); do curl -fs -o /dev/null http://127.0.0.1:9000/healthz && break; sleep 1; done
+          # The bucket the CMS storage-profile suite binds a site to (an R2-style profile).
+          docker exec s3 sh -c "echo 's3.bucket.create -name heopress-cms-test' | weed shell"
+      - name: Runtime adapter suites (PostgreSQL cache, rate limiter, queue; S3 on SeaweedFS)
+        run: pnpm --filter @heopress/runtime exec vitest --run
+        env:
+          HEOPRESS_TEST_S3_ENDPOINT: http://127.0.0.1:9000
+          HEOPRESS_TEST_S3_ACCESS_KEY: heopress_ci
+          HEOPRESS_TEST_S3_SECRET_KEY: heopress_ci_s3_secret
+          HEOPRESS_TEST_S3_REQUIRE_AUTH: '1'
+      - name: Start MeiliSearch for the optional search backend
+        run: |
+          docker run -d --name meili -p 7700:7700 -e MEILI_MASTER_KEY=heopress_test_key -e MEILI_NO_ANALYTICS=true getmeili/meilisearch:v1.16.0
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:7700/health && break; sleep 1; done
+      # Search runs on PostgreSQL by default (here a stock postgres:18, so the
+      # pg_trgm fallback for Chinese); the MeiliSearch scenario runs too.
+      - name: CMS suites
+        run: pnpm --filter @heopress/cms exec vitest --run
+        env:
+          HEOPRESS_TEST_MEILI_HOST: http://127.0.0.1:7700
+          # Site A on an S3 profile (SeaweedFS), site B on local storage.
+          HEOPRESS_TEST_S3_ENDPOINT: http://127.0.0.1:9000
+          HEOPRESS_TEST_S3_ACCESS_KEY: heopress_ci
+          HEOPRESS_TEST_S3_SECRET_KEY: heopress_ci_s3_secret
+          HEOPRESS_TEST_S3_BUCKET: heopress-cms-test
+
+  docker-image:
+    name: Production images carry license files
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: docker build -f docker/Dockerfile -t heopress-cms:ci .
+      - run: docker/scripts/verify-image-licenses.sh heopress-cms:ci
+      - name: The CMS image has no package manager (P07 task 8.1)
+        run: docker run --rm --entrypoint sh heopress-cms:ci -c '! command -v npm && ! command -v npx && ! command -v corepack && ! command -v yarn && ! command -v yarnpkg && test ! -e /usr/local/lib/node_modules/npm && test ! -e /usr/local/lib/node_modules/corepack && test ! -e /usr/local/lib/node_modules/yarn && test -z "$(ls -d /opt/yarn* 2>/dev/null)" && test -f /app/dist/serve.cjs'
+      - name: The rendering service image (P06 task 5.2) — license files, non-root, no package manager
+        run: |
+          docker build -f docker/Dockerfile --target site-classic -t heopress-site-classic:ci .
+          docker/scripts/verify-image-licenses.sh heopress-site-classic:ci
+          test "$(docker run --rm --entrypoint id heopress-site-classic:ci -un)" = heopress
+          docker run --rm --entrypoint sh heopress-site-classic:ci -c '! command -v npm && ! command -v npx && ! command -v corepack && ! command -v yarn && ! command -v yarnpkg && test ! -e /usr/local/lib/node_modules/npm && test ! -e /usr/local/lib/node_modules/corepack && test ! -e /usr/local/lib/node_modules/yarn && test -z "$(ls -d /opt/yarn* 2>/dev/null)" && test -f /app/dist/serve.mjs && test -f /app/dist/render-worker.mjs'
+      - name: Image transforms work in the image (sharp and its native libvips)
+        run: >-
+          docker run --rm --entrypoint node -w /app/dist heopress-cms:ci -e
+          "require('sharp')({create:{width:4,height:4,channels:3,background:'#000'}}).webp().toBuffer().then(b=>console.log('sharp ok',b.length))"
+
+  caddy-routing:
+    name: Production Caddy routing (admin host → CMS; site domains and preview → rendering service; no admin paths on sites)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: docker/scripts/smoke-caddy-routing.sh
+
+  minimal-deploy:
+    name: Minimal deployment (PostgreSQL 18 + API + worker + rendering service, nothing else)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COMPOSE: docker compose -f docker/docker-compose.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build and start the minimal stack
+        run: $COMPOSE up -d --build
+      - name: Only PostgreSQL, the API, the worker and the rendering service; no removed service or model key configured
+        run: |
+          test "$($COMPOSE ps --services | sort | tr '\n' ' ')" = "cms cms-worker postgres site-classic "
+          # Names only: never print a value that might be a secret.
+          found=$($COMPOSE exec -T cms env | grep -E '^(REDIS_[A-Z_]*|IMGPROXY_[A-Z_]*|MEILISEARCH_HOST|S3_ENDPOINT|OPENAI_API_KEY|GEMINI_API_KEY|ANTHROPIC_API_KEY|NVIDIA_API_KEY)=.' | cut -d= -f1 || true)
+          if [ -n "$found" ]; then echo "unexpected service address or key in the minimal stack: $found"; exit 1; fi
+      - name: Start, setup, content, media, search and scheduled jobs
+        run: docker/scripts/smoke-minimal-deploy.sh http://127.0.0.1:1989 -f docker/docker-compose.yml
+      - name: The rendering service runs as the read-only role the CMS created (P06 task 5.2)
+        run: |
+          for i in $(seq 1 30); do $COMPOSE exec -T site-classic node -e "fetch('http://127.0.0.1:2027/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" && break; sleep 2; done
+          # An unknown host is 404, never a default site; the administration surface is not there.
+          $COMPOSE exec -T site-classic node -e "
+            const get = (p) => fetch('http://127.0.0.1:2027' + p, { headers: { host: 'nobody.example.org' } }).then((r) => r.status);
+            Promise.all([get('/'), get('/admin'), get('/api/v1/items')]).then((s) => { console.log(s); process.exit(s.every((x) => x === 404) ? 0 : 1); });"
+          # Connected as heopress_render: it cannot read the administration tables.
+          test "$($COMPOSE exec -T postgres psql -U heopress -d heopress -tAc "SELECT has_table_privilege('heopress_render', 'lumibase_items', 'SELECT')")" = "f"
+          test "$($COMPOSE exec -T postgres psql -U heopress -d heopress -tAc "SELECT count(*) FROM pg_stat_activity WHERE usename = 'heopress_render'")" -ge 1
+          # The servers' own environment (PID 1, after the entrypoint): no rendering credentials in the
+          # CMS or the worker, no preview secret in the worker. Names only.
+          for svc in cms cms-worker; do
+            leaked=$($COMPOSE exec -T $svc sh -c "tr '\\0' '\\n' < /proc/1/environ | cut -d= -f1 | grep -E '^HEOPRESS_RENDER_(PASSWORD|DATABASE_URL)' || true")
+            test -z "$leaked" || { echo "$svc has $leaked"; exit 1; }
+          done
+          test -z "$($COMPOSE exec -T cms-worker sh -c "tr '\\0' '\\n' < /proc/1/environ | cut -d= -f1 | grep -E '^HEOPRESS_INTERNAL_SECRET' || true")"
+      - name: A worker given rendering credentials and the preview secret (as docker/.env would) drops them; a misconfigured site deployment stops before migrating
+        run: |
+          $COMPOSE run -d --name worker-sentinel --no-deps -e HEOPRESS_PROCESS_ROLE=worker -e SKIP_MIGRATIONS=true \
+            -e HEOPRESS_RENDER_PASSWORD=sentinel-pw -e HEOPRESS_RENDER_DATABASE_URL=sentinel-url -e HEOPRESS_INTERNAL_SECRET=sentinel-secret cms-worker
+          for i in $(seq 1 20); do docker exec worker-sentinel true 2>/dev/null && break; sleep 1; done
+          sleep 3
+          # The worker itself is PID 1 (the entrypoint exec'd it), still running.
+          docker exec worker-sentinel sh -c "tr '\\0' ' ' < /proc/1/cmdline" | grep -q 'dist/serve.cjs'
+          leaked=$(docker exec worker-sentinel sh -c "tr '\\0' '\\n' < /proc/1/environ | cut -d= -f1 | grep -E '^HEOPRESS_(RENDER|INTERNAL)' || true")
+          docker rm -f worker-sentinel >/dev/null
+          test -z "$leaked" || { echo "worker kept: $leaked"; exit 1; }
+          grep -q 'HEOPRESS_REQUIRE_RENDER_ROLE: "true"' docker/docker-compose.domains.yml
+          set +e
+          out=$($COMPOSE run --rm --no-deps -e HEOPRESS_REQUIRE_RENDER_ROLE=true -e HEOPRESS_RENDER_PASSWORD= cms 2>&1)
+          code=$?
+          set -e
+          test "$code" -ne 0
+          echo "$out" | grep -q 'The public sites need the rendering role'
+          ! echo "$out" | grep -q 'Running database migrations'
+      - name: Settings of a removed service stop startup loudly
+        run: |
+          set +e
+          out=$($COMPOSE run --rm --no-deps -e SKIP_MIGRATIONS=true -e REDIS_URL=redis://redis:6379 cms 2>&1)  # removed-services:allow
+          code=$?
+          set -e
+          echo "$out" | tail -5
+          test "$code" -ne 0
+          echo "$out" | grep -q 'REDIS_URL: Redis is no longer used'  # removed-services:allow
+      - name: An unreachable optional service shows in readiness instead of being swallowed
+        run: |
+          $COMPOSE run -d --name cms-dead-meili --no-deps -p 1990:1989 -e SKIP_MIGRATIONS=true \
+            -e MEILISEARCH_HOST=http://10.255.255.1:7700 -e HEOPRESS_TRUSTED_INTERNAL_ENDPOINTS=http://10.255.255.1:7700 cms
+          for i in $(seq 1 60); do curl -fs http://127.0.0.1:1990/health/live >/dev/null && break; sleep 2; done
+          code=$(curl -s -o ready.json -w '%{http_code}' http://127.0.0.1:1990/health/ready)
+          cat ready.json; echo
+          test "$code" = 503
+          grep -q '"search":"unhealthy"' ready.json
+      - name: Logs
+        if: failure()
+        run: |
+          $COMPOSE logs --tail=200
+          docker logs cms-dead-meili --tail=100 2>&1 || true
+
+  sites-e2e:
+    name: Two public sites in a browser against the production images (P06 task 7.4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COMPOSE_PROJECT_NAME: heopress-e2e-p06
+      COMPOSE: docker compose -f docker/docker-compose.yml -f docker/docker-compose.sites.yml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @heopress/public-site exec playwright install --with-deps chromium
+      - name: Build the production images
+        run: $COMPOSE build
+      - name: Two sites on their own hosts; publish, edit and unpublish show on refresh, on their own site only
+        run: docker/scripts/e2e-p06-sites.sh 1989 2027
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sites-e2e-report
+          path: |
+            packages/public-site/e2e-results/sites
+            packages/public-site/e2e-report/sites
+          retention-days: 14
+      - name: Logs
+        if: failure()
+        run: $COMPOSE logs --tail=200
+
+  db-image:
+    name: Database image (${{ matrix.platform }}) loads pgvector and zhparser
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        if: matrix.platform != 'linux/amd64'
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build
+        run: >-
+          docker buildx build --platform ${{ matrix.platform }} --load
+          -f docker/postgres/Dockerfile -t heopress-postgres:ci docker/postgres
+      - name: CREATE EXTENSION vector / zhparser / pg_trgm
+        run: docker/postgres/verify-extensions.sh heopress-postgres:ci ${{ matrix.platform }}
+      # Search suites on the HeoPress image, where Chinese goes through zhparser.
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        if: matrix.platform == 'linux/amd64'
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: matrix.platform == 'linux/amd64'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Search and vector suites on the HeoPress database image (zhparser, pgvector)
+        if: matrix.platform == 'linux/amd64'
+        env:
+          DATABASE_URL: postgresql://heopress:heopress_ci@localhost:5432/heopress
+          HEOPRESS_RUNTIME: docker
+          HEOPRESS_ENV: development
+          JWT_SECRET: ci_db_image_secret
+        run: |
+          docker run -d --name heopress-pg -p 5432:5432 -e POSTGRES_USER=heopress -e POSTGRES_PASSWORD=heopress_ci -e POSTGRES_DB=heopress heopress-postgres:ci
+          for i in $(seq 1 60); do docker exec heopress-pg psql -U heopress -d heopress -tAc 'SELECT 1' >/dev/null 2>&1 && break; sleep 1; done
+          pnpm install --frozen-lockfile
+          HEOPRESS_VECTOR_SEARCH=true pnpm --filter @heopress/database migrate
+          HEOPRESS_APP_PASSWORD=heopress_app_ci pnpm --filter @heopress/database app-role --test-database
+          # From here on: the application role (creates vector spaces itself).
+          export DATABASE_OWNER_URL="$DATABASE_URL"
+          export DATABASE_URL=postgresql://heopress_app:heopress_app_ci@localhost:5432/heopress
+          test "$(docker exec heopress-pg psql -U heopress -d heopress -tAc "SELECT count(*) FROM pg_ts_config WHERE cfgname = 'heopress_zh'")" = 1
+          # The vector suites skip without pgvector; here that must be a failure.
+          export HEOPRESS_TEST_REQUIRE_VECTOR=1
+          pnpm --filter @heopress/database exec vitest --run src/__tests__/rls.db.test.ts
+          pnpm --filter @heopress/runtime exec vitest --run src/__tests__/postgres-search.db.test.ts src/__tests__/vector-store.db.test.ts
+          pnpm --filter @heopress/cms exec vitest --run src/__tests__/search-postgres.e2e.test.ts src/services/__tests__/vector-retrieval.db.integration.test.ts
