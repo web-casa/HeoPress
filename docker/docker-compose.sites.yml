@@ -1,0 +1,18 @@
+# The public sites reachable from the host, for checks of the production
+# images (HeoPress P06 tasks 6.1, 7.4: docker/scripts/bench-p06-classic.sh,
+# docker/scripts/e2e-p06-sites.sh). In production only Caddy reaches the
+# rendering service; never use this file there.
+services:
+  cms:
+    # Test stacks: the CMS (with a known test administrator) reachable from this machine only.
+    ports: !override
+      - "127.0.0.1:${CMS_PORT:-1989}:1989"
+    environment:
+      # Free subdomains are live at once (no DNS check): the test sites' domains.
+      HEOPRESS_FREE_DOMAIN_SUFFIX: ${HEOPRESS_FREE_DOMAIN_SUFFIX:-sites.example.test}
+  cms-worker:
+    environment:
+      HEOPRESS_FREE_DOMAIN_SUFFIX: ${HEOPRESS_FREE_DOMAIN_SUFFIX:-sites.example.test}
+  site-classic:
+    ports:
+      - "127.0.0.1:${SITE_PORT:-2027}:2027"

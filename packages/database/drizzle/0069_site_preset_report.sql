@@ -1,0 +1,1 @@
+ALTER TABLE "lumibase_site_presets" ADD COLUMN "report" jsonb;
