@@ -1,0 +1,27 @@
+---
+import type { PageDataPage } from '@heopress/astro-kit';
+import SeoHead from '@heopress/astro-kit/SeoHead.astro';
+import ItemBody from '@heopress/astro-kit/ItemBody.astro';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const { vm } = page;
+const item = vm.item;
+const date = item && typeof item.fields.briefing_date === 'string' ? item.fields.briefing_date : '';
+const period = item && typeof item.fields.period === 'string' ? item.fields.period : '';
+---
+<html lang={vm.page.locale}>
+<head>
+<meta charset="utf-8">
+<SeoHead page={page} />
+</head>
+<body class="heopress-briefing heopress-briefing-item">
+<main>
+<article>
+<h1>{item?.title}</h1>
+{date !== '' && <p class="heopress-briefing-date"><time datetime={date}>{date}</time></p>}
+{period !== '' && <p class="heopress-briefing-period">{period}</p>}
+<ItemBody page={page} />
+</article>
+</main>
+</body>
+</html>
