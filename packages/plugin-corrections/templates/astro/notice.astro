@@ -1,0 +1,33 @@
+---
+import type { PageDataPage } from '@heopress/astro-kit';
+import { safeUrl } from '@heopress/astro-kit';
+import SeoHead from '@heopress/astro-kit/SeoHead.astro';
+import ItemBody from '@heopress/astro-kit/ItemBody.astro';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const { vm } = page;
+const item = vm.item;
+const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+const pagePath = text(item?.fields.page_path);
+const excerpt = text(item?.fields.excerpt);
+const correction = text(item?.fields.correction);
+const correctedOn = text(item?.fields.corrected_on);
+---
+<html lang={vm.page.locale}>
+<head>
+<meta charset="utf-8">
+<SeoHead page={page} />
+</head>
+<body class="heopress-corrections heopress-corrections-notice">
+<main>
+<article>
+<h1>{item?.title}</h1>
+{pagePath !== '' && <p class="heopress-corrections-page">Corrected page: <a href={safeUrl(pagePath)}>{pagePath}</a></p>}
+{correctedOn !== '' && <p class="heopress-corrections-date"><time datetime={correctedOn}>{correctedOn.slice(0, 10)}</time></p>}
+{excerpt !== '' && <blockquote class="heopress-corrections-quote"><p>{excerpt}</p></blockquote>}
+{correction !== '' && <p class="heopress-corrections-correction">{correction}</p>}
+<ItemBody page={page} />
+</article>
+</main>
+</body>
+</html>
