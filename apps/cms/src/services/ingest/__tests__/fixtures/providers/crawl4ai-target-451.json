@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "results": [
+    {
+      "url": "https://news.example.com/harbour",
+      "html": "",
+      "success": false,
+      "status_code": 451,
+      "error_message": "Unavailable For Legal Reasons",
+      "redirected_url": null,
+      "markdown": "",
+      "metadata": {}
+    }
+  ]
+}
