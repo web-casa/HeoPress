@@ -1,0 +1,51 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+export {
+  sha256Hex,
+  verifyEd25519,
+  verifyBundle,
+  deriveIsOfficial,
+  OFFICIAL_NAMESPACE_PREFIX,
+  type SignatureAlg,
+  type BundleSignature,
+  type ResolvedKey,
+  type VerifyReason,
+  type VerifyResult,
+  type KeyResolver,
+} from './signature';
+export {
+  EXTENSION_POINTS,
+  CAPABILITY_CATEGORIES,
+  REMOVED_CAPABILITIES,
+  PUBLISH_STATUSES,
+  LEGACY_TYPE_POINT,
+  parseCapability,
+  isParsedCapability,
+  validateCapabilities,
+  normalizeCapabilities,
+  diffCapabilities,
+  approvalCovers,
+  migrateLegacyCapabilities,
+  allowsHost,
+  allowsCollection,
+  declaresExtensionPoint,
+  groupCapabilities,
+  type ExtensionPoint,
+  type CapabilityCategory,
+  type ParsedCapability,
+  type CapabilityError,
+  type CapabilityDiff,
+} from './capabilities';
+export {
+  parseVersion,
+  compareVersions,
+  parseVersionRange,
+  isValidVersionRange,
+  satisfiesVersionRange,
+} from './version-range';
+export {
+  canonicalProvenance,
+  normalizeRepository,
+  verifyProvenance,
+  type BuildProvenance,
+  type ProvenanceReason,
+} from './provenance';

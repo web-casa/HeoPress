@@ -1,0 +1,1 @@
+ALTER TABLE "lumibase_api_keys" ADD COLUMN "last4" text;
