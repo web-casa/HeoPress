@@ -1,0 +1,235 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { Plus, Save, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
+import type { TranslationResource } from '@heopress/sdk';
+import { getApiClient } from '@/lib/api';
+import { cn } from '@/lib/cn';
+import { initI18n } from '@/lib/i18n';
+import { PageHeader } from '@/workspace/ui/page-header';
+
+/**
+ * Translations Module
+ * Manages translation strings across UI, field, and content namespaces.
+ */
+export function TranslationsPage() {
+  const { t } = useTranslation('tm');
+  const client = getApiClient();
+  const qc = useQueryClient();
+
+  const [activeTab, setActiveTab] = useState<'ui' | 'field' | 'content'>('ui');
+  const [lang, setLang] = useState('vi'); // Default to vi for editing
+  
+  // Settings for locales
+  const settingsQuery = useQuery({
+    queryKey: ['settings', 'locales'],
+    queryFn: async () => {
+      try {
+        const res = await client.settings.get('locales');
+        return res.data;
+      } catch {
+        return null; // Might not exist yet
+      }
+    },
+  });
+
+  const supportedLangs = (settingsQuery.data?.value?.supported as string[]) ?? ['en', 'vi'];
+
+  const translationsQuery = useQuery({
+    queryKey: ['translations', activeTab, lang],
+    queryFn: async () => (await client.translations.list({ namespace: activeTab, language: lang })).data,
+  });
+
+  const translations = translationsQuery.data ?? [];
+  const [editing, setEditing] = useState<TranslationResource | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => client.translations.delete(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['translations', activeTab, lang] });
+      // Re-init i18n to fetch fresh keys
+      void initI18n();
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={t('strings.title')}
+        actions={<>
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            className="rounded-ctl border border-line bg-bg px-2.5 py-1.5 text-[13px] outline-none focus:border-brand"
+          >
+            {supportedLangs.map((l) => (
+              <option key={l} value={l}>{l.toUpperCase()}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="inline-flex items-center gap-1 rounded-ctl bg-brand px-3 py-1.5 text-[13px] text-brand-fg"
+          >
+            <Plus className="h-4 w-4" /> {t('strings.add')}
+          </button>
+        </>}
+      />
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 border-b border-line">
+        {(['ui', 'field', 'content'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              'border-b-2 px-4 py-2 text-sm font-medium capitalize transition-colors',
+              activeTab === tab
+                ? 'border-brand text-brand'
+                : 'border-transparent text-dim hover:border-line hover:text-fg',
+            )}
+          >
+            {t(`strings.tab.${tab}`)}
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      <div className="rounded-card border border-line bg-panel">
+        <table className="w-full text-sm">
+          <thead className="border-b border-line bg-panel-2 text-left text-xs uppercase text-dim">
+            <tr>
+              <th className="px-4 py-3">{t('strings.key')}</th>
+              <th className="px-4 py-3">{t('strings.value')}</th>
+              <th className="px-4 py-3">{t('strings.status')}</th>
+              <th className="w-24 px-4 py-3 text-right">{t('strings.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {translationsQuery.isLoading && (
+              <tr><td colSpan={4} className="px-4 py-8 text-center text-dim">{t('common:loading')}</td></tr>
+            )}
+            {!translationsQuery.isLoading && translations.length === 0 && (
+              <tr><td colSpan={4} className="px-4 py-8 text-center text-dim">{t('strings.empty')}</td></tr>
+            )}
+            {translations.map((row) => (
+              <tr key={row.id} className="border-b border-line hover:bg-panel-2">
+                <td className="px-4 py-2 font-mono text-xs">{row.key}</td>
+                <td className="px-4 py-2">{row.value}</td>
+                <td className="px-4 py-2">
+                  <span className="rounded bg-panel-2 px-1.5 py-0.5 text-[10px] uppercase">
+                    {t(`strings.statusValue.${row.status}`, { defaultValue: row.status })}
+                  </span>
+                </td>
+                <td className="px-4 py-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => setEditing(row)}
+                    className="text-brand hover:underline text-xs mr-3"
+                  >
+                    {t('strings.edit')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteMutation.mutate(row.id)}
+                    className="text-bad hover:opacity-80"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 inline" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {(creating || editing) && (
+        <TranslationEditor
+          resource={editing}
+          namespace={activeTab}
+          language={lang}
+          onClose={() => { setCreating(false); setEditing(null); }}
+          onSaved={() => {
+            setCreating(false);
+            setEditing(null);
+            void qc.invalidateQueries({ queryKey: ['translations', activeTab, lang] });
+            void initI18n();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function TranslationEditor({
+  resource,
+  namespace,
+  language,
+  onClose,
+  onSaved,
+}: {
+  resource: TranslationResource | null;
+  namespace: string;
+  language: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { t } = useTranslation('tm');
+  const client = getApiClient();
+  const [key, setKey] = useState(resource?.key ?? '');
+  const [value, setValue] = useState(resource?.value ?? '');
+
+  const mutation = useMutation({
+    mutationFn: () => {
+      if (resource) {
+        return client.translations.update(resource.id, { key, value });
+      }
+      return client.translations.create({ language, namespace, key, value });
+    },
+    onSuccess: onSaved,
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-card border border-line bg-panel p-6 shadow-lg">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="t-section">{resource ? t('strings.editTitle') : t('strings.newTitle')}</h2>
+          <button type="button" onClick={onClose} className="text-dim hover:text-fg">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-dim">{t('strings.key')}</label>
+            <input
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              className="w-full rounded-ctl border border-line bg-panel-2 px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-brand"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-dim">{t('strings.value')}</label>
+            <textarea
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              rows={3}
+              className="w-full rounded-ctl border border-line bg-panel-2 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-brand"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => mutation.mutate()}
+            disabled={!key || !value || mutation.isPending}
+            className="w-full rounded-ctl bg-brand px-4 py-2 font-medium text-brand-fg disabled:opacity-50"
+          >
+            <Save className="mr-2 h-4 w-4 inline" />
+            {mutation.isPending ? t('saving') : t('common:save')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

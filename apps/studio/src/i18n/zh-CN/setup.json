@@ -1,0 +1,559 @@
+{
+  "login": {
+    "title": "登录 HeoPress",
+    "subtitle": "登录以继续使用 Studio。",
+    "mfaSubtitle": "请输入身份验证码。",
+    "email": "邮箱",
+    "password": "密码",
+    "signingIn": "正在登录",
+    "signIn": "登录",
+    "totpCode": "身份验证码",
+    "recoveryCode": "恢复码",
+    "useTotp": "改用身份验证器验证码",
+    "useRecovery": "改用恢复码",
+    "verifying": "正在验证",
+    "verify": "验证",
+    "back": "返回登录",
+    "forgot": "忘记密码？",
+    "failed": "登录失败。",
+    "verifyFailed": "验证失败。",
+    "sessionNotSaved": "无法在此浏览器中保存会话。",
+    "unreachable": "无法连接登录服务。",
+    "notFoundTitle": "未找到",
+    "notFoundBody": "此管理地址无效。"
+  },
+  "backupCode": {
+    "title": "使用备用码恢复",
+    "intro": "输入管理员邮箱以及安装时保存的任一备用码。我们会解除锁定，并显示你的管理路径。",
+    "email": "管理员邮箱",
+    "code": "备用码",
+    "checking": "正在核对…",
+    "submit": "恢复访问",
+    "lostPath": "忘记了管理路径？",
+    "lostPathLink": "通过邮件找回",
+    "sentenceEnd": "。",
+    "invalidEmail": "请输入有效的邮箱地址。",
+    "codeRequired": "请输入一个备用码。",
+    "passwordMismatch": "两次输入的密码不一致。",
+    "errors": {
+      "network": "连接服务器时发生网络错误。",
+      "unparsable": "无法解析服务器响应。",
+      "missingDetails": "服务器响应缺少恢复信息。",
+      "mismatch": "邮箱与备用码不匹配。",
+      "rateLimited": "恢复尝试次数过多。",
+      "invalidRequest": "恢复请求无效，已被拒绝。",
+      "unexpected": "恢复失败，服务器返回了意外的响应（HTTP {{status}}）。"
+    },
+    "banner": {
+      "mismatch": "邮箱与备用码不匹配。请检查后重试。",
+      "rateLimitedWait": "恢复尝试次数过多。请在约 {{wait}}后重试。",
+      "rateLimited": "恢复尝试次数过多。请稍后重试。",
+      "generic": "暂时无法完成恢复。请检查网络连接后重试。"
+    },
+    "reset": {
+      "network": "重置密码时发生网络错误。",
+      "expired": "此恢复会话已过期或已被使用。",
+      "weak": "请设置更强的密码。",
+      "unexpected": "密码重置失败，服务器返回了意外的响应（HTTP {{status}}）。",
+      "doneTitle": "密码已重置",
+      "doneBody": "密码已更新。请使用新密码登录。",
+      "newPassword": "新密码",
+      "hideNew": "隐藏新密码",
+      "showNew": "显示新密码",
+      "confirmPassword": "确认新密码",
+      "hideConfirm": "隐藏确认密码",
+      "showConfirm": "显示确认密码",
+      "updating": "正在更新…",
+      "submit": "设置新密码"
+    },
+    "goToLogin": "前往管理员登录",
+    "successTitle": "恢复成功",
+    "successBody": "备用码已通过验证。请设置新密码，然后登录。",
+    "adminPath": "你的管理路径",
+    "invalidPath": "找回的管理路径无效。登录前请联系运维人员。",
+    "rules": {
+      "length_one": "至少 {{count}} 个字符。",
+      "length_other": "至少 {{count}} 个字符。",
+      "lowercase": "包含小写字母。",
+      "uppercase": "包含大写字母。",
+      "digit": "包含数字。",
+      "special": "包含特殊字符（{{chars}}）。",
+      "met": "已满足：",
+      "notMet": "未满足："
+    },
+    "back": "返回",
+    "wait": {
+      "seconds_one": "{{count}} 秒",
+      "seconds_other": "{{count}} 秒",
+      "minutes_one": "{{count}} 分钟",
+      "minutes_other": "{{count}} 分钟"
+    },
+    "codePlaceholder": "XXXX-XXXX"
+  },
+  "forgotPath": {
+    "title": "找回管理路径",
+    "intro": "输入管理员邮箱。如果它与管理员账户匹配，我们会通过邮件发送重新进入的步骤。",
+    "sending": "正在发送…",
+    "submit": "发送恢复说明",
+    "haveCode": "有备用码？",
+    "sentTitle": "请查收邮件",
+    "sentBody": "如果该邮箱属于管理员账户，我们已发送恢复说明。请查看收件箱（以及垃圾邮件文件夹）。",
+    "haveCodeInstead": "手上有备用码？"
+  },
+  "gate": {
+    "checking": "正在检查安装状态",
+    "unreachableTitle": "无法连接服务器",
+    "unreachableBody": "无法确认此实例是否已完成安装。请确认 HeoPress 后端正在运行，然后重试。",
+    "unreachableBodySetup": "无法确认此实例是否已安装。请确认 HeoPress 后端正在运行，然后重试。",
+    "retrying": "正在检查…",
+    "retry": "重试",
+    "notFoundTitle": "页面不存在",
+    "notFoundBody": "你要找的页面不存在。",
+    "tokenTitle": "需要安装令牌",
+    "tokenBodyBefore": "此实例启动时设置了",
+    "tokenBodyAfter": "。请粘贴 CMS 启动日志中打印的一次性安装令牌以继续。",
+    "tokenLabel": "安装令牌",
+    "continue": "继续"
+  },
+  "readyGate": {
+    "signInTitle": "请先登录",
+    "signInBody": "登录后才能打开 Studio。",
+    "goToSignIn": "前往登录",
+    "openAdminUrl": "请打开安装结束时保存的后台地址，然后登录。"
+  },
+  "layout": {
+    "eyebrow": "高级安装",
+    "title": "完整配置 HeoPress",
+    "description": "需要逐屏调整后台路径、安全策略、项目信息和恢复设置时，请使用完整向导。",
+    "quickSetup": "快速安装",
+    "progress": "安装进度",
+    "editStep": "编辑“{{step}}”",
+    "steps": {
+      "account": {
+        "label": "账户",
+        "description": "创建第一个管理员账户。"
+      },
+      "path": {
+        "label": "路径",
+        "description": "为 Studio 后台选择一个私密地址。"
+      },
+      "security": {
+        "label": "安全",
+        "description": "配置登录锁定与异常检测。"
+      },
+      "project": {
+        "label": "项目",
+        "description": "设置语言、站点 URL、标题和主题方向。"
+      },
+      "recovery": {
+        "label": "恢复",
+        "description": "保存用于紧急访问的备用码。"
+      },
+      "done": {
+        "label": "完成",
+        "description": "安装完成——请收藏你的后台地址。"
+      }
+    }
+  },
+  "wizard": {
+    "eyebrow": "快速安装",
+    "title": "三步安装 HeoPress",
+    "description": "快速安装采用与完整向导相同的生产默认值。在创建任何内容之前，确认步骤会列出将要应用的每一项默认设置。",
+    "advancedSetup": "高级安装",
+    "presetInvalid": "所选安全预设无效。",
+    "completeFailed": "无法完成安装。",
+    "invalidValue": "值无效。",
+    "badResponse": "安装已完成，但响应格式与预期不符。",
+    "httpFailed": "安装失败（HTTP {{status}}）。",
+    "editStep": "编辑“{{step}}”",
+    "steps": {
+      "essentials": "基本信息",
+      "review": "安全确认",
+      "recovery": "恢复码"
+    },
+    "passwordRules": {
+      "length": "至少 {{count}} 个字符",
+      "lowercase": "包含小写字母",
+      "uppercase": "包含大写字母",
+      "digit": "包含数字",
+      "special": "包含特殊字符"
+    },
+    "presets": {
+      "standard": "标准",
+      "strict": "严格",
+      "lenient": "宽松"
+    },
+    "presetDescriptions": {
+      "strict": "更严格的锁定，并启用全部异常检测。",
+      "lenient": "较宽松的锁定，适合私有开发实例。",
+      "standard": "新生产项目的推荐默认值。"
+    },
+    "duration": {
+      "hours": "{{count}} 小时",
+      "minutes": "{{count}} 分钟",
+      "seconds": "{{count}} 秒"
+    },
+    "essentials": {
+      "title": "账户与后台地址",
+      "description": "这些安装值无法安全地自动推断。快速安装中项目信息使用 HeoPress 默认值，可在高级安装中调整。",
+      "email": "管理员邮箱",
+      "firstName": "名",
+      "lastName": "姓",
+      "password": "密码",
+      "confirmPassword": "确认密码",
+      "hidePassword": "隐藏密码",
+      "showPassword": "显示密码",
+      "adminPath": "私密后台路径",
+      "adminPathHelp": "安装后请收藏此地址。它将取代容易被猜到的 /admin 路径。",
+      "generate": "生成",
+      "preview": "预览：",
+      "continueAdvanced": "改用高级安装继续",
+      "review": "确认安全默认值"
+    },
+    "review": {
+      "title": "确认快速安装将应用的设置",
+      "description": "目前尚未写入任何内容。如需逐项调整锁定、异常检测或通知设置，请现在切换到高级安装。",
+      "preset": "安全预设",
+      "presetDocs": "如何选择预设",
+      "adminPath": "后台路径",
+      "securityDefaults": "安全默认值",
+      "userLockout": "用户锁定",
+      "ipLockout": "IP 锁定",
+      "lockoutValue_one": "失败 {{count}} 次后锁定 {{duration}}",
+      "lockoutValue_other": "失败 {{count}} 次后锁定 {{duration}}",
+      "detection": "检测",
+      "detectionGeo": "地理位置",
+      "detectionTime": "时间",
+      "detectionDevice": "设备",
+      "detectionNone": "无",
+      "listSeparator": "、",
+      "notification": "通知",
+      "channels": {
+        "email": "邮件",
+        "webhook": "Webhook"
+      },
+      "advancedTitle": "高级设置仍然可用。",
+      "advancedBody": "快速安装会在此列出所有隐藏的默认值。如需在创建首个管理员账户前自定义 Webhook 通知、异常阈值或精确的锁定时间窗口，请使用高级安装。",
+      "openAdvanced": "改用高级安装",
+      "back": "上一步",
+      "creating": "正在创建…",
+      "create": "完成安装"
+    },
+    "invites": {
+      "title": "邀请团队成员（可选）",
+      "description": "他们会作为受邀用户添加，登录后出现在“用户”中。你也可以稍后再邀请。",
+      "docs": "角色与权限",
+      "emailPlaceholder": "teammate@example.com",
+      "emailLabel": "第 {{index}} 位受邀者邮箱",
+      "emailInvalid": "请输入有效的邮箱地址。",
+      "roleLabel": "第 {{index}} 位受邀者角色",
+      "roles": {
+        "member": "成员",
+        "admin": "管理员"
+      },
+      "remove": "移除第 {{index}} 位受邀者",
+      "add": "添加成员"
+    },
+    "recovery": {
+      "created": "安装已创建",
+      "title": "保存你的恢复码",
+      "description": "这些恢复码只显示一次。请在打开后台登录页前保存好。",
+      "codes": "备用码",
+      "copy": "复制",
+      "download": "下载",
+      "copyFailed": "无法自动复制。请使用“下载”或手动选中恢复码。",
+      "invited_one": "已邀请 {{count}} 位成员——他们登录后会出现在“用户”中。",
+      "invited_other": "已邀请 {{count}} 位成员——他们登录后会出现在“用户”中。",
+      "confirm": "我已保存这些备用码和私密后台路径。",
+      "docs": "查看文档",
+      "goToLogin": "前往后台登录"
+    }
+  },
+  "hooks": {
+    "complete": {
+      "invalid": "安装请求无效，已被拒绝。",
+      "alreadyInitialized": "此实例已完成安装。",
+      "inProgress": "另一个安装流程正在进行中。",
+      "pathPredictable": "所选后台路径太容易被猜到。",
+      "pathReserved": "所选后台路径与保留前缀冲突。",
+      "validation": "安装请求未通过校验。",
+      "unexpected": "安装失败，服务器返回了意外的响应（HTTP {{status}}）。",
+      "network": "完成安装时发生网络错误。",
+      "unparsable": "安装已成功，但无法解析响应。",
+      "badShape": "安装已成功，但响应格式与预期不符。"
+    }
+  },
+  "schemas": {
+    "project": {
+      "languageTag": "请使用语言标签，例如 en、vi 或 en-US。",
+      "siteUrlRequired": "请填写站点 URL。",
+      "siteUrlProtocol": "站点 URL 必须以 http:// 或 https:// 开头。",
+      "siteUrlInvalid": "请输入有效的站点 URL。",
+      "titleMin": "显示标题至少需要 {{count}} 个字符。",
+      "titleMax": "显示标题不能超过 {{count}} 个字符。"
+    },
+    "account": {
+      "emailRequired": "请填写邮箱。",
+      "emailMax": "邮箱不能超过 {{count}} 个字符。",
+      "emailInvalid": "请输入有效的邮箱地址。",
+      "passwordLength": "密码至少需要 {{count}} 个字符。",
+      "passwordLower": "密码必须包含小写字母。",
+      "passwordUpper": "密码必须包含大写字母。",
+      "passwordDigit": "密码必须包含数字。",
+      "passwordSpecial": "密码必须包含特殊字符。",
+      "passwordMismatch": "两次输入的密码不一致。",
+      "firstNameRequired": "请填写名。",
+      "lastNameRequired": "请填写姓。",
+      "firstNameMax": "名不能超过 {{count}} 个字符。",
+      "lastNameMax": "姓不能超过 {{count}} 个字符。"
+    },
+    "policy": {
+      "integer": "必须是整数。",
+      "min": "不能小于 {{min}}。",
+      "max": "不能大于 {{max}}。",
+      "integerSeconds": "必须是整数秒。",
+      "minSeconds": "不能少于 {{min}} 秒。",
+      "maxDay": "不能超过 86400 秒（1 天）。",
+      "scoreMin": "不能小于 0.00。",
+      "scoreMax": "不能大于 1.00。",
+      "decimals": "最多保留 2 位小数。",
+      "channelRequired": "请至少选择一个通知渠道。",
+      "integerMs": "必须是整数毫秒。",
+      "nonNegative": "不能小于 0。",
+      "maxMs": "不能超过 {{max}} 毫秒。",
+      "urlInvalid": "请输入有效的 URL。",
+      "urlMax": "URL 不能超过 {{count}} 个字符。",
+      "secretRequired": "请填写 Webhook 密钥。",
+      "secretMax": "Webhook 密钥不能超过 {{count}} 个字符。",
+      "webhookUrlRequired": "选择 Webhook 渠道时必须填写 Webhook URL。",
+      "webhookSecretRequired": "选择 Webhook 渠道时必须填写 Webhook 密钥。"
+    },
+    "adminPath": {
+      "required": "请填写后台路径。",
+      "invalid": "路径格式无效。",
+      "format": "请使用 /<slug> 格式：4–64 个小写字母、数字或连字符，并以字母或数字开头和结尾。",
+      "predictable": "此路径太容易被猜到，请换一个。",
+      "reserved": "路径与保留前缀“{{prefix}}”冲突。"
+    }
+  },
+  "steps": {
+    "continue": "继续",
+    "project": {
+      "title": "配置项目",
+      "description": "为这个 HeoPress 项目设置默认信息。主题定制目前仅作预览，将在后续版本开放。",
+      "language": {
+        "label": "默认语言",
+        "help": "使用语言标签，例如 en、vi 或 en-US。",
+        "en": "英语（en）",
+        "vi": "越南语（vi）",
+        "ja": "日语（ja）",
+        "fr": "法语（fr）",
+        "enUS": "英语，美国（en-US）"
+      },
+      "displayTitle": {
+        "label": "显示标题",
+        "help": "显示在 Studio 和项目元数据中。",
+        "placeholder": "HeoPress"
+      },
+      "siteUrl": {
+        "label": "站点 URL",
+        "help": "用于元数据和日后链接的规范公开地址。",
+        "placeholder": "https://example.com",
+        "preview": "预览："
+      },
+      "theme": {
+        "title": "主题",
+        "description": "Horizon 预览。主题定制将在后续版本推出。",
+        "disabled": "未启用",
+        "horizon": "Horizon",
+        "horizonName": "Solar Modernism",
+        "horizonDescription": "明亮的界面、暖橙色操作按钮，以及柔和的玻璃质感层次。"
+      }
+    },
+    "done": {
+      "title": "安装完成",
+      "description": "HeoPress 实例已初始化。离开本页前，请先保存下方的管理地址。",
+      "adminUrl": "你的管理地址",
+      "invalidPathShort": "管理路径无效",
+      "copyLabel": "复制管理地址",
+      "copied": "已复制",
+      "copy": "复制",
+      "copiedStatus": "管理地址已复制到剪贴板。",
+      "copyFailed": "无法自动复制。请选中上方地址后手动复制。",
+      "bookmark": "请将此地址加入书签。丢失后，需要用一个备用码走恢复流程才能找回。",
+      "goToLogin": "前往管理后台登录",
+      "invalidPath": "保存的管理路径无效。请重新运行安装后再使用此实例。",
+      "resetWizard": "重置向导（开发用）",
+      "noSetup": {
+        "title": "没有进行中的安装",
+        "body": "在此浏览器会话中找不到已完成的安装。请从头开始运行向导来配置实例。",
+        "back": "返回安装向导"
+      }
+    },
+    "path": {
+      "generateFailed": "无法生成唯一路径。请重试，或手动输入。",
+      "title": "选择私密管理路径",
+      "description": "选一个机器人猜不到的 URL 路径。Studio 只在此路径下响应，其他路径一律返回 404。",
+      "label": "管理路径",
+      "help": "使用小写字母、数字和连字符；斜杠后 4–64 个字符。",
+      "placeholder": "/lumi-7f3a9c",
+      "generate": "随机生成",
+      "warningTitle": "请保存此路径。",
+      "warningBody": "一旦丢失，需要用一个备用码走恢复流程。继续之前，请将地址加入书签、存进密码管理器，或抄写在安全的地方。",
+      "confirm": "我已保存管理路径，并了解丢失后需要走恢复流程。",
+      "preview": "预览：",
+      "invalidFormat": "（格式无效）"
+    },
+    "recovery": {
+      "fileHeader": "HeoPress 备用码——请妥善保管。每个码只能使用一次。",
+      "title": "保存恢复码",
+      "description": "请保存这些恢复码。被锁在外面时，每个码可用一次来恢复访问。它们不会再次显示。",
+      "codesLabel": "你的备用码",
+      "copyLabel": "复制备用码",
+      "copied": "已复制",
+      "copy": "复制",
+      "downloadLabel": "将备用码下载为文本文件",
+      "download": "下载 .txt",
+      "copiedStatus": "备用码已复制到剪贴板。",
+      "copyFailed": "无法自动复制。请选中上方的备用码手动复制，或使用“下载 .txt”。",
+      "storeSafely": "请将它们离线存放在安全的地方，例如密码管理器或打印件。没有它们（或管理路径）时，只能通过邮件恢复流程重新登录。",
+      "confirm": "我已保存这些备用码",
+      "finish": "完成安装",
+      "noCodes": {
+        "title": "没有可显示的备用码",
+        "body": "恢复码只在安装完成后显示一次，且不会保存在此浏览器中。请返回安装向导重新生成一组。"
+      }
+    },
+    "account": {
+      "title": "创建管理员账户",
+      "description": "此账户将成为实例的初始管理员。请设置一个强度高且独一无二的密码——没有恢复码将无法重置。",
+      "email": "邮箱",
+      "firstName": "名",
+      "lastName": "姓",
+      "password": "密码",
+      "confirmPassword": "确认密码",
+      "hidePassword": "隐藏密码",
+      "showPassword": "显示密码",
+      "hideConfirm": "隐藏确认密码",
+      "showConfirm": "显示确认密码",
+      "requirements": "密码要求",
+      "rules": {
+        "length": "至少 {{min}} 个字符",
+        "lowercase": "包含小写字母",
+        "uppercase": "包含大写字母",
+        "digit": "包含数字",
+        "special": "包含特殊字符（{{chars}}）"
+      },
+      "checkingStrength": "正在检查强度…",
+      "ruleMet": "已满足：",
+      "ruleNotMet": "未满足：",
+      "checkingPasswordStrength": "正在检查密码强度…",
+      "strengthNone": "密码强度：无",
+      "strength": {
+        "veryWeak": "非常弱",
+        "weak": "弱",
+        "fair": "一般",
+        "strong": "强",
+        "veryStrong": "非常强"
+      },
+      "tooWeak": "请选择强度为“强”或以上的密码再继续。"
+    },
+    "security": {
+      "title": "配置登录安全",
+      "description": "设置登录失败次数的阈值，并选择安全事件的通知方式。",
+      "noEncryptionKey": "此实例未配置加密密钥，因此无法启用二次验证，也无法写入加密字段。请设置 <code>{{name}}</code> 并重启 CMS——安装的其余步骤不受影响。",
+      "preset": {
+        "legend": "预设",
+        "help": "为下方所有分组套用默认值。选择预设后仍可逐项微调。",
+        "ariaLabel": "锁定策略预设"
+      },
+      "presets": {
+        "standard": {
+          "label": "标准",
+          "description": "均衡的默认值，适合大多数团队。"
+        },
+        "strict": {
+          "label": "严格",
+          "description": "更低的阈值、更长的锁定时间。"
+        },
+        "lenient": {
+          "label": "宽松",
+          "description": "更高的阈值，适合低风险环境。"
+        }
+      },
+      "failed": {
+        "legend": "登录失败",
+        "help": "在锁定用户或封禁 IP 之前，允许多少次登录失败。",
+        "withRange": "{{help}}范围 {{min}}–{{max}}。",
+        "fields": {
+          "userMaxFailedAttempts": {
+            "label": "单用户最大尝试次数",
+            "help": "在时间窗口内失败达到此次数后锁定用户。"
+          },
+          "userLockoutDurationSeconds": {
+            "label": "用户锁定时长（秒）",
+            "help": "用户保持锁定的时长。"
+          },
+          "ipMaxFailedAttempts": {
+            "label": "单 IP 最大尝试次数",
+            "help": "在时间窗口内失败达到此次数后封禁 IP。"
+          },
+          "ipLockoutDurationSeconds": {
+            "label": "IP 封禁时长（秒）",
+            "help": "IP 保持封禁的时长。"
+          },
+          "lockoutWindowSeconds": {
+            "label": "滑动窗口（秒）",
+            "help": "统计登录失败次数的时间窗口。"
+          }
+        }
+      },
+      "geo": {
+        "legend": "地理位置异常",
+        "help": "标记来自该用户从未登录过的国家/地区的登录。",
+        "enable": "启用地理位置异常检测",
+        "unavailable": "此实例没有 GeoIP 数据库；安装之前，地理位置异常检测不会生效。",
+        "dismissLabel": "关闭 GeoIP 不可用提示",
+        "dismiss": "关闭"
+      },
+      "time": {
+        "legend": "时间异常",
+        "help": "标记在该用户很少登录的时段发生的登录。",
+        "enable": "启用登录时段异常检测"
+      },
+      "device": {
+        "legend": "设备异常",
+        "help": "标记使用该用户从未用过的 User-Agent 或设备指纹的登录。",
+        "enable": "启用设备异常检测"
+      },
+      "action": {
+        "legend": "异常处置",
+        "help": "登录的异常分数超过阈值时，系统应如何处理。",
+        "threshold": "异常分数阈值",
+        "thresholdHelp": "范围 0.00–1.00，保留两位小数。默认 0.70。",
+        "label": "处置方式",
+        "unavailableOption": "{{label}}（不可用）",
+        "mfaUnavailable": "未安装二次验证模块，“要求二次验证”选项暂不可用。",
+        "options": {
+          "notify_only": "仅通知",
+          "lock": "锁定账户",
+          "require_mfa": "要求二次验证"
+        }
+      },
+      "notify": {
+        "legend": "通知",
+        "help": "安全事件通知的发送渠道。至少选择一个渠道。",
+        "channelsLabel": "通知渠道",
+        "channels": {
+          "email": "邮件",
+          "webhook": "Webhook"
+        },
+        "webhookUrl": "Webhook URL",
+        "webhookUrlHelp": "接收安全事件 POST 请求的 HTTPS 端点。",
+        "webhookUrlPlaceholder": "https://example.com/heopress/security",
+        "webhookSecret": "Webhook 密钥",
+        "webhookSecretHelp": "用于以 HMAC-SHA256 签名 Webhook 负载，请妥善保管。"
+      }
+    }
+  }
+}
