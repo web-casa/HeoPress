@@ -1,0 +1,29 @@
+{
+  "name": "@heopress/site-astro",
+  "version": "1.0.0-rc.4",
+  "private": true,
+  "description": "HeoPress Astro engine: the static build template (page data from the read-only page data interface) and the build runner (isolated child process, atomic publication).",
+  "type": "module",
+  "main": "src/builder/index.ts",
+  "exports": {
+    ".": "./src/builder/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run",
+    "clean": "rm -rf .turbo dist .astro",
+    "build:site": "astro build"
+  },
+  "dependencies": {
+    "@heopress/astro-kit": "workspace:*",
+    "@heopress/contracts": "workspace:*",
+    "astro": "7.4.2",
+    "parse5": "8.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^5.6.2",
+    "vitest": "^5.0.3",
+    "@heopress/site-classic": "workspace:*"
+  }
+}
