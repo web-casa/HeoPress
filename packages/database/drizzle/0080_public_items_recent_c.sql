@@ -1,0 +1,3 @@
+DROP INDEX "public_items_site_collection_locale_recent";--> statement-breakpoint
+CREATE INDEX "public_items_site_collection_locale_recent_c" ON "lumibase_public_items" USING btree ("site_id","collection","locale","published_at","item_id" COLLATE "C");--> statement-breakpoint
+CREATE INDEX "public_items_site_collection_recent_c" ON "lumibase_public_items" USING btree ("site_id","collection","published_at","item_id" COLLATE "C");
