@@ -1,0 +1,24 @@
+{
+  "name": "heopress-plugin-briefing-daily",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The official HeoPress daily-briefing plugin, built only on @heopress/extension-sdk.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "heopress-extension.json",
+    "templates"
+  ],
+  "scripts": {
+    "build": "node scripts/build-manifest.mjs && tsc -p tsconfig.json",
+    "manifest:check": "node scripts/build-manifest.mjs --check",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@heopress/extension-sdk": "^1.0.0",
+    "typescript": "5.9.3"
+  }
+}
