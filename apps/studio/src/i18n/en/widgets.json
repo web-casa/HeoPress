@@ -1,0 +1,100 @@
+{
+  "ai": {
+    "title": "AI Assistant",
+    "open": "Open AI assistant",
+    "close": "Close AI assistant",
+    "selectConversation": "Select conversation",
+    "newConversation": "New conversation",
+    "deleteConversation": "Delete conversation",
+    "noConversations": "No conversations yet.",
+    "emptyHint": "Send a message to start chatting with the AI assistant.",
+    "thinking": "Thinking…",
+    "messageInput": "Message input",
+    "placeholder": "Ask the AI…",
+    "send": "Send message",
+    "queuedRun": "Request queued (run {{runId}}). Poll GET /api/v1/flows/runs/{{runId}} for the result.",
+    "queued": "Request queued for async processing.",
+    "requestFailed": "Request failed with status {{status}}",
+    "done": "Done.",
+    "unexpected": "Received an unexpected response.",
+    "networkError": "Network error. Please check your connection and try again.",
+    "status": {
+      "executed": "Executed",
+      "pending_approval": "Pending approval",
+      "denied": "Denied"
+    }
+  },
+  "coEdit": {
+    "one": "{{name}} is also working on this item right now.",
+    "many_one": "{{count}} other person is working on this item right now.",
+    "many_other": "{{count}} other people are working on this item right now.",
+    "namesHere": "{{names}} are here too. ",
+    "warning": "Saving may overwrite each other’s changes — coordinate before you save.",
+    "listSeparator": ", ",
+    "listAnd": "{{head}} and {{last}}"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "bellUnread_one": "Notifications ({{count}} unread)",
+    "bellUnread_other": "Notifications ({{count}} unread)",
+    "markAllRead": "Mark all read",
+    "clearAll": "Clear all",
+    "empty": "No notifications yet",
+    "open": "Open →",
+    "item": {
+      "create": "Item <code>{{id}}</code> created in <b>{{collection}}</b>",
+      "update": "Item <code>{{id}}</code> updated in <b>{{collection}}</b>",
+      "delete": "Item <code>{{id}}</code> deleted in <b>{{collection}}</b>"
+    },
+    "dismiss": "Dismiss"
+  },
+  "presence": {
+    "viewing_one": "{{count}} user viewing",
+    "viewing_other": "{{count}} users viewing",
+    "more_one": "{{count}} more user",
+    "more_other": "{{count}} more users"
+  },
+  "release": {
+    "available": "New version available: HeoPress {{version}}",
+    "released": "Released {{date}}. This phase only notifies admins; Studio will not restart services or run migrations from the UI.",
+    "reviewGuide": "Review the upgrade guide before updating.",
+    "reviewGuideBelow": "Review the upgrade guide before updating from versions below {{version}}.",
+    "upgradeGuide": "Upgrade guide",
+    "changelog": "Changelog",
+    "checkError": "Release update checks are enabled, but Studio could not read the manifest: {{error}}",
+    "checking": "Checking for HeoPress updates…",
+    "upToDate": "No newer HeoPress release found from the public manifest.",
+    "checkNow": "Check now",
+    "manifestUnreadable": "Unable to read release manifest."
+  },
+  "connect": {
+    "title": "Connect to HeoPress",
+    "subtitle": "Enter the address of your HeoPress server to get started.",
+    "urlLabel": "Server URL",
+    "urlPlaceholder": "https://cms.example.com",
+    "connecting": "Connecting…",
+    "connect": "Connect",
+    "urlRequired": "Enter your HeoPress server URL.",
+    "unreachable": "Could not reach {{origin}}. Check the URL and that the server is running."
+  },
+  "version": {
+    "aria": "Build and release information",
+    "studio": "Studio v{{version}}",
+    "git": "Git {{sha}}",
+    "built": "Built {{time}}",
+    "channel": "Channel {{channel}}",
+    "backend": "Backend {{value}}",
+    "checking": "checking…",
+    "unavailable": "unavailable",
+    "mismatch": "Frontend/backend versions differ.",
+    "noUpdates": "No client-side downloads or updates are performed.",
+    "reportBug": "Report a bug",
+    "releaseNotes": "Release notes"
+  },
+  "siteSwitcher": {
+    "mfa": "2FA",
+    "signInThere": "Sign in there",
+    "idPlaceholder": "my-site",
+    "languagePlaceholder": "en"
+  }
+}
