@@ -1,0 +1,13 @@
+---
+// Was: a hard-coded SITE_TITLE and nav links. Now: the site's name and nav from the page data.
+import type { PageDataPage } from '@heopress/astro-kit';
+import { safeUrl } from '@heopress/astro-kit';
+interface Props { page: PageDataPage }
+const { vm } = Astro.props.page;
+---
+<header>
+  <nav>
+    <h2><a href={safeUrl(vm.site.homeUrl)}>{vm.site.name}</a></h2>
+    <div class="internal-links">{vm.nav.map((n) => <a href={safeUrl(n.url)}>{n.label}</a>)}</div>
+  </nav>
+</header>

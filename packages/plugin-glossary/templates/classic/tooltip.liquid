@@ -1,0 +1,1 @@
+{% if item and item.collection == "heopress_glossary__terms" and item.fields.excerpt and item.fields.excerpt != "" %}<aside class="heopress-glossary-tooltip" role="note"><dfn>{{ item.title }}</dfn> <span>{{ item.fields.excerpt | strip }}</span></aside>{% endif %}

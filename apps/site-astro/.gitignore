@@ -1,0 +1,4 @@
+.astro/
+dist/
+themes/.operator/
+themes/.ext/
