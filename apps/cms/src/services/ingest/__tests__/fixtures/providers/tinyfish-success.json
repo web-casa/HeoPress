@@ -1,0 +1,14 @@
+{
+  "run_id": "run_example_1",
+  "status": "COMPLETED",
+  "result": {
+    "title": "Harbour season",
+    "author": "Jane Doe",
+    "published_at": "2026-09-01T08:00:00Z",
+    "language": "en",
+    "final_url": "https://news.example.com/harbour",
+    "markdown": "# Harbour season\n\nThe harbour authority in Example Town reported a busy season for ferries, fishing boats and visiting yachts this year, with record passenger numbers.\n\nThe harbour authority in Example Town reported a busy season for ferries, fishing boats and visiting yachts this year, with record passenger numbers.\n\nThe harbour authority in Example Town reported a busy season for ferries, fishing boats and visiting yachts this year, with record passenger numbers.\n\nThe harbour authority in Example Town reported a busy season for ferries, fishing boats and visiting yachts this year, with record passenger numbers.\n\n- ferries\n- yachts\n\nSee [the report](https://news.example.com/report) and [bad](javascript:alert(1)).\n\n<script>alert(1)</script>\n",
+    "access_denied": false
+  },
+  "error": null
+}
