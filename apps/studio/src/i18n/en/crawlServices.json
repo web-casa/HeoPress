@@ -1,0 +1,52 @@
+{
+  "title": "Crawl services",
+  "description": "External services used only when native fetching fails for a technical reason (timeouts, server errors, pages that need a browser). A refusal by the site — 401, 403, 451, robots.txt, a no-AI reservation — stops the URL; no service is asked to get around it.",
+  "adminOnly": "Only site administrators can change these settings.",
+  "close": "Close",
+  "open": "Crawl services",
+  "saved": "Saved.",
+  "hosts": "Reaches only: {{hosts}}",
+  "hostsEndpoint": "Reaches only the endpoint configured below (or the instance's own Crawl4AI).",
+  "provider": {
+    "firecrawl": "Firecrawl",
+    "crawl4ai": "Crawl4AI",
+    "cloudflare": "Cloudflare Browser Run",
+    "tinyfish": "TinyFish"
+  },
+  "reason": {
+    "ready": "In use",
+    "disabled": "Off",
+    "no_consent": "Not confirmed",
+    "no_credential": "No credential",
+    "missing_option": "Incomplete",
+    "budget_exhausted": "Budget used up",
+    "breaker_open": "Paused after failures"
+  },
+  "usage": {
+    "month": "Month {{month}}",
+    "requests_one": "{{count}} request",
+    "requests_other": "{{count}} requests",
+    "cost": "Estimated cost",
+    "costValue": "{{cost}} of {{budget}} USD",
+    "noCeiling": "no ceiling",
+    "failures": "Failures",
+    "pausedUntil": "Paused until"
+  },
+  "form": {
+    "enabled": "Use this service",
+    "position": "Order after native fetching",
+    "consent": "I confirm this site's target URLs may be sent to {{service}}.",
+    "credential": {
+      "api_key": "API key",
+      "api_token": "API token",
+      "optional_token": "Token (optional)"
+    },
+    "credentialSet": "Set (…{{hint}}); type to replace",
+    "clearCredential": "Remove credential",
+    "budget": "Monthly budget (USD, empty: no ceiling)",
+    "endpoint": "Endpoint",
+    "endpointPlaceholder": "Empty: the instance's own Crawl4AI",
+    "accountId": "Account ID",
+    "save": "Save"
+  }
+}

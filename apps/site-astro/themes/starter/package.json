@@ -1,0 +1,14 @@
+{
+  "name": "@heopress/astro-theme-starter",
+  "version": "1.0.0-rc.4",
+  "private": true,
+  "description": "The official Astro starter theme: the Astro counterpart of the Classic engine's Minimal starter theme.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "heopress": {
+    "astroTheme": {
+      "entry": "src/Page.astro",
+      "integrations": []
+    }
+  }
+}
