@@ -1,0 +1,54 @@
+{
+  "page": {
+    "title": "术语表",
+    "subtitle": "站点在某个语言对上的用语规范——双模型翻译在接受一段译文之前执行的规则。"
+  },
+  "saving": "保存中…",
+  "rule": {
+    "prefer": "必须使用",
+    "preferHelp": "源文出现该词时，译文必须使用这里给出的译法。",
+    "do-not-translate": "不翻译",
+    "doNotTranslateHelp": "该词在译文中保留源文写法，译文与词条相同。",
+    "forbidden": "禁止使用",
+    "forbiddenHelp": "无论源文如何，译文中都不得出现这个说法。"
+  },
+  "form": {
+    "addTitle": "添加术语",
+    "editTitle": "编辑术语",
+    "sourceLang": "源语言",
+    "sourceLangAria": "术语源语言",
+    "targetLang": "目标语言",
+    "targetLangAria": "术语目标语言",
+    "term": "词条",
+    "termAria": "源语言词条",
+    "translation": "译文",
+    "translationAria": "目标语言中必须使用的写法",
+    "rule": "规则",
+    "ruleAria": "术语规则",
+    "note": "备注（可选）",
+    "noteAria": "术语备注",
+    "save": "保存术语",
+    "saveFailed": "无法保存该术语。"
+  },
+  "entries": {
+    "title": "术语",
+    "fromPlaceholder": "源语言",
+    "filterFromAria": "按源语言筛选",
+    "toPlaceholder": "目标语言",
+    "filterToAria": "按目标语言筛选",
+    "loading": "正在加载术语…",
+    "empty": "该语言对没有术语。",
+    "pair": "语言对",
+    "term": "词条",
+    "translation": "译文",
+    "rule": "规则",
+    "note": "备注",
+    "actions": "操作",
+    "editAria": "编辑术语 {{term}}",
+    "deleteAria": "删除术语 {{term}}",
+    "pageInfo_one": "共 {{count}} 条 · 第 {{page}}/{{pages}} 页",
+    "pageInfo_other": "共 {{count}} 条 · 第 {{page}}/{{pages}} 页",
+    "prev": "上一页",
+    "next": "下一页"
+  }
+}
