@@ -1,0 +1,8 @@
+---
+import type { PageDataPage } from '@heopress/astro-kit';
+interface Props { page: PageDataPage }
+const { page } = Astro.props;
+const item = page.vm.item;
+const definition = item && item.collection === 'heopress_glossary__terms' && typeof item.fields.excerpt === 'string' ? item.fields.excerpt.trim() : '';
+---
+{definition !== '' && <aside class="heopress-glossary-tooltip" role="note"><dfn>{item?.title}</dfn> <span>{definition}</span></aside>}
