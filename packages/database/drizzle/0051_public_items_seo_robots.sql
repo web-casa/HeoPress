@@ -1,0 +1,1 @@
+ALTER TABLE "lumibase_public_items" ADD COLUMN "seo_robots" text;

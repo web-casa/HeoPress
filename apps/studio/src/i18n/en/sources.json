@@ -1,0 +1,114 @@
+{
+  "title": "Sources",
+  "description": "Feeds, sitemaps and pages this site watches, when it checks them, and on what terms their content may be used.",
+  "new": "New source",
+  "empty": {
+    "title": "No sources yet",
+    "body": "Add an RSS / Atom feed, a sitemap, a list page or a single URL. New sources start as discovery only: their titles and links are leads, nothing more."
+  },
+  "columns": {
+    "source": "Source",
+    "schedule": "Schedule",
+    "status": "Status",
+    "terms": "Terms",
+    "health": "Health",
+    "actions": "Actions"
+  },
+  "type": {
+    "rss": "RSS",
+    "atom": "Atom",
+    "sitemap": "Sitemap",
+    "list_page": "List page",
+    "url": "Single URL"
+  },
+  "status": {
+    "active": "Active",
+    "paused": "Paused",
+    "pausedFailures": "Paused after failures"
+  },
+  "licence": {
+    "unknown": "Licence unknown",
+    "licensed": "Licensed",
+    "own": "Own content",
+    "open-license": "Open licence"
+  },
+  "usage": {
+    "discovery_only": "Discovery only",
+    "facts_only": "Facts only",
+    "licensed_derivative": "Licensed derivative"
+  },
+  "trust": {
+    "low": "Low trust",
+    "medium": "Medium trust",
+    "high": "High trust"
+  },
+  "failure": {
+    "network": "Network",
+    "timeout": "Timeout",
+    "access_denied": "Access denied",
+    "blocked": "Blocked by security policy",
+    "extraction": "Extraction",
+    "quota": "Quota",
+    "other": "Other"
+  },
+  "notEffective": "Licence not in effect: discovery only until reviewed",
+  "commercial": "Commercial use",
+  "failures": "{{count}} failures in a row ({{category}})",
+  "healthy": "Healthy",
+  "nextRun": "Next run",
+  "never": "Not scheduled",
+  "times": "{{times}} ({{timezone}})",
+  "actions": {
+    "edit": "Edit",
+    "pause": "Pause",
+    "resume": "Resume",
+    "terms": "Licence & terms",
+    "history": "History"
+  },
+  "resumeAdminOnly": "Only site administrators may resume a source.",
+  "form": {
+    "newTitle": "New source",
+    "editTitle": "Edit source",
+    "name": "Name",
+    "type": "Type",
+    "url": "URL",
+    "itemSelector": "Item selector",
+    "linkSelector": "Link selector",
+    "titleSelector": "Title selector (optional)",
+    "times": "Times of day",
+    "timesHint": "24-hour local times, separated by commas, e.g. 08:00, 20:00.",
+    "timezone": "Time zone",
+    "maxItems": "Most items per run",
+    "termsNote": "A new source is licence unknown, discovery only, not for commercial use, low trust. Site administrators change that with a licence revision.",
+    "create": "Create",
+    "save": "Save",
+    "cancel": "Cancel",
+    "badTimes": "Use HH:MM times, e.g. 08:00.",
+    "badTimezone": "Not a known time zone."
+  },
+  "terms": {
+    "title": "Licence & terms",
+    "description": "Each change is kept as a revision with its evidence. Nothing a fetched page says can change these.",
+    "licenceStatus": "Licence status",
+    "usageMode": "Usage",
+    "commercialUse": "Commercial use allowed",
+    "trustLevel": "Trust level",
+    "evidence": "Evidence",
+    "evidencePlaceholder": "Contract reference, licence URL, email…",
+    "scope": "Scope",
+    "validUntil": "Valid until",
+    "reviewDueAt": "Review due",
+    "attribution": "Attribution required",
+    "save": "Record revision",
+    "adminOnly": "Only site administrators may change a source's licence, usage or trust."
+  },
+  "history": {
+    "title": "Licence history",
+    "empty": "No revisions.",
+    "setBy": "Set by {{who}}",
+    "unknownActor": "unknown",
+    "validUntil": "valid until {{date}}",
+    "reviewDue": "review due {{date}}",
+    "close": "Close"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@heopress/seo-geo",
+  "version": "1.0.0-rc.4",
+  "private": true,
+  "description": "HeoPress SEO / GEO data layer: the indexing decision, page head, sitemap, feed and llms entries as structured objects (pure functions: no database, no HTTP).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run",
+    "clean": "rm -rf .turbo dist"
+  },
+  "dependencies": {
+    "@heopress/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^5.6.2",
+    "vitest": "^5.0.3"
+  }
+}
