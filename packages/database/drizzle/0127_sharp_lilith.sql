@@ -1,0 +1,2 @@
+ALTER TABLE "lumibase_items" ADD COLUMN "needs_update_source" text DEFAULT 'manual';--> statement-breakpoint
+ALTER TABLE "lumibase_items" ADD CONSTRAINT "items_needs_update_source_valid" CHECK ("lumibase_items"."needs_update_source" IS NULL OR "lumibase_items"."needs_update_source" IN ('manual', 'auto'));
