@@ -1,0 +1,85 @@
+{
+  "title": "Audit",
+  "description": "Problems found on the published site, to clear one by one — a list, not a score.",
+  "views": {
+    "title": "Views",
+    "open": "Open",
+    "ignored": "Ignored",
+    "resolved": "Resolved",
+    "categories": "By rule",
+    "links": "Links",
+    "meta": "Duplicate metadata",
+    "hreflang": "hreflang return links",
+    "jsonld": "Structured data",
+    "markdown": "Markdown copies"
+  },
+  "run": {
+    "title": "Last audit",
+    "never": "Not audited yet",
+    "done": "Completed",
+    "failed": "Failed",
+    "truncated": "Cut short — the list is incomplete",
+    "running": "Queued or running",
+    "rerun": "Audit again",
+    "requested": "Audit requested"
+  },
+  "severity": {
+    "error": "Error",
+    "warning": "Warning",
+    "notice": "Notice"
+  },
+  "list": {
+    "pages_one": "{{count}} page",
+    "pages_other": "{{count}} pages",
+    "emptyOpen": "No open issues in this view.",
+    "emptyIgnored": "No ignored issues. An ignored issue comes back by itself when its time is up.",
+    "emptyResolved": "Nothing resolved in the last 90 days.",
+    "nextAudit": "Audits run daily; the next one picks up any new problem."
+  },
+  "detail": {
+    "empty": "Select an issue to see its evidence and what to do.",
+    "rule": "Rule",
+    "firstSeen": "First found",
+    "lastSeen": "Last checked",
+    "evidence": "Evidence",
+    "pages": "Pages",
+    "open": "Open in editor",
+    "ignore": "Ignore",
+    "ignoreReason": "Reason (optional)",
+    "ignoreDays": "For",
+    "days": "{{count}} days",
+    "confirmIgnore": "Ignore issue",
+    "restore": "Restore",
+    "ignoredBy": "Ignored by {{who}}, until {{until}}",
+    "reason": "Reason: {{reason}}",
+    "ignoredToast": "Issue ignored",
+    "resolvedAt": "Resolved",
+    "adminOnly": "Only site administrators can ignore or audit again."
+  },
+  "fix": {
+    "title": "Add a redirect for the old address",
+    "explain": "The link points to {{from}}, which no longer answers. A redirect sends readers and crawlers on to the address you choose; the next audit then resolves the issue.",
+    "to": "New address",
+    "check": "Check",
+    "before": "Now",
+    "after": "After",
+    "pagesAffected_one": "{{count}} page links to this address",
+    "pagesAffected_other": "{{count}} pages link to this address",
+    "conflicts": "This address is still a page: no redirect can take effect there.",
+    "loops": "This would make a redirect loop.",
+    "apply": "Add redirect",
+    "done": "Redirect added — it takes effect now."
+  },
+  "rules": {
+    "links~broken": "Broken internal link",
+    "links~broken-anchor": "Broken anchor",
+    "meta~duplicate-title": "Duplicate title",
+    "meta~duplicate-description": "Duplicate description",
+    "meta~duplicate-canonical": "Duplicate canonical",
+    "hreflang~missing-return": "Missing hreflang return link",
+    "jsonld~invalid": "Invalid structured data",
+    "jsonld~site-invalid": "Invalid site structured data",
+    "markdown~inconsistent": "Markdown copy differs from the page",
+    "markdown~address-taken": "Markdown copy address taken"
+  }
+}

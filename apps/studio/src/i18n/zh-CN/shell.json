@@ -1,0 +1,71 @@
+{
+  "skipToMain": "跳到主要内容",
+  "menu": "菜单",
+  "closeMenu": "关闭菜单",
+  "search": "搜索",
+  "searchHint": "搜索或跳转…",
+  "notifications": "通知",
+  "theme": "主题",
+  "account": "账户",
+  "signOut": "退出登录",
+  "primaryNav": "模块",
+  "modules": {
+    "overview": "概览",
+    "content": "内容",
+    "sites": "站点",
+    "seo": "SEO / GEO",
+    "aiTraffic": "AI 流量",
+    "audit": "审计",
+    "monitoring": "日志与监控",
+    "settings": "设置"
+  },
+  "themes": {
+    "light": "亮色",
+    "dark": "暗色",
+    "system": "跟随系统"
+  },
+  "shortcuts": {
+    "title": "快捷键",
+    "goTo": "前往{{module}}",
+    "palette": "打开命令面板",
+    "help": "查看快捷键",
+    "next": "下一项",
+    "previous": "上一项"
+  },
+  "brand": "HeoPress",
+  "signOutOffline": "已在此浏览器退出，但无法连接服务器：该登录在服务器上会保持有效直到过期。",
+  "close": "关闭",
+  "paletteEmpty": "没有匹配项。",
+  "paletteContent": "内容",
+  "paletteJump": "跳转",
+  "paletteActions": "操作",
+  "actions": {
+    "newArticle": "新建文章",
+    "toggleTheme": "切换主题"
+  },
+  "keys": {
+    "esc": "Esc"
+  },
+  "site": {
+    "current": "当前站点",
+    "switch": "切换站点",
+    "switching": "正在切换…",
+    "search": "查找站点",
+    "noMatch": "没有匹配的站点。",
+    "new": "新建站点",
+    "newHint": "创建后你将成为该站点的管理员，并进入它的站点身份设置。",
+    "name": "站点名称",
+    "id": "站点 ID",
+    "idHint": "小写字母、数字、- 和 _，用于 API 调用；根据名称自动填写。",
+    "language": "默认语言",
+    "languageHint": "语言代码，如 en、zh-CN。留空则使用实例默认语言。",
+    "cancel": "取消",
+    "create": "创建站点",
+    "creating": "正在创建…"
+  },
+  "maintenance": {
+    "title": "系统维护中",
+    "body": "HeoPress 正在升级，暂时无法保存修改；浏览不受影响，升级完成后即可继续保存。",
+    "since": "开始于 {{time}}。"
+  }
+}
