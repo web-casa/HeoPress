@@ -38,7 +38,7 @@
     "isomorphic-git": "1.44.7",
     "jose": "^6.2.12",
     "linkedom": "0.18.12",
-    "marked": "14.0.0",
+    "marked": "18.1.3",
     "maxmind": "5.0.7",
     "nanoid": "^6.0.1",
     "node-cron": "^4.6.0",
