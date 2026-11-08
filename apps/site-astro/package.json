@@ -17,13 +17,13 @@
   "dependencies": {
     "@heopress/astro-kit": "workspace:*",
     "@heopress/contracts": "workspace:*",
-    "astro": "7.4.2",
-    "parse5": "8.0.1"
+    "astro": "7.4.5",
+    "parse5": "8.1.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.6",
     "typescript": "^5.6.2",
-    "vitest": "^5.0.3",
+    "vitest": "^5.1.0",
     "@heopress/site-classic": "workspace:*"
   }
 }
