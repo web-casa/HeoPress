@@ -21,7 +21,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@heopress/contracts": "workspace:*",
     "@heopress/sdk": "workspace:*",
-    "@hookform/resolvers": "^5.8.0",
+    "@hookform/resolvers": "^7.0.3",
     "@monaco-editor/react": "^4.6.0",
     "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-router": "^1.170.41",
