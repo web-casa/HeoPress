@@ -1,10 +1,10 @@
 ---
-version: 4
-lastUpdated: 2026-11-11T03:02:58.710Z
+version: 5
+lastUpdated: 2026-11-11T05:56:13.959Z
 sourceLang: en
 contentHash: 8239e8df5e0da2f5
 translatedFrom: en
-sourceHash: c686c698a114eeb5
+sourceHash: 944cb4ba36444bef
 mtEngine: manual
 syncStatus: human-translated
 ---
@@ -132,7 +132,7 @@ test(ai-harness): add property tests for capability check
 - [ ] 每次发布的 release notes 都包含 `Migrations` 一节，即使内容是 `None`
 - [ ] 数据库迁移至少向后兼容一个发布窗口：先加可空列/默认值，再单独回填，破坏性删除推迟到后续清理版本
 - [ ] PR 标题符合约定式提交格式
-- [ ] [CLA](../../../CLA.md) 已签署（首次贡献者在 PR 下评论表示接受，由维护者记录）
+- [ ] [CLA](../../../CLA.md) 已签署：首次贡献者在 PR 下评论表示接受，维护者记入 `.github/cla-signatures.json`，`CLA signed` 检查通过
 - [ ] schema 变化时已更新 `docs/en/data-model.md`
 - [ ] 改动 `pnpm` 覆盖或补丁时已更新 `docs/en/security/dependency-overrides.md`
 - [ ] 重大架构决策已补 ADR

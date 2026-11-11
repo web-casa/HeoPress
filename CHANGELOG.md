@@ -2,6 +2,18 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.2.1] - 2026-11-11
+
+### Added
+
+- `CLA signed` 检查：`.github/cla-signatures.json` 记录每份 CLA 接受（登录名、姓名、日期、CLA 版本），
+  `scripts/cla-check.mjs` 判定已签 / 未签 / 机器人跳过，`.github/workflows/cla.yml` 在每个 PR 上运行；
+  未签的 PR 无法合并。
+
+### Changed
+
+- 工作区版本 `1.2.0` → `1.2.1`。
+
 ## [1.2.0] - 2026-11-11
 
 ### Added

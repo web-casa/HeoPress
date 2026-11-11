@@ -1,8 +1,8 @@
 ---
-version: 4
-lastUpdated: 2026-11-11T03:02:58.710Z
+version: 5
+lastUpdated: 2026-11-11T05:56:13.959Z
 sourceLang: en
-contentHash: c686c698a114eeb5
+contentHash: 944cb4ba36444bef
 ---
 
 # Contributing to HeoPress
@@ -126,7 +126,7 @@ Before opening a PR, verify:
 - [ ] Release notes include a `Migrations` section for every release, even if it says `None`
 - [ ] Database migrations are backward-compatible for at least one release window: add nullable/defaults first, backfill separately, and defer destructive drops to a later cleanup release
 - [ ] PR title follows Conventional Commits format
-- [ ] The [CLA](../../../CLA.md) is signed (a first-time contributor comments on the PR that they accept it; a maintainer records it)
+- [ ] The [CLA](../../../CLA.md) is signed: a first-time contributor comments that they accept it, a maintainer records it in `.github/cla-signatures.json`, and the `CLA signed` check passes
 - [ ] `docs/en/data-model.md` updated if schema changed
 - [ ] `docs/en/security/dependency-overrides.md` updated if a `pnpm` override or patch changed
 - [ ] ADR added if a significant architectural decision was made

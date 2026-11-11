@@ -41,10 +41,19 @@ pnpm dev
 
 ## Sign the CLA once
 
-Before we can merge your first pull request, sign [CLA.md](CLA.md) (the agreement is how the project can keep
-offering HeoPress under AGPL-3.0 *and* a commercial licence while you keep the copyright in your work). Comment on
-your pull request that you have read and accept it; the maintainers record the acceptance in the repository. A pull
-request without a recorded CLA acceptance cannot be merged.
+Before we can merge your first pull request, sign [CLA.md](CLA.md) — the agreement is how the project can keep
+offering HeoPress under AGPL-3.0 *and* a commercial licence while you keep the copyright in your work.
+
+1. Read [CLA.md](CLA.md).
+2. Comment on your pull request, exactly: `I have read and agree to the HeoPress CLA.`
+3. A maintainer records the acceptance in [`.github/cla-signatures.json`](.github/cla-signatures.json) and pushes to
+   your branch; the check runs again and passes.
+
+The **CLA signed** check (`.github/workflows/cla.yml`, logic in `scripts/cla-check.mjs`) is required on `main`, so a
+pull request from an unrecorded author cannot merge. You sign once, not per pull request — the record stays in the
+repository and is reviewed like any other change. Bots (dependabot, GitHub Actions) are exempt; they cannot sign.
+
+Maintainers: `node scripts/cla-check.mjs --print --author <login> --name "<name>"` prints the entry to add.
 
 ## What a pull request must satisfy
 
