@@ -229,6 +229,30 @@ export const items = pgTable(
     publishedAt: timestamp('published_at', { withTimezone: true }),
     publishedAtSource: text('published_at_source'),
     /**
+     * Timeliness marks (HeoPress v1.1, spec content/timeliness-marks): an operator's explicit, dated "needs an
+     * update" mark. `needs_update_since` is when it was set and the only truth of whether the mark exists (NULL:
+     * unmarked); `needs_update_reason` is the short why; `needs_update_due_at` the deadline the daily review-reminder
+     * job watches (`services/staleness/reminders.ts`). Columns, not `data` keys: a normal content write must not drop
+     * the mark.
+     */
+    needsUpdateSince: timestamp('needs_update_since', { withTimezone: true }),
+    needsUpdateReason: text('needs_update_reason'),
+    needsUpdateDueAt: timestamp('needs_update_due_at', { withTimezone: true }),
+    /**
+     * When a review reminder was last sent for this item (HeoPress v1.1; spec content/review-reminders): the delivery
+     * watermark that makes the daily pass at-most-once per repeat interval. Reset to NULL whenever the mark is set,
+     * re-set or cleared — a new deadline deserves a new reminder. Not content state: no Change Feed event, no audit,
+     * no `version`/`updated_at` bump, and never returned by the item API.
+     */
+    needsUpdateRemindedAt: timestamp('needs_update_reminded_at', { withTimezone: true }),
+    /**
+     * What set the mark (HeoPress v1.1; spec content/timeliness-marks, content/stale-content-queue): `manual` (a person
+     * marked it) or `auto` (the staleness sweep derived it). Only meaningful together with `needs_update_since`; the
+     * default keeps every mark made before the column existed — and every ordinary mark — on `manual`, and the sweep
+     * never overwrites a manual mark with an automatic one.
+     */
+    needsUpdateSource: text('needs_update_source').default('manual'),
+    /**
      * Content scheduling window (Req 7). When set, the Scheduler publishes at
      * `publishAt` and unpublishes at `unpublishAt`; delivery filters to the
      * current Publish_Window. Both nullable → default behaviour unchanged.
@@ -270,6 +294,11 @@ export const items = pgTable(
       'items_published_at_source_valid',
       sql`${t.publishedAtSource} IS NULL OR ${t.publishedAtSource} IN ('recorded', 'set', 'estimated', 'unknown')`,
     ),
+    /** The mark's source is one of the two writers (spec content/stale-content-queue). */
+    needsUpdateSourceValid: check(
+      'items_needs_update_source_valid',
+      sql`${t.needsUpdateSource} IS NULL OR ${t.needsUpdateSource} IN ('manual', 'auto')`,
+    ),
     /** Scheduler scans for items due to publish/unpublish (Req 7.3, 7.4). */
     publishDueIdx: index('items_publish_due_idx').on(t.siteId, t.status, t.publishAt),
     unpublishDueIdx: index('items_unpublish_due_idx').on(t.siteId, t.status, t.unpublishAt),
@@ -283,6 +312,21 @@ export const items = pgTable(
     deliverIdx: index('items_deliver_idx')
       .on(t.siteId, t.collectionId, t.status, t.publishAt, t.unpublishAt)
       .where(sql`${t.deletedAt} is null`),
+    /**
+     * `?needs_update=true` lists the marked items of a collection newest-first (spec content/timeliness-marks):
+     * the partial index matches that query shape, so unmarked rows are not in it at all.
+     */
+    needsUpdateIdx: index('items_needs_update_idx')
+      .on(t.siteId, t.collectionId, t.updatedAt)
+      .where(sql`${t.needsUpdateSince} is not null`),
+    /**
+     * The daily review-reminder pass (`services/staleness/reminders.ts`) asks one site for the marked items whose
+     * deadline has arrived (spec content/review-reminders). The partial index keeps unmarked and undated rows — the
+     * overwhelming majority — out of the scan; `items_needs_update_idx` serves the list filter, not this shape.
+     */
+    reviewDueIdx: index('items_review_due_idx')
+      .on(t.siteId, t.needsUpdateDueAt)
+      .where(sql`${t.needsUpdateSince} is not null AND ${t.needsUpdateDueAt} is not null`),
   }),
 );
 

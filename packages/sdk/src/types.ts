@@ -459,6 +459,11 @@ export interface ListItemsParams {
    * for a cheaper list (e.g. infinite scroll) and omits `meta.total`.
    */
   meta?: 'total_count' | 'none';
+  /**
+   * Only the items carrying a timeliness mark (HeoPress v1.1; spec
+   * content/timeliness-marks). Omitted or `false`: no such filter.
+   */
+  needsUpdate?: boolean;
 }
 
 /** Reserved metadata attributes present on every search hit. */
@@ -523,11 +528,29 @@ export interface ItemRow<
   unpublishAt?: string | null;
   /** Editorial workflow state; null when the workflow is not in use. */
   editorialState?: string | null;
+  /**
+   * Timeliness mark (HeoPress v1.1; spec content/timeliness-marks): when an operator marked the item as needing an
+   * update, why, and the optional deadline. `needsUpdateSince` null/absent: not marked. A normal content write keeps
+   * the mark.
+   */
+  needsUpdateSince?: string | null;
+  needsUpdateReason?: string | null;
+  needsUpdateDueAt?: string | null;
   userCreated: string | null;
   userUpdated: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+}
+
+/** An item's timeliness mark (`needsUpdateSince` null: unmarked), returned by the mark and clear endpoints. */
+export interface TimelinessMark {
+  itemId: string;
+  needsUpdateSince: string | null;
+  reason: string | null;
+  dueAt: string | null;
+  /** The item's version after the change. */
+  version: number;
 }
 
 export interface RevisionRow {
@@ -1821,6 +1844,19 @@ export interface ExtensionResource {
   installedAt: string;
 }
 
+/**
+ * One named plugin secret on a site (HeoPress v1.2, spec extensions/plugin-secrets). The API never returns the value,
+ * a fragment of it or the ciphertext: only the name and whether a value is configured.
+ */
+export interface PluginSecretResource {
+  /** The name in the manifest's `secrets:<name>` capability. */
+  name: string;
+  /** Whether the site has a value for it right now. */
+  configured: boolean;
+  /** Whether the installed manifest still declares that name (a stored value for a dropped name can be removed). */
+  declared: boolean;
+}
+
 /** The extension points a plugin declares at a range this instance does not provide. */
 export interface ExtensionUpgradeNeed {
   points: string[];
@@ -2087,7 +2123,7 @@ export interface DeploymentResource {
 
 /** Static deployments of an Astro site (HeoPress P11 tasks 4.3–4.5). */
 export type StaticPlatform = "vps" | "cloudflare-pages" | "vercel" | "netlify";
-export type StaticFeature = "noindex" | "markdown-canonical" | "redirect-301" | "gone-410" | "feeds" | "search" | "preview" | "analytics";
+export type StaticFeature = "noindex" | "markdown-canonical" | "markdown-negotiation" | "redirect-301" | "gone-410" | "feeds" | "search" | "preview" | "analytics";
 
 export interface StaticDeployResource {
   id: string;

@@ -75,7 +75,7 @@ DATABASE_URL=<渲染角色> pnpm --filter @heopress/site-classic start
 
 列表每页 10 篇，`?page=N` 翻页；`page` 不是正整数、或超出最后一页 → 404。错误页不含堆栈与内部路径。
 
-语言只由域名与路径决定：同一地址无论 `Accept-Language` 是什么，响应正文完全相同。
+语言只由域名与路径决定：同一地址无论 `Accept-Language` 是什么，响应正文完全相同。`Accept` 只决定一件事：站点开启 Markdown 内容协商时，条目页的同一地址可以返回该页的 Markdown（见下节“Markdown 内容协商”）。
 
 ## 页面
 
@@ -140,9 +140,9 @@ DATABASE_URL=<渲染角色> pnpm --filter @heopress/site-classic start
 | `/sitemap.xml` | sitemap 索引：各分片（及开启时的新闻 sitemap），每项带该分片最新的 `lastmod` | `application/xml` |
 | `/sitemap-<N>.xml` | 分片：每片至多 10,000 条（低于协议上限 50,000）且至多 45 MiB（低于协议上限 50 MiB；语言关联多的页面先达到字节上限）；先是可收录的各语言首页，再按语言与路径列出可收录页面，`lastmod` 为真实修改时间，带语言关联（`xhtml:link`）；超出最后一片为 404 | `application/xml` |
 | `/sitemap.txt` | 每行一个地址，至多 50,000 个 | `text/plain` |
-| `/feed.xml`、`/atom.xml` | 站点的 RSS 2.0 / Atom：站点默认语言最新 20 篇可收录文章，全文（`content:encoded` / `content`）中的链接都转为绝对地址 | `application/rss+xml` / `application/atom+xml` |
-| `/feed/pages.xml`、`/atom/pages.xml` | 集合级订阅源（站点订阅源已是文章，所以集合级只有 `pages`） | 同上 |
-| `/feed.<语言>.xml`、`/atom/pages.<语言>.xml` 等 | 其他语言的订阅源：语言须与站点语言的写法完全一致，且不是默认语言 | 同上 |
+| `/feed.xml`、`/atom.xml` | 站点订阅源：站点配置的集合（`discovery.feedCollection`，默认 `articles`）中最新 20 条可收录条目，全文（`content:encoded` / `content`）中的链接都转为绝对地址 | `application/rss+xml` / `application/atom+xml` |
+| `/feed/pages.xml`、`/atom/pages.xml` | 集合级订阅源：`pages`，以及每个已启用插件路由声明的集合；插件集合优先用本地名（例如 `/feed/briefings.xml`），本地名在多个插件间重名时用机器名 | 同上 |
+| `/feed.<语言>.xml`、`/atom/pages.<语言>.xml` 等 | 其他语言的订阅源：语言须与站点语言的写法完全一致，且不是默认语言；集合级地址同样带语言后缀 | 同上 |
 | `/llms.txt` | 站点名称与简介、页面（`pages`，按标题，至多 50）、最近文章（至多 30）与发现文件（订阅源、sitemap、新闻 sitemap、`llms-full.txt`）的链接，Markdown 格式；站点关闭 `discovery.llms` 时 404 | `text/plain` |
 | `/llms-full.txt` | 同样的开头，再逐篇给出页面与最新文章的 Markdown 全文（标题、描述、地址、发布与修改时间、正文），至多 200 篇、5 MB | `text/plain` |
 | `/robots.txt` | 爬虫策略（见下）、本域名的 sitemap 索引与新闻 sitemap（开启时）、默认语言的订阅源（注释行） | `text/plain` |
@@ -151,7 +151,10 @@ DATABASE_URL=<渲染角色> pnpm --filter @heopress/site-classic start
 
 - 每个页面的 `<head>` 用 `<link rel="alternate">` 声明本语言的 RSS 与 Atom（站点关闭订阅源时不声明，订阅源路径返回 404）。
 - 每个订阅源只有一个地址：订阅源的语言只由路径决定（与应答的域名无关），默认语言不带后缀，其他写法（大小写不同、默认语言带后缀、`/rss.xml`、`/feed/articles.xml`）都是 404，
-  因此不同地址不会生成相同内容的多个缓存条目。
+  因此不同地址不会生成相同内容的多个缓存条目。站点订阅源使用的集合不再有集合级地址（把 `feedCollection` 设为 `pages` 时 `/feed/pages.xml` 为 404）；
+  插件集合的本地名可用时，机器名不是第二个地址。
+- 站点订阅源的集合由 `site-seo-settings` 的 `discovery.feedCollection` 决定（默认 `articles`）；集合级订阅源覆盖 `pages` 与已启用插件路由声明的集合。
+  两者使用同一个收录判定与同一个 `feeds` 开关：关闭时都返回 404，而不是空文档。
 - 新闻 sitemap 的应答带过期时间：最早一篇文章离开 48 小时窗口（或下一篇定时文章进入窗口）的时刻，进程内缓存与共享缓存都不在此之后使用它；文章离开窗口后仍在普通 sitemap 中。
 - XML 中的值全部转义，并去掉 XML 1.0 不能容纳的字符。测试用 libxml2（`xmllint-wasm`）按本项目依据各协议编写的 XML Schema 校验 sitemap、新闻 sitemap、RSS 与 Atom。
 
@@ -206,4 +209,33 @@ DATABASE_URL=<渲染角色> pnpm --filter @heopress/site-classic start
 - HTML 页面的 head 声明 `<link rel="alternate" type="text/markdown" href="….md">`，不可收录或 canonical 指向别处的页面不声明，也没有副本（404）；
 - 真实路由优先：路径本身是条目，或会跳转到一个条目（如结尾斜杠、旧路径），或是已删除页面的 410，都按原样应答，不提供副本；
 - 站点关闭副本后 `.md` 地址 404，HTML 不再声明。
+
+### Markdown 内容协商（v1.2 P07）
+
+站点开启 `discovery.markdownNegotiation`（默认**关闭**）后，**同一个地址**在请求的 `Accept` 偏好 Markdown 时返回该页的 Markdown
+（`Content-Type: text/markdown; charset=utf-8`）。正文与同一页 `.md` 副本的正文相同（同一个 `pageMarkdown` + `markdownBodyOf`），
+两种取法不会给出两份互相矛盾的 Markdown。设置走既有的 SEO 设置接口（`PUT /api/v1/sites/:site/seo`，共享 schema），
+没有单独的 Studio 开关；改动经投影立即生效。
+
+判定（`apps/site-classic/src/negotiation.ts` 的 `prefersMarkdown`，按 RFC 9110 的媒体范围与 q 值，最具体的匹配优先）：
+
+| `Accept` | 结果 |
+|---|---|
+| `text/markdown`、`text/markdown;q=0.9`、`text/html;q=0.5, text/markdown;q=0.9`、`text/markdown, text/html;q=0.5` | Markdown |
+| 缺失、空、`text/html`、`*/*`、`text/*`、`text/markdown;q=0`、`q` 格式错误 | HTML |
+| 并列（`text/markdown, text/html`，或两个 `q` 相同） | HTML |
+
+- 只有**可收录且 canonical 指向自身**的条目页协商（与 `.md` 副本、sitemap、订阅源同一个收录判定）。列表页、搜索页、
+  404、301、410、订阅源与 sitemap 等发现文件、`.md` 副本地址都与 `Accept` 无关；不可收录或 canonical 指向别处的条目页仍回 HTML。
+- Markdown 应答带 `X-Robots-Tag: noindex` 与 `Link: <页面地址>; rel="canonical"`（与 `.md` 副本相同）；
+  Markdown 与 HTML 两个变体都带 `Vary: Accept`（仅当站点开启协商且该页可协商），共享缓存才不会把 HTML 回给 Markdown 请求。
+- ETag 按变体各自计算：`If-None-Match` 只匹配同一变体；HEAD 与 304 回放与 200 相同的表示头。
+- **缓存契约**：缓存键含表示形式（`html` / `markdown`），先缓存的 HTML 不会回答 Markdown 请求，反之亦然；一个地址最多两个条目，
+  条目不随 `Accept` 的具体写法增长（见 `docs/zh-CN/rendering/page-cache.md`）。
+- 关闭（默认）时与加入该能力之前逐字节相同：不带 `Accept`、`Accept: text/html`、`Accept: */*` 或并列优先级的请求都得到原来的 HTML，
+  响应也没有 `Vary`。
+- **静态目标**：静态部署不运行本节代码，而在部署时把同一承诺写进各平台配置（Cloudflare Pages 的 `_worker.js`、
+  Vercel 的 `has`/`missing` 路由、Caddy 的 matcher），无法表达的 Netlify 在支持矩阵与部署记录中写明不可用；
+  配置只能按请求头文本匹配时以保守方向降级（`q` 值不比较）。静态契约里的 `markdown-canonical` 仍只描述 `.md` 副本的类型与
+  `Link` 头，与本节的协商分开。详见《静态前台部署》的「同一地址的 Markdown 协商」。
 

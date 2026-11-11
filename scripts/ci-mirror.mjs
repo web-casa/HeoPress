@@ -64,9 +64,16 @@ export function mirrorBranch(privateBranch) {
 }
 
 /** The mirror commit's message: nothing from the private commit but its SHA. */
-export function mirrorMessage(sha) {
+/**
+ * The mirror commit's message. `changed` (paths, optional) lets the public CI classify a branch's first push — where
+ * there is no previous mirror commit to diff against — as code or docs-only; it is data about paths, never content.
+ */
+export function mirrorMessage(sha, changed = []) {
   if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error(`not a commit SHA: ${sha}`);
-  return `ci: mirror of a private commit (ADR-0018)\n\nPrivate-Commit: ${sha}\n`;
+  const paths = changed.slice(0, 200);
+  const more = changed.length > paths.length ? ' (and more)' : '';
+  const line = paths.length ? `\nChanged-Paths: ${JSON.stringify(paths)}${more}\n` : '';
+  return `ci: mirror of a private commit (ADR-0018)\n\nPrivate-Commit: ${sha}\n${line}`;
 }
 
 /** Validate the commit's own `openspec/` (not the working tree's) in an isolated directory. */
@@ -93,7 +100,7 @@ function validateOpenSpec(sha) {
  * must hold exactly the exported files — the same blobs and modes as the private commit, but for the modified-
  * files list the export rewrites.
  */
-export function buildMirrorCommit({ gitDir, out, entries, sha, rewritten = new Set(['LICENSES/HEOPRESS-MODIFIED-FILES.txt']) }) {
+export function buildMirrorCommit({ gitDir, out, entries, sha, changed = [], rewritten = new Set(['LICENSES/HEOPRESS-MODIFIED-FILES.txt']) }) {
   const env = {
     ...process.env,
     GIT_DIR: gitDir,
@@ -108,7 +115,7 @@ export function buildMirrorCommit({ gitDir, out, entries, sha, rewritten = new S
   };
   // The tree is the export: same paths, modes and (but for rewritten files) blobs as the private commit.
   const tree = writeExportTree({ gitDir, out, entries, rewritten });
-  const commit = git(['commit-tree', tree, '-m', mirrorMessage(sha)], { cwd: out, env });
+  const commit = git(['commit-tree', tree, '-m', mirrorMessage(sha, changed)], { cwd: out, env });
   return { tree, commit };
 }
 
@@ -197,7 +204,7 @@ export function checkPublicRepo(repo) {
   return repo;
 }
 
-async function push(commit) {
+async function push(commit, { wait = false } = {}) {
   checkPublicRepo(PUBLIC_REPO);
   const sha = git(['rev-parse', '--verify', `${commit}^{commit}`], { cwd: ROOT });
   const branch = git(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: ROOT });
@@ -213,7 +220,9 @@ async function push(commit) {
     if (draftLicences.length) console.log(`[ci-mirror] left out, still drafts: ${draftLicences.join(', ')}`);
     const gitDir = path.join(scratch, 'mirror.git');
     git(['init', '--quiet', '--bare', gitDir]);
-    const { tree, commit: mirrorSha } = buildMirrorCommit({ gitDir, out, entries, sha });
+    const base = git(['merge-base', 'origin/main', sha], { cwd: ROOT, encoding: 'utf8' }).trim();
+    const changed = base ? git(['diff', '--name-only', base, sha], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean) : [];
+    const { tree, commit: mirrorSha } = buildMirrorCommit({ gitDir, out, entries, sha, changed });
     const url = `https://github.com/${PUBLIC_REPO}.git`;
     const current = git(['ls-remote', url, `refs/heads/${target}`]).split('\t')[0] ?? '';
     // Lease on the head just read: a concurrent push of the same branch fails instead of being overwritten.
@@ -225,6 +234,11 @@ async function push(commit) {
       setStatus(sha, 'pending', `Public CI running (${mirrorSha.slice(0, 8)})`, `https://github.com/${PUBLIC_REPO}/commit/${mirrorSha}`);
     });
     console.log(`[ci-mirror] ${files} files of ${sha.slice(0, 8)} pushed to ${PUBLIC_REPO} ${target} as ${mirrorSha.slice(0, 8)}`);
+    if (wait) {
+      console.log('[ci-mirror] waiting for the public run (up to 3 hours) to set public-mirror-ci…');
+      process.exit((await report(sha)) ? 0 : 1);
+    }
+    console.log(`[ci-mirror] when the run finishes: node scripts/ci-mirror.mjs report --commit ${sha.slice(0, 8)}`);
   } finally {
     fs.rmSync(scratch, { recursive: true, force: true });
   }
@@ -272,10 +286,10 @@ async function main(argv) {
   const i = argv.indexOf('--commit');
   const commit = i >= 0 ? argv[i + 1] : 'HEAD';
   try {
-    if (command === 'push') await push(commit);
+    if (command === 'push') await push(commit, { wait: argv.includes('--wait') });
     else if (command === 'report') process.exit((await report(commit)) ? 0 : 1);
     else {
-      console.error('usage: ci-mirror.mjs push|report [--commit <rev>]');
+      console.error('usage: ci-mirror.mjs push [--commit <rev>] [--wait] | report [--commit <rev>]');
       process.exit(2);
     }
   } catch (err) {

@@ -14,7 +14,7 @@ import {
 } from '@heopress/database';
 import { refreshPhysicalTable, type MaterializeConfig } from './materialize-service';
 import { dispatchItemEvent } from './flow-dispatch';
-import { and, asc, desc, eq, gt, inArray, isNull, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 import { SchemaService } from './schema-service';
 import { validateItem } from './validation';
 import {
@@ -94,6 +94,24 @@ export interface ListItemsParams {
    * extra aggregate query. When `false`, `meta.total` is omitted.
    */
   withTotal?: boolean;
+  /**
+   * Only the items carrying a timeliness mark (HeoPress v1.1; spec
+   * content/timeliness-marks). Undefined/false: no such filter.
+   */
+  needsUpdate?: boolean;
+}
+
+/** A short reason, not an essay: the badge has room for one sentence (spec content/timeliness-marks). */
+export const TIMELINESS_REASON_MAX = 200;
+
+/** An item's timeliness mark (`needsUpdateSince` null: unmarked). */
+export interface TimelinessMark {
+  itemId: string;
+  needsUpdateSince: Date | null;
+  reason: string | null;
+  dueAt: Date | null;
+  /** The item's version after the change (a mark is a versioned write, like `hold`). */
+  version: number;
 }
 
 export type ItemFilterOp =
@@ -740,7 +758,7 @@ export class ItemService {
     const { PluginHost } = await import('../extensions/runtime/plugin-host');
     const { runPrePublishHooks } = await import('../extensions/runtime/events');
     const db = this.deps.rootDb ?? this.deps.db;
-    const host = new PluginHost({ db, env: this.deps.extensionEnv });
+    const host = new PluginHost({ db, env: this.deps.extensionEnv, keys: this.deps.keyProvider });
     const actorEmail = typeof this.deps.permissionCtx?.user?.email === 'string' ? this.deps.permissionCtx.user.email : null;
     await runPrePublishHooks({ db, host, siteId: this.deps.siteId, actorEmail }, { collection, itemId, status, data });
   }
@@ -971,6 +989,9 @@ export class ItemService {
       eq(items.collectionId, coll.id),
       isNull(items.deletedAt),
       params.status ? eq(items.status, params.status) : undefined,
+      // The timeliness mark is a column, not a `data` field: the filter is a
+      // plain column predicate, so it stacks with `filter`, `status` and paging.
+      params.needsUpdate ? isNotNull(items.needsUpdateSince) : undefined,
       buildFilter(params.filter),
       permClause,
     );
@@ -1953,6 +1974,119 @@ export class ItemService {
     this.wakeConsumers();
     await this.afterWriteInvalidation(collectionName);
     return { ...result, publishedAtSource: result.publishedAtSource ?? 'set' };
+  }
+
+  /**
+   * Mark an item as needing an update, or clear the mark (HeoPress v1.1; spec content/timeliness-marks).
+   *
+   * A versioned item write like `setHold`: `update` permission, `expectedVersion` required (428), a stale one is 409.
+   * `reason: null` clears. The mark lives in three columns, so an ordinary content write (`patch`, `replace`,
+   * publish) never touches it — that is the point of the feature. Marking an already marked item keeps its original
+   * `needs_update_since` (since when it has needed the update) and only replaces reason and due date. Audited, and its
+   * Change Feed event commits with the row (spec content/change-events).
+   */
+  async setTimeliness(
+    collectionName: string,
+    id: string,
+    input: {
+      /** The operator's short reason; `null` clears the mark. */
+      reason: string | null;
+      /** Optional deadline, recorded only (nothing schedules on it). */
+      dueAt?: Date | null;
+      expectedVersion: number | undefined;
+      actorEmail?: string | null;
+    },
+  ): Promise<TimelinessMark> {
+    const { expectedVersion } = input;
+    if (expectedVersion === undefined) throw versionRequired();
+    const clearing = input.reason === null;
+    const reason = clearing ? null : input.reason!.trim();
+    if (!clearing && (!reason || reason.length > TIMELINESS_REASON_MAX)) {
+      throw new ItemServiceError('VALIDATION', `reason must be 1–${TIMELINESS_REASON_MAX} characters.`, 400);
+    }
+    if (input.dueAt && Number.isNaN(input.dueAt.getTime())) throw new ItemServiceError('VALIDATION', 'dueAt is not a valid date.', 400);
+    const coll = await this.resolveCollection(collectionName);
+    const perm = await this.perm(collectionName, 'update');
+    const permClause = this.permissions?.whereFor(perm) ?? undefined;
+    const mark = await runItemWriteTransaction(this.deps.db, this.deps.siteId, async (tx) => {
+      const [row] = await tx
+        .select({
+          version: items.version,
+          since: items.needsUpdateSince,
+          reason: items.needsUpdateReason,
+          dueAt: items.needsUpdateDueAt,
+          source: items.needsUpdateSource,
+        })
+        .from(items)
+        .where(and(scopeSite(items.siteId, this.deps.siteId), eq(items.collectionId, coll.id), eq(items.id, id), isNull(items.deletedAt), permClause))
+        .for('update');
+      if (!row) throw new ItemServiceError('NOT_FOUND', `Item "${id}" not found.`, 404);
+      if (row.version !== expectedVersion) throw new VersionMoved(row.version);
+      const since = clearing ? null : (row.since ?? new Date());
+      const [updated] = await tx
+        .update(items)
+        .set({
+          needsUpdateSince: since,
+          needsUpdateReason: clearing ? null : reason,
+          needsUpdateDueAt: clearing ? null : (input.dueAt ?? null),
+          // A new (or removed) deadline re-arms the reminder: the daily pass must not inherit the old watermark
+          // (spec content/review-reminders).
+          needsUpdateRemindedAt: null,
+          // A person's mark is `manual` (spec content/stale-content-queue): the staleness sweep must never overwrite it,
+          // and only an `auto` mark is cleared by the edit that resolves it.
+          needsUpdateSource: clearing ? null : 'manual',
+          version: expectedVersion + 1,
+          userUpdated: this.deps.userId ?? null,
+          updatedAt: new Date(),
+        })
+        .where(and(scopeSite(items.siteId, this.deps.siteId), eq(items.id, id), eq(items.version, expectedVersion)))
+        .returning({
+          id: items.id,
+          version: items.version,
+          since: items.needsUpdateSince,
+          reason: items.needsUpdateReason,
+          dueAt: items.needsUpdateDueAt,
+          source: items.needsUpdateSource,
+        });
+      if (!updated) throw new VersionMoved(expectedVersion + 1);
+      await new AuditLogger({ db: this.deps.db, siteId: this.deps.siteId }).writeInTransaction(tx, {
+        siteId: this.deps.siteId,
+        event: clearing ? 'item_timeliness_cleared' : 'item_timeliness_marked',
+        actorEmail: input.actorEmail ?? null,
+        metadata: {
+          operator: this.deps.userId ?? null,
+          collection: coll.name,
+          itemId: id,
+          before: {
+            needsUpdateSince: row.since?.toISOString() ?? null,
+            reason: row.reason ?? null,
+            dueAt: row.dueAt?.toISOString() ?? null,
+            source: row.source ?? null,
+          },
+          after: {
+            needsUpdateSince: updated.since?.toISOString() ?? null,
+            reason: updated.reason ?? null,
+            source: updated.source ?? null,
+            dueAt: updated.dueAt?.toISOString() ?? null,
+          },
+        },
+      });
+      await this.writeEvent(tx, collectionName, 'update', id, null, updated.version, ['needs_update']);
+      return {
+        itemId: updated.id,
+        needsUpdateSince: updated.since,
+        reason: updated.reason,
+        dueAt: updated.dueAt,
+        version: updated.version,
+      } satisfies TimelinessMark;
+    }).catch(async (err: unknown) => {
+      if (err instanceof VersionMoved) throw await this.conflict(coll.name, id, expectedVersion, err.currentVersion);
+      throw err;
+    });
+    await this.writeActivity(clearing ? 'timeliness.clear' : 'timeliness.mark', coll.name, id, {});
+    this.wakeConsumers();
+    await this.afterWriteInvalidation(collectionName);
+    return mark;
   }
 
   /**

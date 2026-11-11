@@ -1,6 +1,6 @@
 {
   "name": "@heopress/astro-kit",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "description": "HeoPress Astro theme kit: the page data contract's types and the system components (head, item body, sponsor disclosure, card) an Astro theme places but never writes.",
   "license": "Apache-2.0",
@@ -25,7 +25,7 @@
     "astro": "7.4.2"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.6",
     "typescript": "^5.6.2"
   }
 }

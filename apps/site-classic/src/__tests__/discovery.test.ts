@@ -13,7 +13,7 @@ import {
   xmlText,
   type FullFeedEntry,
 } from '../discovery';
-import { discoveryFileOf, feedPath } from '../discovery-plan';
+import { discoveryFileOf, feedPath, pluginFeedCollections } from '../discovery-plan';
 import { schemaErrors } from './xml-schemas';
 
 /** The discovery files' serialisation (HeoPress P07 tasks 3.1, 3.3, 3.7): valid against their schemas, every value escaped. */
@@ -110,25 +110,50 @@ describe('feeds (task 3.3)', () => {
     );
   });
 
-  it('feed paths: the site, a collection, a language; nothing else', () => {
+  it('feed paths: the site, a collection, a language; a collection is resolved when answered', () => {
     expect(discoveryFileOf('/feed.xml')).toEqual({ kind: 'feed', format: 'rss', collection: null, locale: null });
     // One address per feed: no `/rss.xml` alias, no collection feed of the articles (the site's feed is).
     // `/rss.xml` is no feed: a root file by that name is looked for (a name the system keeps: there is none, so not found).
     expect(discoveryFileOf('/rss.xml')).toEqual({ kind: 'root-file', filename: 'rss.xml' });
-    expect(discoveryFileOf('/feed/articles.xml')).toBeNull();
+    // The path grammar names a collection; whether the site has it (and may address it) is decided by the answer.
+    expect(discoveryFileOf('/feed/articles.xml')).toEqual({ kind: 'feed', format: 'rss', collection: 'articles', locale: null });
+    expect(discoveryFileOf('/feed/briefings.xml')).toEqual({ kind: 'feed', format: 'rss', collection: 'briefings', locale: null });
     // Any language tag a site may name (checked against its languages when answered).
     expect(discoveryFileOf('/feed.x-private.xml')).toEqual({ kind: 'feed', format: 'rss', collection: null, locale: 'x-private' });
     expect(discoveryFileOf('/feed.de-DE-u-co-phonebk-kf-upper-kn-true.xml')).toMatchObject({ locale: 'de-DE-u-co-phonebk-kf-upper-kn-true' });
     expect(discoveryFileOf(`/feed.${'a-'.repeat(18)}a.xml`)).toBeNull();
     expect(discoveryFileOf('/atom/pages.zh-Hant-TW.xml')).toEqual({ kind: 'feed', format: 'atom', collection: 'pages', locale: 'zh-Hant-TW' });
     expect(discoveryFileOf('/atom/pages.zh-CN.xml')).toEqual({ kind: 'feed', format: 'atom', collection: 'pages', locale: 'zh-CN' });
-    expect(discoveryFileOf('/feed/users.xml')).toBeNull();
+    expect(discoveryFileOf('/feed/heopress_briefing_daily__briefings.xml')).toEqual({
+      kind: 'feed',
+      format: 'rss',
+      collection: 'heopress_briefing_daily__briefings',
+      locale: null,
+    });
+    expect(discoveryFileOf('/feed/users.xml')).toEqual({ kind: 'feed', format: 'rss', collection: 'users', locale: null });
     expect(discoveryFileOf('/feed')).toBeNull();
     // Not a shard: looked for as a root file (a reserved name: none exists, so not found).
     expect(discoveryFileOf('/sitemap-0.xml')).toEqual({ kind: 'root-file', filename: 'sitemap-0.xml' });
     expect(discoveryFileOf('/sitemap-3.xml')).toEqual({ kind: 'sitemap', shard: 3 });
     expect(feedPath('atom', 'pages', 'ja')).toBe('/atom/pages.ja.xml');
     expect(discoveryFileOf(feedPath('rss', null, 'zh-CN'))).toEqual({ kind: 'feed', format: 'rss', collection: null, locale: 'zh-CN' });
+  });
+
+  it('plugin collection feeds: the local name when it is unambiguous, the machine name when it is not', () => {
+    const route = (collection: string, title: string) => ({ namespace: 'x', id: collection, kind: 'list' as const, path: '/x', collection, template: 'x', title, pageSize: 20, sitemap: true, llms: true });
+    // One segment per collection: the local name is the address, the machine name is not a second one.
+    expect(pluginFeedCollections([route('heopress_briefing_daily__briefings', 'Briefing')])).toEqual(
+      new Map([['briefings', 'heopress_briefing_daily__briefings']]),
+    );
+    // Two plugins with the same local name: the machine names address them.
+    expect(pluginFeedCollections([route('acme__terms', 'Terms'), route('beta__terms', 'Terms')])).toEqual(
+      new Map([
+        ['acme__terms', 'acme__terms'],
+        ['beta__terms', 'beta__terms'],
+      ]),
+    );
+    // A preset-looking collection with no namespace keeps its own name.
+    expect(pluginFeedCollections([route('glossary', 'Glossary')])).toEqual(new Map([['glossary', 'glossary']]));
   });
 });
 

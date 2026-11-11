@@ -50,7 +50,12 @@ pluginEndpointsRouter.on(['POST', 'PUT', 'GET', 'DELETE', 'PATCH'], '/:plugin/:e
   if (body === null) return c.json({ errors: [{ code: 'BODY_TOO_LARGE', message: 'The body is too large.' }] }, 413);
   const runtime = c.get('runtime');
   const db = c.get('db');
-  const host = new PluginHost({ db, env: c.env as unknown as Record<string, unknown>, enqueueJob: queueJobEnqueuer(runtime?.queue) });
+  const host = new PluginHost({
+    db,
+    env: c.env as unknown as Record<string, unknown>,
+    keys: runtime?.keys,
+    enqueueJob: queueJobEnqueuer(runtime?.queue),
+  });
   const res = await handlePluginEndpoint(
     { db, host, keys: runtime?.keys, rateLimiter: runtime?.rateLimiter },
     {

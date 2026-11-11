@@ -164,6 +164,14 @@ test('the root package.json exposes the three commands', () => {
   }
 });
 
+test('--steps runs only the named steps of the chosen groups, in their order', () => {
+  assert.deepEqual(planSteps('pr', ['static'], { steps: ['typecheck', 'lint'] }), ['typecheck', 'lint']);
+  assert.deepEqual(planSteps('pr', ['static'], { steps: ['lint', 'typecheck'] }), ['typecheck', 'lint'], 'the group order wins');
+  assert.deepEqual(planSteps('pr', ['static'], { steps: ['unit', 'build', 'unit'] }), ['unit', 'build']);
+  assert.throws(() => planSteps('pr', ['static'], { steps: ['db:cms'] }), /no step "db:cms"/);
+  assert.throws(() => planSteps('pr', ['static'], { steps: ['typecheck', 'nope'] }), /no step "nope"/);
+});
+
 test('CI runs every group of quality:pr', () => {
   const ci = fs.readFileSync(path.join(repoRoot, '.github', 'workflows', 'ci.yml'), 'utf8');
   const ran = new Set([...ci.matchAll(/node scripts\/quality\.mjs pr --group (\S+)/g)].map((m) => m[1]));
@@ -273,9 +281,10 @@ test('CI: the shards, their count and the merge agree, and the merge fails close
   for (const must of ['image: postgres:18', 'image: postgres:17', 'HEOPRESS_TEST_PG17_URL', 'summarize_wal = on', 'host replication all all scram-sha-256', 'postgresql-18', 'HEOPRESS_TEST_BACKUP_TOOLS: required', 'HEOPRESS_TEST_PG_BIN_DIR', 'npx tsx scripts/cli.ts backup drill']) {
     assert.ok(shards.includes(must), `db-suites keeps ${must}`);
   }
-  assert.doesNotMatch(shards, /\n {4}if:/, 'a shard is never skipped by a condition');
+  // A shard is never skipped for a code change; the one allowed condition is the docs-only gate, shared by all shards.
+  assert.deepEqual([...shards.matchAll(/\n {4}if: (.+)\n/g)].map((m) => m[1]), ["needs.changes.outputs.code == 'true'"]);
   const merge = job('db-coverage');
-  assert.match(merge, /\n {4}needs: db-suites\n/);
+  assert.match(merge, /\n {4}needs: \[changes, db-suites\]\n/);
   assert.match(merge, /\n {4}if: always\(\)\n/, 'the merge runs whatever happened to the shards');
   assert.match(merge, /SHARDS_RESULT: \$\{\{ needs\.db-suites\.result \}\}[\s\S]*test "\$SHARDS_RESULT" = success/);
   assert.ok(merge.includes(`node scripts/quality.mjs pr --group db --merge-shards ${count}\n`));

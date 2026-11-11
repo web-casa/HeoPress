@@ -10,6 +10,8 @@
     "media": "Media",
     "translations": "Translations",
     "translationMemory": "Translation memory",
+    "translationBacklog": "Translation backlog",
+    "reviewQueue": "Review queue",
     "sources": "Sources",
     "aiReview": "AI review",
     "workbench": "Prompt workbench",

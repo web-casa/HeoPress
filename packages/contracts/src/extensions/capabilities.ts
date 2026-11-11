@@ -16,7 +16,7 @@
  * | `cdc:subscribe:<collection>`        | change-feed events of the collection (`*`: every collection)    |
  * | `seo:structured-data`               | structured-data contributions (merged by the core, P07)         |
  * | `ai:generate`                       | model calls through the site's model gateway (ledger, budget)   |
- * | `ext:<extension point>`             | registering on one of the nine extension points (ADR-0015)      |
+ * | `ext:<extension point>`             | registering on one of the eleven extension points (ADR-0015)    |
  *
  * There is no raw database, environment or host-file access: `db:read`, `db:write`, `service-account`,
  * `env:read`, `queue:enqueue` and a host-less `http:fetch` are refused (`REMOVED_CAPABILITIES`), for official
@@ -27,7 +27,7 @@
  * dialog) and the extension CLI.
  */
 
-/** The nine extension points of ADR-0015, in the order the approval dialog lists them. */
+/** The eleven extension points of ADR-0015, in the order the approval dialog lists them. */
 export const EXTENSION_POINTS = [
   'collections',
   'routes',
@@ -38,6 +38,10 @@ export const EXTENSION_POINTS = [
   'events',
   'admin-panels',
   'build-steps',
+  // HeoPress v1.1: the Studio overview's briefing (spec extensions/briefing-sections).
+  'briefing-sections',
+  // HeoPress v1.2: plugin-provided machine-translation services (spec extensions/translation-services).
+  'translation-services',
 ] as const;
 
 export type ExtensionPoint = (typeof EXTENSION_POINTS)[number];
@@ -175,6 +179,19 @@ function compareCapabilities(a: ParsedCapability, b: ParsedCapability): number {
 /** Normalise a valid list: de-duplicated and sorted (category, then name). Invalid entries are dropped. */
 export function normalizeCapabilities(list: readonly string[]): string[] {
   return validateCapabilities(list).capabilities.map((c) => c.raw);
+}
+
+/**
+ * The secret names a plugin declares (`secrets:<name>` capabilities), de-duplicated and sorted. Used by the host's
+ * secret store, its admin API and Studio, so all three read the manifest's declaration the same way.
+ */
+export function secretNamesOf(capabilities: readonly string[]): string[] {
+  const out = new Set<string>();
+  for (const raw of capabilities) {
+    const parsed = parseCapability(raw);
+    if (isParsedCapability(parsed) && parsed.kind === 'secrets' && parsed.target) out.add(parsed.target);
+  }
+  return [...out].sort();
 }
 
 export interface CapabilityDiff {

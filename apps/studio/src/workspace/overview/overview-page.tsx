@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { AlertTriangle, Check, CheckCircle2, Circle, Clock, FileText, Globe2, ShieldAlert } from 'lucide-react';
+import { Check, CheckCircle2, Circle } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAdminBase } from '@/lib/admin-base';
@@ -9,17 +9,18 @@ import { cn } from '@/lib/cn';
 import { withAdminBase } from '@/lib/keybindings/commands';
 import { activeSiteId } from '@/lib/session/current';
 import { usePermissions } from '@/lib/use-permissions';
-import { isAvailable, siteKey, studioApi, useNetworkAiTraffic, useNetworkSummary, useOverviewFeed, type SiteSummary } from '../api';
+import { isAvailable, siteKey, studioApi, useBriefingSections, useNetworkAiTraffic, useNetworkSummary, useOverviewFeed, type SiteSummary } from '../api';
 import { Sparkline } from '../charts/sparkline';
 import { saveStudioPreferences } from '../shell/preferences';
 import { Page } from '../shell/module-layout';
 import { openOnSite } from '../site-switch';
-import { EmptyState } from '../ui/empty-state';
-import { changeOf, formatDuration, formatNumber } from '../ui/format';
+import { Card } from '../ui/card';
+import { changeOf, formatNumber } from '../ui/format';
 import { PageHeader } from '../ui/page-header';
 import { RelativeTime } from '../ui/relative-time';
 import { Skeleton } from '../ui/skeleton';
-import { incomplete, keyFigures, nextAuditAt, reviewsUnreadable, todoItems, weekOf, type Exclusions, type Scope, type Todo } from './model';
+import { Briefing } from './briefing';
+import { briefingOf, incomplete, keyFigures, nextAuditAt, weekOf, type Exclusions, type Scope } from './model';
 
 interface SiteAiReport {
   totals: { crawler: number; referral: number };
@@ -34,7 +35,10 @@ function useSiteAi(days: number) {
   });
 }
 
-/** Overview (spec studio/overview): what needs you, key figures, the week, recent activity, the setup checklist. */
+/**
+ * Overview (spec studio/overview): key figures, the three-section briefing (v1.1; spec studio/briefing), the week,
+ * and the setup checklist.
+ */
 export function OverviewPage() {
   const { t, i18n } = useTranslation(['overview', 'common']);
   const lang = i18n.language;
@@ -60,14 +64,31 @@ export function OverviewPage() {
   const network7 = useNetworkAiTraffic(7, scope.kind === 'all');
   const network30 = useNetworkAiTraffic(30, scope.kind === 'all');
   const status = useQuery({ queryKey: siteKey('service-status'), queryFn: studioApi.serviceStatus, enabled: isAdmin, retry: false });
+  // The plugins' briefing sections are the active site's only, so another scope neither reads nor shows them.
+  const sections = useBriefingSections(scope.kind === 'current');
   const prefs = useQuery({ queryKey: ['me', 'preferences'], queryFn: () => getApiClient().me.getPreferences() });
   const qc = useQueryClient();
 
+  // Failed jobs get their own "needs attention" row, with the real count: service alerts must not count them too.
   const alerts = status.data
     ? Object.values(status.data.site).filter((c) => c.status === 'failed').length +
-      (status.data.instance ? Object.values(status.data.instance.services).filter((s) => s === 'unhealthy').length + (status.data.instance.failedJobs24h ? 1 : 0) : 0)
+      (status.data.instance ? Object.values(status.data.instance.services).filter((s) => s === 'unhealthy').length : 0)
     : 0;
-  const todos = todoItems({ scope, alerts, sites: scoped, feed: scope.kind === 'current' ? feed.data : undefined });
+  const failedJobs = status.data?.instance?.failedJobs24h ?? null;
+  const services = status.data?.instance?.services ?? null;
+  const unreviewed =
+    scope.kind === 'current'
+      ? (feed.data?.reviews?.count ?? 0)
+      : scoped.reduce((n, s) => n + (isAvailable(s) && typeof s.pendingReviews === 'object' ? s.pendingReviews.count : 0), 0);
+  const briefing = briefingOf({
+    scope,
+    alerts,
+    failedJobs,
+    services,
+    sites: scoped,
+    feed: scope.kind === 'current' ? feed.data : undefined,
+    unreviewed,
+  });
   const figures = keyFigures(scoped);
 
   const crawlerTrend = scope.kind === 'all' ? network7.data?.byDay.map((d) => d.training + d.search + d.userFetch) : ai7.data?.byDay.map((d) => d.training + d.search + d.userFetch);
@@ -76,7 +97,6 @@ export function OverviewPage() {
   const referralChange = scope.kind === 'all' ? changeOf(network30.data?.totals.referral ?? 0, network30.data?.previousTotals?.referral) : changeOf(ai30.data?.totals.referral ?? 0, ai30.data?.previousTotals?.referral);
 
   const nextAudit = nextAuditAt(scoped);
-  const unreadableReviews = scope.kind === 'current' ? 0 : reviewsUnreadable(scoped);
   const go = (path: string, siteId?: string) => {
     if (siteId && siteId !== currentId) void openOnSite(siteId, path);
     else void navigate({ to: withAdminBase(adminBase, path) as never });
@@ -113,105 +133,52 @@ export function OverviewPage() {
         <Kpi label={t('kpi.attention')} value={summary.isLoading ? null : formatNumber(figures.attention, lang)} note={<ExclusionNote e={{ ...figures.exclusions, noPermission: 0, partial: 0 }} />} />
       </section>
 
-      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <Card title={t('todo.title')}>
-          {summary.isLoading ? (
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-12" />
-              <Skeleton className="h-12" />
-            </div>
-          ) : todos.length === 0 ? (
-            <EmptyState
-              icon={CheckCircle2}
-              title={t('todo.empty')}
-              body={
-                nextAudit ? (
-                  <>
-                    {t('todo.nextAudit', { when: '' })}
-                    <RelativeTime value={nextAudit} />
-                  </>
-                ) : undefined
-              }
-            />
-          ) : (
-            <ul className="flex flex-col divide-y divide-line">
-              {todos.map((todo) => (
-                <TodoRow key={todo.kind} todo={todo} scope={scope} sites={scoped} onGo={go} />
-              ))}
-            </ul>
-          )}
-          {!summary.isLoading && unreadableReviews > 0 ? <p className="mt-2 t-aux">{t('common:sitesExcluded.noPermission', { count: unreadableReviews })}</p> : null}
-        </Card>
+      <Briefing model={briefing} scope={scope} sites={scoped} loading={summary.isLoading} nextAudit={nextAudit} sections={sections.data} onGo={go} />
 
-        <div className="flex flex-col gap-4">
-          {scope.kind === 'current' && setup && !setupDone && !setupHidden ? (
-            <Card
-              title={t('setup.title')}
-              action={
-                <button
-                  type="button"
-                  className="rounded-ctl px-2 py-1 text-[12.5px] text-dim hover:bg-panel-2"
-                  onClick={() => {
-                    void saveStudioPreferences({ setupChecklistHidden: true }).then(() => qc.invalidateQueries({ queryKey: ['me', 'preferences'] }));
-                  }}
-                >
-                  {t('setup.hide')}
-                </button>
-              }
-            >
-              <ul className="flex flex-col gap-2">
-                {(
-                  [
-                    ['domain', setup.domainVerified, '/sites/domains'],
-                    ['article', setup.firstArticlePublished, '/content'],
-                    ['crawlers', setup.crawlerPolicySet, '/seo/crawlers'],
-                    ['members', setup.membersInvited, '/settings/members'],
-                  ] as const
-                ).map(([key, done, to]) => (
-                  <li key={key}>
-                    <Link to={withAdminBase(adminBase, to) as never} className="flex items-center gap-2 rounded-ctl px-1 py-1 text-[13.5px] hover:bg-panel-2">
-                      {done ? <CheckCircle2 className="h-4 w-4 text-ok" aria-hidden="true" /> : <Circle className="h-4 w-4 text-icon" aria-hidden="true" />}
-                      <span className={cn(done && 'text-dim line-through')}>{t(`setup.${key}`)}</span>
-                      {done ? <span className="sr-only">{t('setup.done')}</span> : null}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ) : null}
+      {scope.kind === 'current' ? (
+        <div className="mt-4 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <Card title={t('week.title')}>
+            <WeekCalendar days={week.days} items={feed.data?.week ?? []} loading={feed.isLoading} />
+          </Card>
 
-          {scope.kind === 'current' ? (
-            <Card title={t('activity.title')}>
-              {feed.isLoading ? (
-                <Skeleton className="h-24" />
-              ) : !feed.data?.activity.length ? (
-                <p className="t-aux">{t('activity.empty')}</p>
-              ) : (
-                <ul className="flex flex-col gap-2.5">
-                  {feed.data.activity.slice(0, 8).map((a) => (
-                    <li key={`${a.kind}:${a.itemId}:${a.at}`} className="flex items-start gap-2 text-[13px]">
-                      <span className={cn('mt-1 h-2 w-2 shrink-0 rounded-full', a.kind === 'published' ? 'bg-ok' : a.kind === 'rejected' ? 'bg-bad' : 'bg-warn')} aria-hidden="true" />
-                      <span className="min-w-0 flex-1">
-                        <Link to={withAdminBase(adminBase, `/content/${a.collection}/${a.itemId}`) as never} className="block truncate font-medium hover:underline">
-                          {a.title}
-                        </Link>
-                        <span className="t-aux">
-                          {t(`activity.${a.kind}`)} · <RelativeTime value={a.at} />
-                        </span>
-                      </span>
+          <div className="flex flex-col gap-4">
+            {setup && !setupDone && !setupHidden ? (
+              <Card
+                title={t('setup.title')}
+                action={
+                  <button
+                    type="button"
+                    className="rounded-ctl px-2 py-1 text-[12.5px] text-dim hover:bg-panel-2"
+                    onClick={() => {
+                      void saveStudioPreferences({ setupChecklistHidden: true }).then(() => qc.invalidateQueries({ queryKey: ['me', 'preferences'] }));
+                    }}
+                  >
+                    {t('setup.hide')}
+                  </button>
+                }
+              >
+                <ul className="flex flex-col gap-2">
+                  {(
+                    [
+                      ['domain', setup.domainVerified, '/sites/domains'],
+                      ['article', setup.firstArticlePublished, '/content'],
+                      ['crawlers', setup.crawlerPolicySet, '/seo/crawlers'],
+                      ['members', setup.membersInvited, '/settings/members'],
+                    ] as const
+                  ).map(([key, done, to]) => (
+                    <li key={key}>
+                      <Link to={withAdminBase(adminBase, to) as never} className="flex items-center gap-2 rounded-ctl px-1 py-1 text-[13.5px] hover:bg-panel-2">
+                        {done ? <CheckCircle2 className="h-4 w-4 text-ok" aria-hidden="true" /> : <Circle className="h-4 w-4 text-icon" aria-hidden="true" />}
+                        <span className={cn(done && 'text-dim line-through')}>{t(`setup.${key}`)}</span>
+                        {done ? <span className="sr-only">{t('setup.done')}</span> : null}
+                      </Link>
                     </li>
                   ))}
                 </ul>
-              )}
-            </Card>
-          ) : null}
+              </Card>
+            ) : null}
+          </div>
         </div>
-      </div>
-
-      {scope.kind === 'current' ? (
-        <Card title={t('week.title')} className="mt-4">
-          <WeekCalendar days={week.days} items={feed.data?.week ?? []} loading={feed.isLoading} />
-        </Card>
       ) : null}
 
       <p className="mt-4 text-[12.5px]">
@@ -220,75 +187,6 @@ export function OverviewPage() {
         </Link>
       </p>
     </Page>
-  );
-}
-
-function TodoRow({ todo, scope: s, sites: scopeSites, onGo }: { todo: Todo; scope: Scope; sites: SiteSummary[]; onGo: (path: string, siteId?: string) => void }) {
-  const { t, i18n } = useTranslation(['overview', 'common']);
-  const lang = i18n.language;
-  const singleSite = s.kind === 'site' ? s.siteId : undefined;
-  const icon = { alerts: ShieldAlert, domains: Globe2, auditErrors: AlertTriangle, reviews: FileText, auditWarnings: AlertTriangle }[todo.kind];
-  const Icon = icon;
-  const tone = todo.kind === 'alerts' || todo.kind === 'domains' || todo.kind === 'auditErrors' ? 'text-bad' : 'text-warn';
-  const [picking, setPicking] = useState(false);
-  if (todo.unavailable) {
-    return (
-      <li className="flex items-center gap-3 py-3">
-        <Clock className="h-4 w-4 text-icon" aria-hidden="true" />
-        <span className="text-[13.5px]">{t(todo.unavailable === 'mfa_required' ? 'todo.mfa' : 'todo.unavailable')}</span>
-        {todo.unavailable === 'mfa_required' && singleSite ? (
-          <button type="button" className="ml-auto text-[13px] text-brand hover:underline" onClick={() => onGo('/overview', singleSite)}>
-            {t('common:switchAndVerify')}
-          </button>
-        ) : null}
-      </li>
-    );
-  }
-  const title =
-    todo.kind === 'reviews'
-      ? t('todo.reviews', { count: todo.count })
-      : todo.kind === 'alerts'
-        ? t('todo.alerts', { count: todo.count })
-        : todo.kind === 'domains'
-          ? t('todo.domains', { count: todo.count })
-          : todo.kind === 'auditErrors'
-            ? t('todo.auditErrors', { count: todo.count })
-            : t('todo.auditWarnings', { count: todo.count });
-  let detail: ReactNode = null;
-  if (todo.oldest) detail = t('todo.oldest', { title: todo.oldest.title, wait: formatDuration(todo.oldest.waitSeconds, lang) });
-  else if (todo.kind === 'reviews' && todo.longestWaitSeconds != null) {
-    detail = [t('todo.longestWait', { wait: formatDuration(todo.longestWaitSeconds, lang) }), s.kind === 'all' && todo.sites ? t('todo.acrossSites', { count: todo.sites }) : null].filter(Boolean).join(' · ');
-  } else if (todo.detail?.host) {
-    detail = todo.detail.code === 'domain_pending' ? t('todo.domainPending', { host: todo.detail.host }) : t('todo.domainFailed', { host: todo.detail.host, detail: todo.detail.detail ?? '' });
-  } else if (todo.kind === 'alerts') detail = t('todo.alertsHint');
-  const path = { alerts: '/monitoring', domains: '/sites/domains', auditErrors: '/audit', reviews: '/content?view=pending', auditWarnings: '/audit' }[todo.kind];
-  const reviewSites = scopeSites.filter((x) => isAvailable(x) && typeof x.pendingReviews === 'object' && x.pendingReviews.count > 0);
-  const onClick = () => {
-    if (s.kind === 'all' && todo.kind === 'reviews') setPicking((p) => !p);
-    else onGo(path, singleSite);
-  };
-  return (
-    <li className="py-1">
-      <button type="button" onClick={onClick} className="flex w-full items-start gap-3 rounded-ctl px-2 py-2.5 text-left hover:bg-panel-2" aria-expanded={s.kind === 'all' && todo.kind === 'reviews' ? picking : undefined}>
-        <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', tone)} aria-hidden="true" />
-        <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-medium">{title}</span>
-          {detail ? <span className="block truncate t-aux">{detail}</span> : null}
-        </span>
-      </button>
-      {picking ? (
-        <ul aria-label={t('todo.pickSite')} className="mb-2 ml-9 flex flex-col gap-1">
-          {reviewSites.map((x) => (
-            <li key={x.id}>
-              <button type="button" className="flex w-full items-center justify-between rounded-ctl px-2 py-1.5 text-[13px] hover:bg-panel-2" onClick={() => onGo('/content?view=pending', x.id)}>
-                <span>{x.name}</span>
-                <span className="t-num text-dim">{isAvailable(x) && typeof x.pendingReviews === 'object' ? x.pendingReviews.count : ''}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </li>
   );
 }
 
@@ -327,18 +225,6 @@ function ScopeSwitch({ scope, onChange, sites, currentId }: { scope: Scope; onCh
         </select>
       ) : null}
     </div>
-  );
-}
-
-function Card({ title, action, children, className }: { title: string; action?: ReactNode; children: ReactNode; className?: string }) {
-  return (
-    <section className={cn('rounded-card border border-line bg-panel p-4', className)} aria-label={title}>
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="t-section">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </section>
   );
 }
 

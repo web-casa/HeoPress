@@ -262,16 +262,19 @@ function stripCredentials(headers: Headers, extra: string[]): void {
 }
 
 function limitBody(res: Response, maxBytes: number): Response {
-  // Only real Responses carry a stream to cap (test doubles pass through).
-  if (!(res instanceof Response)) return res;
-  const declared = Number(res.headers.get('content-length'));
+  // The cap keys on the stream, not on `instanceof Response`: a Response from another implementation (undici's own
+  // class, another realm) carries the bytes just the same and would otherwise pass uncapped. A test double without a
+  // readable body has nothing to cap and passes through.
+  const body = res.body as unknown as { pipeThrough?: unknown; cancel?: () => void } | null;
+  // A test double may carry no headers at all; the real boundary always does.
+  const declared = Number(res.headers?.get?.('content-length') ?? Number.NaN);
   if (Number.isFinite(declared) && declared > maxBytes) {
-    void res.body?.cancel();
+    void body?.cancel?.();
     throw new OutboundBlockedError(`response body of ${declared} bytes exceeds the ${maxBytes}-byte limit`, { afterResponse: true });
   }
-  if (!res.body) return res;
+  if (!body || typeof body.pipeThrough !== 'function') return res;
   let seen = 0;
-  const capped = res.body.pipeThrough(
+  const capped = (body as ReadableStream<Uint8Array>).pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
         seen += chunk.byteLength;

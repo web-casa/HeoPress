@@ -464,4 +464,126 @@ describe.skipIf(!hasDbIntegrationUrl)('content pipeline — DB integration', () 
       expect(await fixtures.select().from(contentVersions).where(eq(contentVersions.itemId, zhId))).toHaveLength(0);
     });
   });
+
+  describe('briefing-style rewrite (P09)', () => {
+    const brief = {
+      thesis: 'The harbour reopened after the storm, and the ferry timetable is the proof.',
+      audience: 'Commuters in Example Town.',
+      angle: 'What the timetable means for the morning crossing.',
+      sections: [
+        { heading: 'What changed', keyPoints: ['The first ferry leaves at 06:10'], sourceIds: [] as string[] },
+        { heading: 'What it means', keyPoints: ['Ten minutes more at the office'], sourceIds: [] as string[] },
+      ],
+      tone: 'Plain and practical.',
+      wordBudget: 900,
+      seo: { title: 'Example Town ferries after the storm', description: 'The new timetable, and what the morning crossing gains.', keywords: ['ferries', 'Example Town'] },
+    };
+    /** The brief naming `doc` as its source, which is what makes its article citable. */
+    const briefFor = (doc: string) => ({ ...brief, sections: brief.sections.map((s, i) => (i === 0 ? { ...s, sourceIds: [doc] } : s)) });
+    const answerWith = (value: unknown) => JSON.stringify(value);
+    const payloadOf = (req: ChatCallInput) => JSON.parse(String(req.messages[0]!.content)) as Record<string, unknown>;
+
+    it('generates the brief, then writes the draft from it; both are inspectable on the run record and the draft', async () => {
+      const src = await addSource('Wire', licensed);
+      const doc = await register(src, '/brief', 'Harbour season', paras(3));
+      const expected = briefFor(doc);
+      answers.value_assessment = () => answerWith({ score: 90, reasons: ['Timely'] });
+      answers.brief = (req) => {
+        expect(String(req.messages[0]!.content)).toContain(doc);
+        return answerWith(expected);
+      };
+      answers.write = (req) => {
+        // The article is written from the brief, not from a free-form instruction.
+        expect(payloadOf(req)).toMatchObject({ brief: expected });
+        expect(req.callKey).toContain(':write:');
+        return answerWith({ title: 'From the brief', summary: 'Summary.', bodyHtml: '<p>The ferry leaves at 06:10.</p>', citations: [doc] });
+      };
+      // The new mode is a Flows operation like the others (this is how a production is started).
+      const run = await runFlow({ nodes: [{ id: 'br', key: 'pipeline:brief', options: { targetLocale: 'en' } }] }, { sourceDocumentIds: [doc] }, { db, siteId, pipeline: { gateway } });
+      expect(run.status, run.error).toBe('success');
+      const out = run.steps['br'] as { productionId: string; status: string; itemId: string; duplicate: boolean };
+      expect(out).toMatchObject({ status: 'drafted', duplicate: false });
+      expect(capsCalled()).toEqual(['value_assessment', 'brief', 'write']);
+
+      const [prod] = await fixtures.select().from(aiProductions).where(eq(aiProductions.id, out.productionId));
+      expect(prod!.mode).toBe('brief');
+      const steps = await stepsOf(out.productionId);
+      const briefStep = steps.find((s) => s.step === 'brief')!;
+      expect(briefStep).toMatchObject({ capability: 'brief', promptVersion: 'brief@1', outcome: 'ok' });
+      expect(briefStep.detail).toMatchObject({ attempt: 1, brief: expected });
+      const writeStep = steps.find((s) => s.step === 'write')!;
+      expect(writeStep).toMatchObject({ capability: 'write', promptVersion: 'write@1', outcome: 'ok' });
+      expect(writeStep.detail).toEqual({});
+
+      const item = await itemOf(out.itemId);
+      expect(item.status).toBe('draft');
+      const data = item.data as Record<string, unknown>;
+      expect(data.brief).toEqual(expected);
+      expect(data.title).toBe('From the brief');
+      expect(String(data.body)).toContain('href="https://wire.example.com/brief"');
+    });
+
+    it('repairs one invalid answer: the second call is told the validation errors and the draft is written', async () => {
+      const src = await addSource('Wire', licensed);
+      const doc = await register(src, '/brief-repair', 'Harbour season', paras(2));
+      const expected = briefFor(doc);
+      answers.value_assessment = () => answerWith({ score: 90, reasons: [] });
+      let n = 0;
+      answers.brief = (req) => {
+        n += 1;
+        if (n === 1) return answerWith({ ...expected, seo: { ...expected.seo, keywords: [] } });
+        // The repair attempt carries what was wrong; the rejected answer is data, not instructions.
+        expect(req.systemPrompt).toContain('seo.keywords');
+        expect(String(payloadOf(req).previousAnswer)).toContain('keywords');
+        return answerWith(expected);
+      };
+      answers.write = () => answerWith({ title: 'Repaired', bodyHtml: '<p>Body.</p>', citations: [doc] });
+      const res = await pipeline().produce({ mode: 'brief', sourceDocumentIds: [doc], targetLocale: 'en' });
+      expect(res.status, res.reason ?? '').toBe('drafted');
+      expect(capsCalled()).toEqual(['value_assessment', 'brief', 'brief', 'write']);
+      const steps = await stepsOf(res.productionId);
+      expect(steps.filter((s) => s.step === 'brief').map((s) => s.outcome)).toEqual(['failed', 'repaired']);
+      expect((await itemOf(res.itemId!)).data).toMatchObject({ brief: expected });
+    });
+
+    it('two failed answers end the production at once with the typed reason (invalid JSON, then a schema violation)', async () => {
+      const src = await addSource('Wire', licensed);
+      const doc = await register(src, '/brief-bad', 'Harbour season', paras(2));
+      const expected = briefFor(doc);
+      answers.value_assessment = () => answerWith({ score: 90, reasons: [] });
+      let n = 0;
+      answers.brief = () => {
+        n += 1;
+        return n === 1 ? 'not json at all' : answerWith({ ...expected, sections: [] });
+      };
+      answers.write = () => {
+        throw new Error('the write must not run without a valid brief');
+      };
+      const res = await pipeline().produce({ mode: 'brief', sourceDocumentIds: [doc], targetLocale: 'en' });
+      expect(res).toMatchObject({ status: 'failed', reason: 'brief_invalid', itemId: null });
+      expect(capsCalled()).toEqual(['value_assessment', 'brief', 'brief']);
+      const steps = await stepsOf(res.productionId);
+      const briefSteps = steps.filter((s) => s.step === 'brief');
+      expect(briefSteps.map((s) => s.outcome)).toEqual(['failed', 'failed']);
+      expect(briefSteps[0]!.detail).toMatchObject({ attempt: 1, errors: ['the answer is not a JSON object'] });
+      expect(JSON.stringify(briefSteps[1]!.detail)).toContain('sections');
+      // A second trigger does not spend more model calls: the production is final, not scheduled for a retry.
+      expect(await pipeline().produce({ mode: 'brief', sourceDocumentIds: [doc], targetLocale: 'en' })).toMatchObject({ duplicate: true, status: 'failed' });
+      expect(capsCalled()).toHaveLength(3);
+    });
+
+    it('the article may only cite the sources the brief rests on', async () => {
+      const src = await addSource('Wire', licensed);
+      // Both are sources of this production; the brief rests on `doc` only, so `other` may not be cited.
+      const other = await register(src, '/brief-other', 'Another wire story', `${paras(2)}<p id="distinct">Distinct.</p>`);
+      const doc = await register(src, '/brief-cite', 'Harbour season', paras(2));
+      expect(other).not.toBe(doc);
+      answers.value_assessment = () => answerWith({ score: 90, reasons: [] });
+      answers.brief = () => answerWith(briefFor(doc));
+      answers.write = () => answerWith({ title: 'Outside the brief', bodyHtml: '<p>Body.</p>', citations: [other] });
+      const res = await pipeline().produce({ mode: 'brief', sourceDocumentIds: [doc, other], targetLocale: 'en' });
+      expect(res).toMatchObject({ status: 'retry_scheduled', itemId: null });
+      expect((await productions())[0]!.statusReason).toContain('NO_CITATIONS');
+    });
+  });
 });

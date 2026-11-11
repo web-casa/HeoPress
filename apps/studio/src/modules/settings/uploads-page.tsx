@@ -183,4 +183,3 @@ function friendlyError(err: unknown): string {
 }
 
 // Re-exported type for callers that want the shape.
-export type { UploadConfigResource };

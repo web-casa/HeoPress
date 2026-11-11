@@ -37,6 +37,7 @@ const PALETTE_COMMANDS: readonly PaletteCommand[] = [
   { id: 'go.aiReview', kind: 'jump', module: 'content', label: 'nav:content.aiReview', to: '/content/ai-review', keywords: 'ai gate quality review queue veto' },
   { id: 'go.workbench', kind: 'jump', module: 'content', label: 'nav:content.workbench', to: '/content/workbench', keywords: 'ai prompt trial' },
   { id: 'go.flowDrafts', kind: 'jump', module: 'content', label: 'nav:content.flowDrafts', to: '/content/flow-drafts', adminOnly: true, keywords: 'ai agent flow approval' },
+  { id: 'go.reviewQueue', kind: 'jump', module: 'content', label: 'nav:content.reviewQueue', to: '/content/review-queue', keywords: 'stale outdated needs update review queue' },
   { id: 'go.translations', kind: 'jump', module: 'content', label: 'nav:content.translations', to: '/content/translations', keywords: 'i18n' },
   { id: 'go.topology', kind: 'jump', module: 'sites', label: 'nav:sites.topology', to: '/sites' },
   { id: 'go.sitesList', kind: 'jump', module: 'sites', label: 'nav:sites.list', to: '/sites/list', keywords: 'sites network' },

@@ -65,6 +65,7 @@ import {
   ItemAlternate,
   TranslationLocaleStatus,
   TranslationGroupResource,
+  TimelinessMark,
   SiteContentSettingsResource,
   SiteIdentityInput,
   SiteIdentityResource,
@@ -92,6 +93,7 @@ import {
   ActivityResource,
   ExtensionResource,
   ExtensionUpgradeResult,
+  PluginSecretResource,
   PluginCollectionResource,
   PluginCollectionsExport,
   DeploymentTargetResource,
@@ -285,6 +287,8 @@ export function legacyRest() {
         if (params.offset !== undefined)
           qs.set("offset", String(params.offset));
         if (params.status) qs.set("status", params.status);
+        // Timeliness mark filter (v1.1; spec content/timeliness-marks).
+        if (params.needsUpdate) qs.set("needs_update", "true");
         const s = qs.toString();
         return s ? `?${s}` : "";
       }
@@ -401,6 +405,27 @@ export function legacyRest() {
             `${base}/${id}/pins/${encodeURIComponent(field)}`,
             { method: "DELETE" },
           ),
+        /**
+         * Mark the item as needing an update (HeoPress v1.1; spec
+         * content/timeliness-marks): a short reason and an optional deadline,
+         * based on the version you read. Needs update permission; the mark is
+         * kept by ordinary content writes. 428 without `expectedVersion`, 409
+         * VERSION_CONFLICT when the item moved on.
+         */
+        markTimeliness: (
+          id: string,
+          input: { reason: string; dueAt?: string | null; expectedVersion: number },
+        ) =>
+          client.rawRequest<TimelinessMark>(`${base}/${id}/timeliness`, {
+            method: "PUT",
+            body: JSON.stringify(input),
+          }),
+        /** Clear the timeliness mark; version-checked like `markTimeliness`. */
+        clearTimeliness: (id: string, opts: { expectedVersion: number }) =>
+          client.rawRequest<TimelinessMark>(`${base}/${id}/timeliness`, {
+            method: "DELETE",
+            headers: { "If-Match": `"${opts.expectedVersion}"` },
+          }),
         // Content versions — named parallel draft branches (content-versioning).
         versions: {
           list: (id: string) =>
@@ -1007,6 +1032,23 @@ export function legacyRest() {
         client.rawRequest<{ deleted: string[] }>(`/api/v1/extensions/collections/${encodeURIComponent(namespace)}/purge`, {
           method: "POST",
           body: JSON.stringify(input),
+        }),
+      /**
+       * The plugin's secret names (HeoPress v1.2, spec extensions/plugin-secrets). The API returns names and a
+       * `configured` flag only — never a value, a fragment of one or the ciphertext.
+       */
+      listSecrets: (id: string) =>
+        client.rawRequest<PluginSecretResource[]>(`/api/v1/extensions/${encodeURIComponent(id)}/secrets`),
+      /** Set or rotate one secret; the response still carries only the name and its configured flag. */
+      setSecret: (id: string, name: string, value: string) =>
+        client.rawRequest<PluginSecretResource>(`/api/v1/extensions/${encodeURIComponent(id)}/secrets/${encodeURIComponent(name)}`, {
+          method: "PUT",
+          body: JSON.stringify({ value }),
+        }),
+      /** Remove the configured value; a name that was never configured answers 404. */
+      deleteSecret: (id: string, name: string) =>
+        client.rawRequest<null>(`/api/v1/extensions/${encodeURIComponent(id)}/secrets/${encodeURIComponent(name)}`, {
+          method: "DELETE",
         }),
       /** Confirm the capabilities of a plugin migrated from the pre-P12 permission model. */
       confirmPermissions: (id: string, approvedCapabilities: string[]) =>

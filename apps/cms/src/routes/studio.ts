@@ -7,12 +7,14 @@
  *   GET /network-summary                 the cross-site read-only summary (spec studio/network-summary)
  *   GET /network-summary/ai-traffic?days= its AI traffic series over 7, 30 or 90 days
  *   GET /overview/feed?from=&to=          the current site's overview feed (spec studio/overview)
+ *   POST /overview/briefing/draft         turn the current briefing into an editable draft (spec studio/briefing-draft)
  *   GET /events, /events/stats            the site's event stream and its counts (spec ops/event-log)
  *   GET /service-status                   status cards of Logs & monitoring
  *   GET /content/items, …/:id/history     the review workspace's lists and an item's review history
  *   /consumers…                          event consumer operations and state reconciliation (P11, below)
  */
 import { Hono, type Context } from 'hono';
+import { z } from 'zod';
 import { servicesWithin } from '../services/ops/service-status';
 import { eq } from 'drizzle-orm';
 import { authSessions, users } from '@heopress/database';
@@ -23,8 +25,10 @@ import { consumeRateLimit, RATE_LIMIT_UNAVAILABLE_RETRY_SECONDS } from '../middl
 import { isFrontendAudience } from '../services/auth/token-audience';
 import { networkAiTraffic, networkSummary, type SummaryPrincipal } from '../services/studio/network-summary';
 import { overviewFeed } from '../services/studio/overview-feed';
+import { createBriefingDraft } from '../services/studio/briefing-draft';
 import { CONTENT_VIEWS, contentList, reviewHistory, type ContentView } from '../services/studio/content-list';
 import { itemServiceForRequest } from '../services/item-service-factory';
+import { ItemServiceError } from '../services/item-service-error';
 import { EVENT_SOURCES, eventStats, readEvents, type EventFilter, type EventLevel, type EventSource } from '../services/ops/event-stream';
 import { auditSites, reachabilitySites } from '@heopress/database';
 import { linkScanOf } from '../services/site-network/link-graph';
@@ -147,6 +151,56 @@ studioRouter.get('/overview/feed', async (c) => {
   const data = await overviewFeed(c.get('db'), c.get('siteId'), permissionServiceForRequest(c), window);
   c.header('Cache-Control', 'no-store');
   return c.json({ data });
+});
+
+const briefingDraftSchema = z.object({
+  collection: z.string().trim().min(1).max(64).optional(),
+  period: z.enum(['day', 'week']).optional(),
+});
+
+/**
+ * The briefing's draft (v1.1 backlog P12): turn the current site's briefing into an editable draft item. The item
+ * service the neighbouring routes use enforces `create` and owns the write (revisions, Change Feed, hooks); the draft
+ * carries `briefingDraftKey`, so the second call of the day returns it instead of making a duplicate.
+ */
+studioRouter.post('/overview/briefing/draft', async (c) => {
+  const who = await studioPrincipal(c);
+  if ('refusal' in who) return who.refusal;
+  let raw: unknown;
+  try {
+    raw = await c.req.json();
+  } catch {
+    return c.json({ errors: [{ code: 'VALIDATION', message: 'Expected a JSON object.' }] }, 400);
+  }
+  const parsed = briefingDraftSchema.safeParse(raw ?? {});
+  if (!parsed.success) {
+    return c.json({ errors: parsed.error.issues.map((i) => ({ code: 'VALIDATION', message: i.message })) }, 400);
+  }
+  const { principal } = who;
+  try {
+    const result = await createBriefingDraft({
+      db: c.get('db'),
+      siteId: c.get('siteId'),
+      permissions: permissionServiceForRequest(c),
+      items: itemServiceForRequest(c),
+      collection: parsed.data.collection,
+      period: parsed.data.period,
+      audit: {
+        actorEmail: principal.user.email,
+        ip: principal.req.ip,
+        userAgent: c.req.header('user-agent') ?? null,
+        requestId: c.get('requestId') ?? null,
+        userId: principal.user.id,
+      },
+    });
+    c.header('Cache-Control', 'no-store');
+    return c.json({ data: result.item, created: result.created }, result.created ? 201 : 200);
+  } catch (err) {
+    if (err instanceof ItemServiceError) {
+      return c.json({ errors: [{ code: err.code, message: err.message }] }, err.status as 400);
+    }
+    throw err;
+  }
 });
 
 /** Logs & monitoring is for site administrators (spec ops/event-log); members and API keys get 403. */

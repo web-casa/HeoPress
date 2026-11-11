@@ -42,7 +42,9 @@ describe('no external or bundled fonts', () => {
     expect(offenders([path.join(dist, 'index.html'), ...css.filter((f) => !readFileSync(f, 'utf8').includes('codicon'))])).toEqual([]);
     // The editor's stylesheet declares only that face, and the first screen's stylesheet none.
     for (const f of css.filter((f) => readFileSync(f, 'utf8').includes('codicon'))) {
-      expect(readFileSync(f, 'utf8').match(/@font-face\s*\{[^}]*\}/g)?.every((face) => /codicon/.test(face)), path.relative(studio, f)).toBe(true);
+      // monaco 0.57 references the codicon font by url() without an inline @font-face: nothing to check then.
+      const faces = readFileSync(f, 'utf8').match(/@font-face\s*\{[^}]*\}/g) ?? [];
+      expect(faces.every((face) => /codicon/.test(face)), path.relative(studio, f)).toBe(true);
       expect(readFileSync(path.join(dist, 'index.html'), 'utf8')).not.toContain(path.basename(f));
     }
   });

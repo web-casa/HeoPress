@@ -698,7 +698,7 @@ function groupPreviewRows(rows: EffectiveRow[]): Array<{
 }
 
 /** Split a textarea of origins into a clean list; blank lines are dropped. */
-export function parseOriginList(value: string): string[] {
+function parseOriginList(value: string): string[] {
   return Array.from(
     new Set(
       value

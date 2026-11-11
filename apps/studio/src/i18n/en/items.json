@@ -751,5 +751,21 @@
     "bodyFields": "Not deleted: someone changed this item since you opened it ({{fields}}; it is now version {{version}}). Reload it to see the change, then decide again.",
     "reload": "Reload the item",
     "keep": "Keep this page"
+  },
+  "timeliness": {
+    "heading": "Timeliness",
+    "badge": "Needs update",
+    "marked": "marked {{date}}",
+    "due": "due {{date}}",
+    "reason": "Why does it need an update?",
+    "reasonPlaceholder": "For example: the prices in this article are out of date",
+    "dueAt": "Update by (optional)",
+    "mark": "Mark as needs update",
+    "save": "Save mark",
+    "cancel": "Cancel",
+    "clear": "Clear mark",
+    "notMarked": "Not marked as needing an update.",
+    "failed": "Could not change the timeliness mark.",
+    "filterOnly": "Needs update only"
   }
 }

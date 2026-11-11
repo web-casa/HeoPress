@@ -3,8 +3,9 @@
  * reads what each registered. A plugin takes part in an extension point only when
  *
  *   - it is installed on the site, enabled, and its permissions are approved (not awaiting re-confirmation), and
- *   - it holds the point's capability (`ext:jobs`, `ext:endpoints`, `ext:events`, `ext:admin-panels`); a registration on
- *     an undeclared point is refused by the sandbox and recorded.
+ *   - it holds the point's capability (`ext:jobs`, `ext:endpoints`, `ext:events`, `ext:admin-panels`,
+ *     `ext:briefing-sections`, `ext:translation-services`); a registration on an undeclared point is refused by the sandbox
+ *     and recorded.
  *
  * A pre-publish hook also has to be declared in the manifest (`prePublishHooks`, maintainer decision 2026-10-28): one
  * registered under an undeclared name is refused and recorded, and only the declared ones make a plugin block publishing
@@ -17,21 +18,30 @@
  */
 import { and, eq, sql } from 'drizzle-orm';
 import { extensions, type Database } from '@heopress/database';
+import type { KeyProvider } from '@heopress/runtime';
 import { inSiteScope } from '../../services/site-scope';
 import {
+  BRIEFING_LIMITS,
   EVENT_LIMITS,
   JOB_LIMITS,
   ENDPOINT_LIMITS,
   RUNTIME_NAME,
+  TRANSLATION_LIMITS,
   clampLimit,
   extensionPointCompatible,
   extensionPointRangesOf,
+  briefingSectionsOf,
   incompatibleExtensionPointKeys,
   prePublishHooksOf,
+  translationServicesOf,
+  charsMicrosOf,
+  type ExtensionBriefingSection,
   type ExtensionPoint,
   type ExtensionPointVersionKey,
   type ExtensionPrePublishHook,
+  type ExtensionTranslationService,
   type PluginEndpointKind,
+  type PluginTranslationRequest,
 } from '@heopress/contracts/extensions';
 import { ExtensionAdminSchema, type ExtensionAdmin } from '@heopress/contracts/schemas';
 import type { Bindings } from '../../env';
@@ -40,6 +50,7 @@ import { buildSandboxVerifyOptions } from '../../services/extension-verifier';
 import { itemServiceForSystem } from '../../services/item-service-factory';
 import { AuditLogger } from '../../modules/audit/logger';
 import { PluginStorage, declaredStorageOf } from './storage';
+import { PluginSecretsService } from '../../services/plugin-secrets-service';
 
 export type ExtensionRow = typeof extensions.$inferSelect;
 
@@ -128,6 +139,31 @@ interface PluginPrePublishHook {
   check(item: Readonly<PrePublishSubject>): Promise<unknown> | unknown;
 }
 
+/** A briefing section the plugin registered (HeoPress v1.1, spec extensions/briefing-sections). */
+interface PluginBriefingSection {
+  id: string;
+  title: string;
+  description: string | null;
+  durationMs: number;
+  maxRequests: number;
+  compute(ctx: { siteId: string; signal: AbortSignal }): Promise<unknown> | unknown;
+}
+
+/**
+ * A translation service the plugin registered (HeoPress v1.2, spec extensions/translation-services). Its declared engine,
+ * label and price come from the manifest (what the admin approved), never from the registration.
+ */
+interface PluginTranslationService {
+  id: string;
+  displayName: string;
+  engine: string;
+  /** Micro-units per million characters. */
+  charsMicros: number;
+  durationMs: number;
+  maxRequests: number;
+  translate(request: PluginTranslationRequest): Promise<unknown> | unknown;
+}
+
 const isFn = (v: unknown): v is (...args: never[]) => unknown => typeof v === 'function';
 const obj = (v: unknown): Record<string, unknown> | null => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
 const names = (v: unknown): string[] | null =>
@@ -185,6 +221,94 @@ function readEndpoints(defs: readonly unknown[], problems: string[]): PluginEndp
     });
   }
   return out;
+}
+
+/**
+ * Validated briefing sections of a load: each registered under an id the manifest declares (`briefingSections`), with the
+ * declared title unless the registration overrides it. An undeclared id is refused (its id lands in `refusedSections`):
+ * the admin approved the sections by id, so a section that was never declared never appears.
+ */
+function readBriefingSections(
+  defs: readonly unknown[],
+  declared: readonly ExtensionBriefingSection[],
+  problems: string[],
+): { sections: PluginBriefingSection[]; refusedSections: string[] } {
+  const sections: PluginBriefingSection[] = [];
+  const refusedSections: string[] = [];
+  const declaredById = new Map(declared.map((s) => [s.id, s]));
+  for (const raw of defs) {
+    const d = obj(raw);
+    if (!d || typeof d.id !== 'string' || !RUNTIME_NAME.test(d.id) || !isFn(d.compute)) {
+      problems.push('briefing-sections: a section needs an id ([a-z][a-z0-9-]*) and compute()');
+      continue;
+    }
+    const declaration = declaredById.get(d.id);
+    if (!declaration) {
+      problems.push(`briefing-sections.${d.id}: a section the manifest does not declare (briefingSections) was refused`);
+      refusedSections.push(d.id);
+      continue;
+    }
+    if (sections.some((s) => s.id === d.id)) {
+      problems.push(`briefing-sections.${d.id}: registered twice; the first one is kept`);
+      continue;
+    }
+    const title = typeof d.title === 'string' && d.title.length > 0 && d.title.length <= BRIEFING_LIMITS.titleChars ? d.title : declaration.title;
+    const description =
+      typeof d.description === 'string' && d.description.length > 0 && d.description.length <= BRIEFING_LIMITS.descriptionChars
+        ? d.description
+        : (declaration.description ?? null);
+    sections.push({
+      id: d.id,
+      title,
+      description,
+      durationMs: clampLimit(d.maxDurationMs, BRIEFING_LIMITS.durationMs),
+      maxRequests: clampLimit(d.maxRequests, BRIEFING_LIMITS.requests),
+      compute: d.compute as PluginBriefingSection['compute'],
+    });
+  }
+  return { sections, refusedSections };
+}
+
+/**
+ * Validated translation services of a load: each registered under an id the manifest declares (`translationServices`), with
+ * the declared engine, label and price. An undeclared id is refused (its id lands in `refusedServices`): the admin approved
+ * the services by id, so one that was never declared is never selectable.
+ */
+function readTranslationServices(
+  defs: readonly unknown[],
+  declared: readonly ExtensionTranslationService[],
+  problems: string[],
+): { services: PluginTranslationService[]; refusedServices: string[] } {
+  const services: PluginTranslationService[] = [];
+  const refusedServices: string[] = [];
+  const declaredById = new Map(declared.map((s) => [s.id, s]));
+  for (const raw of defs) {
+    const d = obj(raw);
+    if (!d || typeof d.id !== 'string' || !RUNTIME_NAME.test(d.id) || !isFn(d.translate)) {
+      problems.push('translation-services: a service needs an id ([a-z][a-z0-9-]*) and translate()');
+      continue;
+    }
+    const declaration = declaredById.get(d.id);
+    if (!declaration) {
+      problems.push(`translation-services.${d.id}: a service the manifest does not declare (translationServices) was refused`);
+      refusedServices.push(d.id);
+      continue;
+    }
+    if (services.some((s) => s.id === d.id)) {
+      problems.push(`translation-services.${d.id}: registered twice; the first one is kept`);
+      continue;
+    }
+    services.push({
+      id: d.id,
+      displayName: declaration.displayName,
+      engine: declaration.engine,
+      charsMicros: charsMicrosOf(declaration.pricePerMillionChars),
+      durationMs: clampLimit(d.maxDurationMs, TRANSLATION_LIMITS.durationMs),
+      maxRequests: clampLimit(d.maxRequests, TRANSLATION_LIMITS.requests),
+      translate: d.translate as PluginTranslationService['translate'],
+    });
+  }
+  return { services, refusedServices };
 }
 
 /**
@@ -262,6 +386,14 @@ export interface LoadedPlugin {
   prePublish: PluginPrePublishHook[];
   /** Pre-publish hooks registered under a name the manifest does not declare: refused, recorded, never run. */
   refusedHooks: string[];
+  /** The briefing sections the plugin registered for the Studio overview (declared ids only). */
+  briefingSections: PluginBriefingSection[];
+  /** Briefing sections registered under an id the manifest does not declare: refused and recorded. */
+  refusedSections: string[];
+  /** The machine-translation services the plugin registered (declared ids only). */
+  translationServices: PluginTranslationService[];
+  /** Translation services registered under an id the manifest does not declare: refused and recorded. */
+  refusedTranslationServices: string[];
   /** Malformed or refused registrations that were skipped. */
   problems: string[];
   /** Extension points (and `context`) the manifest declares at a range this instance does not provide. */
@@ -271,6 +403,11 @@ export interface LoadedPlugin {
 export interface PluginHostDeps {
   db: Database;
   env?: Record<string, unknown>;
+  /**
+   * The runtime key provider that opens the site's plugin secrets (HeoPress v1.2, spec extensions/plugin-secrets).
+   * Absent → the default sandbox provides no `secrets` resolver and `ctx.secrets.get` stays unavailable.
+   */
+  keys?: KeyProvider;
   /** Queue a plugin job run (`ctx.jobs.enqueue`); absent → enqueueing fails. */
   enqueueJob?: (job: { siteId: string; extensionName: string; jobName: string; payload: unknown }) => Promise<void>;
   /** Tests: build the sandbox (e.g. to trust `data:` bundles). */
@@ -407,8 +544,18 @@ export class PluginHost {
     const storage = this.storageOf(row, siteId);
     const db = inSiteScope(this.deps.db, siteId);
     const enqueue = this.deps.enqueueJob;
+    const keys = this.deps.keys;
     const sandboxDeps: ExtensionSandboxDeps = {
       actorDataAccess: this.actor(siteId),
+      // The plugin's own secrets on this site (spec extensions/plugin-secrets): the name is gated by the sandbox's
+      // `secrets:<name>` capability, the site and plugin are bound here. A missing row is `null` (the plugin's typed
+      // "not configured"); an unopenable one throws and stays a failure, never a silent "not configured".
+      ...(keys
+        ? {
+            secrets: async (plugin: string, name: string) =>
+              new PluginSecretsService({ db: this.deps.db, siteId, plugin, keys }).resolve(name),
+          }
+        : {}),
       storage: { namespaces: storage.namespaces, open: (ns) => storage.collection(ns) },
       // Read on every call: a change saved in the admin panel applies to the next run without reloading the plugin.
       settings: async () => {
@@ -449,6 +596,8 @@ export class PluginHost {
     const reg = module.registrations ?? new Map<ExtensionPoint, readonly unknown[]>();
     const problems: string[] = [];
     const events = readEvents(reg.get('events') ?? [], prePublishHooksOf(row.manifest), problems);
+    const briefings = readBriefingSections(reg.get('briefing-sections') ?? [], briefingSectionsOf(row.manifest), problems);
+    const translations = readTranslationServices(reg.get('translation-services') ?? [], translationServicesOf(row.manifest), problems);
     const loaded: LoadedPlugin = {
       row,
       siteId,
@@ -461,13 +610,24 @@ export class PluginHost {
       subscriptions: events.subscriptions,
       prePublish: events.prePublish,
       refusedHooks: events.refusedHooks,
+      briefingSections: briefings.sections,
+      refusedSections: briefings.refusedSections,
+      translationServices: translations.services,
+      refusedTranslationServices: translations.refusedServices,
       problems,
       incompatiblePoints: upgradePointsOf(row),
     };
     if (problems.length) console.warn(`[plugins] "${row.name}" on ${siteId}: ${problems.join('; ')}`);
-    // An undeclared pre-publish hook is a refused registration, recorded like any other (spec extensions/permissions).
+    // An undeclared pre-publish hook (or briefing section) is a refused registration, recorded like any other (spec
+    // extensions/permissions).
     for (const hook of events.refusedHooks) {
       await sandboxDeps.onDenied?.({ extensionName: row.name, capability: `prePublishHooks:${hook}`, operation: 'register:pre-publish' });
+    }
+    for (const section of briefings.refusedSections) {
+      await sandboxDeps.onDenied?.({ extensionName: row.name, capability: `briefingSections:${section}`, operation: 'register:briefing-sections' });
+    }
+    for (const service of translations.refusedServices) {
+      await sandboxDeps.onDenied?.({ extensionName: row.name, capability: `translationServices:${service}`, operation: 'register:translation-services' });
     }
     return loaded;
   }

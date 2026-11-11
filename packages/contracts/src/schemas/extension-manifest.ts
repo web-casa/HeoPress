@@ -6,6 +6,8 @@ import { validateExtensionPointRanges } from '../extensions/extension-point-vers
 import { ContentDeclarationsSchema, contentDeclarationIssues } from '../extensions/content';
 import { PipelineDeclarationsSchema, pipelineDeclarationIssues } from '../extensions/pipeline';
 import { PrePublishDeclarationsSchema, prePublishDeclarationIssues } from '../extensions/pre-publish';
+import { BriefingDeclarationsSchema, briefingDeclarationIssues } from '../extensions/briefing';
+import { TranslationDeclarationsSchema, translationDeclarationIssues } from '../extensions/translation';
 
 /**
  * Extension manifest schema (`heopress-extension.json`).
@@ -183,6 +185,12 @@ const ExtensionManifestBaseSchema = z.object({
   // HeoPress P12 task 3.4 (narrowed 2026-10-28): the pre-publish hooks the bundle registers. Only a plugin that declares
   // them blocks publishing while it fails to load; an undeclared hook is refused.
   ...PrePublishDeclarationsSchema.shape,
+  // HeoPress v1.1 (spec extensions/briefing-sections): the briefing sections the bundle registers for the Studio
+  // overview. Declared by id, like the pre-publish hooks; an undeclared registration is refused.
+  ...BriefingDeclarationsSchema.shape,
+  // HeoPress v1.2 (spec extensions/translation-services): the machine-translation services the bundle registers, by id,
+  // with the engine they stand for and the price (per million characters) the site pays. An undeclared one is refused.
+  ...TranslationDeclarationsSchema.shape,
 });
 
 /**
@@ -205,6 +213,8 @@ export const ManifestDeclarationsSchema = ExtensionManifestBaseSchema.pick({
   gateChecks: true,
   buildSteps: true,
   prePublishHooks: true,
+  briefingSections: true,
+  translationServices: true,
 }).partial();
 
 /** The capabilities a manifest requests: `capabilities` plus one `http:fetch:<host>` per outbound host. */
@@ -245,6 +255,14 @@ export const ExtensionManifestSchema = ExtensionManifestBaseSchema.superRefine((
     ctx.addIssue({ code: 'custom', path: issue.path.split('.'), message: issue.message });
   }
   for (const issue of prePublishDeclarationIssues(m, m.capabilities)) {
+    ctx.addIssue({ code: 'custom', path: issue.path.split('.'), message: issue.message });
+  }
+  // Briefing sections (v1.1): declared by id, each needing the extension point.
+  for (const issue of briefingDeclarationIssues(m, m.capabilities)) {
+    ctx.addIssue({ code: 'custom', path: issue.path.split('.'), message: issue.message });
+  }
+  // Translation services (v1.2): declared by id, each needing the extension point, with the engine and price the admin approves.
+  for (const issue of translationDeclarationIssues(m, m.capabilities)) {
     ctx.addIssue({ code: 'custom', path: issue.path.split('.'), message: issue.message });
   }
   // Extension-point contract versions (P14 task 7.1): every requested point needs a range, `context` is required,

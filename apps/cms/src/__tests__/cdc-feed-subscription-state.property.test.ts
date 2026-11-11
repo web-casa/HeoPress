@@ -103,6 +103,12 @@ describe('cdc-feed subscription state machine (design §3.2)', () => {
     }
   });
 
+  it('an unknown transition source is refused (the defensive default)', () => {
+    // The union type keeps this out of typed code; a stored or plugin-supplied value reaches it at runtime.
+    expect(canTransitionSubscription('active', 'paused', 'unknown-source' as TransitionVia)).toBe(false);
+    expect(canTransitionSubscription('paused', 'active', 'unknown-source' as TransitionVia)).toBe(false);
+  });
+
   it('dead/stale never resume via admin or dispatcher — only replay', () => {
     for (const from of ['dead', 'stale'] as const) {
       expect(canTransitionSubscription(from, 'active', 'admin')).toBe(false);

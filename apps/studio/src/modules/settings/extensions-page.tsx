@@ -6,10 +6,11 @@ import { useState } from 'react';
 import { getApiClient } from '@/lib/api';
 import type { ExtensionResource } from '@heopress/sdk';
 import { manifestCapabilities } from '@heopress/contracts/schemas';
-import { validateCapabilities } from '@heopress/contracts/extensions';
+import { secretNamesOf, validateCapabilities } from '@heopress/contracts/extensions';
 import { PageHeader } from '@/workspace/ui/page-header';
 import { PermissionApprovalDialog, PermissionList, apiErrorMessage } from './extension-permissions';
 import { ExtensionErrorNotice, PluginCollections } from './plugin-collections';
+import { PluginSecrets } from './plugin-secrets';
 
 /** Example values, not translated. */
 const EXAMPLES = { bundleUrl: 'https://example.com/bundle.js', name: 'acme-glossary', capabilities: 'items:read:posts\next:events' };
@@ -217,6 +218,11 @@ export function ExtensionsPage() {
               <div className="mt-4">
                 <PermissionList capabilities={ext.capabilities} />
               </div>
+
+              <PluginSecrets
+                pluginId={ext.id}
+                declaredNames={secretNamesOf(ext.requestedCapabilities?.length ? ext.requestedCapabilities : ext.capabilities)}
+              />
             </div>
             <div className="mt-4 flex items-center justify-between gap-3 border-t pt-3">
               {ext.trusted ? (

@@ -78,13 +78,15 @@ with `ExtensionManifestSchema` from `@heopress/contracts/schemas` (the marketpla
 | `storage` | Private storage namespaces and their indexes. |
 | `admin` | Declarative admin pages (need `ext:admin-panels`) and per-site settings. |
 | `prePublishHooks` | The pre-publish hooks the bundle registers, by `name` (with optional `label`, `description`, `collections`); needs `ext:events`. An undeclared hook is refused; only a plugin that declares hooks blocks publishing while it fails to load. See [Runtime extension points](#runtime-extension-points). |
+| `briefingSections` | The briefing sections the bundle registers for the Studio overview, by `id` (with `title` and an optional `description`); needs `ext:briefing-sections`. An undeclared id is refused. See [Briefing sections](../extensions/briefing-sections.md). |
+| `translationServices` | The machine-translation services the bundle registers, by `id` (with `displayName`, the upstream `engine` and an optional `pricePerMillionChars` in the site's currency); needs `ext:translation-services`, plus `http:fetch:<host>` and `secrets:<name>` for the provider API. An undeclared id is refused; the host records each call priced by characters. See [Translation services](../../zh-CN/extensions/translation-services.md). |
 | `heopress` | The HeoPress version range; install and upgrade are refused outside it. |
 | `extensionPoints` | The contract-version range of every extension point the plugin requests and of `context`; see [Extension-point contract versions](#extension-point-contract-versions). |
 | `security` | Where to report a vulnerability (e-mail or https URL). Required by the marketplace. |
 
 ## Extension-point contract versions
 
-The nine extension points and the plugin host API (`context`) each carry their own semantic version, published by
+The eleven extension points and the plugin host API (`context`) each carry their own semantic version, published by
 `EXTENSION_POINT_VERSIONS` in `@heopress/extension-sdk` and checked by the host against the table in
 `@heopress/contracts`. A breaking change bumps only the affected point's major version (ADR-0025).
 
@@ -99,6 +101,8 @@ The nine extension points and the plugin host API (`context`) each carry their o
 | `events` | `1.0.0` | `ext:events` |
 | `admin-panels` | `1.0.0` | `ext:admin-panels` |
 | `build-steps` | `1.0.0` | `ext:build-steps` |
+| `briefing-sections` | `1.0.0` | `ext:briefing-sections` |
+| `translation-services` | `1.0.0` | `ext:translation-services` |
 | `context` (plugin host API) | `1.0.0` | none; always required |
 
 A manifest declares the range it was written for, for every point it requests and for `context`:

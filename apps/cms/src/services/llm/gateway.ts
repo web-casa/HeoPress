@@ -283,6 +283,8 @@ interface CallRequest {
   tools: ToolDefinition[] | undefined;
   maxOutputTokens: number;
   inputTokens: number;
+  /** Characters of a `per_1m_chars` call (a plugin translation): what its reservation prices. */
+  characters?: number;
 }
 
 type SendResult = { outcome: ChatOutcome; notSent?: 'cancelled' | 'deadline' | 'lease' | 'provider_changed' | 'capability'; candidate: Candidate };
@@ -419,6 +421,11 @@ export class LlmGateway {
       .filter((c) => c.protocol !== 'anthropic' && c.protocol !== 'gemini');
   }
 
+  /** The site's ledger currency (its settings, else the instance default): a plugin service prices in it. */
+  async currency(siteId: string): Promise<string> {
+    return (await runSiteTransaction(this.deps.db, siteId, (tx) => siteBudget(tx, siteId, this.instanceCurrency))).currency;
+  }
+
   /** Whether the site has an embedding provider. */
   async embeddingConfigured(siteId: string): Promise<boolean> {
     return (await runSiteTransaction(this.deps.db, siteId, (tx) => this.resolveEmbedding(tx, siteId))).length > 0;
@@ -480,6 +487,11 @@ export class LlmGateway {
     candidate: Candidate;
     attempts: number;
     request: unknown;
+    /**
+     * Characters a `per_1m_chars` call prices (a plugin translation); the reservation is this × the price, made before the
+     * service is called.
+     */
+    characters?: number;
     deadlineMs: number;
     signal?: AbortSignal;
     send: (signal: AbortSignal, timeoutMs: number) => Promise<ChatOutcome>;
@@ -489,7 +501,14 @@ export class LlmGateway {
     const out = await this.execute({
       input: { siteId: spec.siteId, taskType: spec.taskType, capability: spec.capability, origin: spec.origin, callKey: spec.callKey, deadlineMs: spec.deadlineMs, signal: spec.signal },
       callDigest: digest({ taskType: spec.taskType, request: spec.request, service: spec.candidate.fingerprint }),
-      req: { needsTools: false, systemPrompt: '', tools: undefined, maxOutputTokens: 0, inputTokens: estimateTokens(JSON.stringify(spec.request)) },
+      req: {
+        needsTools: false,
+        systemPrompt: '',
+        tools: undefined,
+        maxOutputTokens: 0,
+        inputTokens: estimateTokens(JSON.stringify(spec.request)),
+        characters: spec.characters,
+      },
       candidates: Array.from({ length: Math.max(1, spec.attempts) }, () => spec.candidate),
       send: (_c, _key, signal, timeoutMs) => spec.send(signal, timeoutMs),
       transferable: spec.transferable,
@@ -687,7 +706,7 @@ export class LlmGateway {
     const caps = candidate.source === 'site' ? (row!.capabilities as Candidate['capabilities']) : candidate.capabilities;
     if (missingFor(caps, req.needsTools, input.taskType).length) return end('CAPABILITY_UNSUPPORTED');
     const budget = await siteBudget(tx, call.siteId, this.instanceCurrency);
-    const reserved = reservationOf(candidate, req.inputTokens, req.maxOutputTokens);
+    const reserved = reservationOf(candidate, req.inputTokens, req.maxOutputTokens, req.characters ?? 0);
     const at = this.now();
     let period: string;
     try {
@@ -719,6 +738,7 @@ export class LlmGateway {
       reservedMicros: reserved,
       ownerId: OWNER_ID,
       leaseMs,
+      characters: req.characters ?? null,
     });
     const [renewed] = await tx
       .update(llmCalls)
@@ -958,6 +978,10 @@ export class LlmGateway {
           : { kind: 'failed_transferable', evidence: { sent: true, usage: none, errorCode: 'TIMEOUT' } };
       case 'network':
         return { kind: 'failed_transferable', evidence: { sent: true, usage: none, errorCode: 'NETWORK' } };
+      case 'failed':
+        // A service that is not an HTTP model API (a plugin-provided translation service) failed after it was called; the
+        // code is ours. One attempt only, so it ends rather than failing over.
+        return { kind: 'failed_final', evidence: { sent: true, usage: none, errorCode: o.errorCode }, reason: o.errorCode };
     }
   }
 

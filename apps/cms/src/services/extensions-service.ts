@@ -28,6 +28,10 @@ import {
   pipelineDeclarationIssues,
   pipelineDeclarationsOf,
   prePublishDeclarationIssues,
+  briefingDeclarationIssues,
+  briefingSectionsOf,
+  translationServicesOf,
+  translationDeclarationIssues,
   prePublishHooksOf,
   validateCapabilities,
   validateExtensionPointRanges,
@@ -114,6 +118,10 @@ const DECLARATION_KEYS = new Set([
   'sourceAdapters', 'gateChecks', 'buildSteps',
   // P12 task 3.4 (narrowed 2026-10-28): the pre-publish hooks the bundle registers.
   'prePublishHooks',
+  // HeoPress v1.1: the briefing sections the bundle registers for the Studio overview.
+  'briefingSections',
+  // HeoPress v1.2: the machine-translation services the bundle registers (id, engine, price per million characters).
+  'translationServices',
 ]);
 
 const signatureFields = {
@@ -304,6 +312,10 @@ export function resolveRequest(
     ...pipelineDeclarationIssues(pipelineDeclarationsOf(input.manifest), requested).map((i) => `${i.path}: ${i.message}`),
     // Pre-publish hooks (P12 task 3.4): declared, with ext:events.
     ...prePublishDeclarationIssues({ prePublishHooks: prePublishHooksOf(input.manifest) }, requested).map((i) => `${i.path}: ${i.message}`),
+    // Briefing sections (v1.1): declared by id, with ext:briefing-sections.
+    ...briefingDeclarationIssues({ briefingSections: briefingSectionsOf(input.manifest) }, requested).map((i) => `${i.path}: ${i.message}`),
+    // Translation services (v1.2): declared by id, with ext:translation-services.
+    ...translationDeclarationIssues({ translationServices: translationServicesOf(input.manifest) }, requested).map((i) => `${i.path}: ${i.message}`),
   ];
   if (issues.length) throw new ExtensionMutationError('INVALID_MANIFEST', issues.slice(0, 5).join('; '), 400, { issues });
   return requested;
@@ -469,8 +481,9 @@ export class ExtensionsService {
     }
     if (input.manifest) {
       const before = (current.manifest as Record<string, unknown>) ?? {};
-      // The declarations an admin approved with the version (P12): the version range, hosts, and the content extensions.
-      for (const key of ['outboundHosts', 'heopress', 'compatibleWith', 'extensionPoints', 'collections', 'routes', 'templates', 'components', 'sourceAdapters', 'gateChecks', 'buildSteps', 'prePublishHooks']) {
+      // The declarations an admin approved with the version (P12, v1.1): the version range, hosts, and the content
+      // extensions.
+      for (const key of ['outboundHosts', 'heopress', 'compatibleWith', 'extensionPoints', 'collections', 'routes', 'templates', 'components', 'sourceAdapters', 'gateChecks', 'buildSteps', 'prePublishHooks', 'briefingSections', 'translationServices']) {
         if (JSON.stringify(input.manifest[key]) !== JSON.stringify(before[key])) {
           throw new ExtensionMutationError('USE_UPGRADE', `Change "manifest.${key}" with POST /extensions/:id/upgrade.`, 400);
         }

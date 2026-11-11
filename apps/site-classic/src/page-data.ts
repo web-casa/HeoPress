@@ -8,7 +8,7 @@ import { sameLocale } from '@heopress/contracts/schemas';
 import { createSiteClassic } from './app';
 import { renderPort } from './read-port';
 import { buildPage, type PageInput } from './view-model';
-import { feedPath } from './discovery-plan';
+import { feedPath, pluginFeedCollections } from './discovery-plan';
 
 /**
  * The page data interface of the Astro engine (HeoPress P11 tasks 3.1, 3.5; spec rendering/astro-engine; ADR-0005 §3):
@@ -67,6 +67,8 @@ interface Planned {
   filePaths: string[];
   /** Paths that may redirect or be gone (P11 task 4.4). */
   routePaths: string[];
+  /** The discovery switches a static target must honour (v1.2 P11 task 4.5). */
+  discovery: { markdownCopies: boolean; markdownNegotiation: boolean };
   /** The Astro sources of the site's enabled plugins (P12 tasks 2.3, 2.4). */
   extensions: { hash: string; astro: Record<string, string> } | null;
 }
@@ -126,9 +128,15 @@ async function planOf(port: ReturnType<typeof renderPort>, siteId: string): Prom
       }
     }
     const files = new Set(['/robots.txt', '/sitemap.xml', '/sitemap.txt', '/news-sitemap.xml', '/llms.txt', '/llms-full.txt']);
+    // The site feed's collection is `/feed.xml` itself; a collection feed exists for `pages` and for each collection a
+    // plugin route declares (HeoPress v1.1 P12). A path the site does not answer is skipped when it is collected.
+    const collectionFeeds = new Set(['pages', ...pluginFeedCollections(info.extensions.routes).keys()]);
     for (const l of locales) {
       const suffix = sameLocale(l, info.defaultLanguage) ? null : l;
-      for (const format of ['rss', 'atom'] as const) for (const collection of [null, 'pages']) files.add(feedPath(format, collection, suffix));
+      for (const format of ['rss', 'atom'] as const) {
+        files.add(feedPath(format, null, suffix));
+        for (const collection of collectionFeeds) files.add(feedPath(format, collection, suffix));
+      }
     }
     for (const name of await reads.rootFileNames()) files.add(`/${name}`);
     const key = info.seo.discovery.indexNow ? info.seo.discovery.indexNowKey : null;
@@ -147,6 +155,7 @@ async function planOf(port: ReturnType<typeof renderPort>, siteId: string): Prom
       pagePaths: [...pages].filter(isSafeSitePath).sort(),
       filePaths: [...files],
       routePaths: [...routes].filter((p) => isSafeSitePath(p) && !pages.has(p)).sort(),
+      discovery: { markdownCopies: info.seo.discovery.markdownCopies, markdownNegotiation: info.seo.discovery.markdownNegotiation },
       extensions: info.extensions.hash ? { hash: info.extensions.hash, astro: info.extensions.astro } : null,
     };
   });
@@ -221,6 +230,7 @@ async function collect(app: App, siteId: string, plan: Planned): Promise<PageDat
     notFound,
     files: [...files.values()].filter((f) => !pages.some((p) => p.path === f.path)),
     routes,
+    discovery: plan.discovery,
     unsupported: [...STATIC_UNSUPPORTED],
     ...(plan.extensions ? { extensions: plan.extensions } : {}),
   };

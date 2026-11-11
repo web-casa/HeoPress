@@ -31,7 +31,11 @@ export interface Candidate {
   protocol: string;
   baseUrl: string | null;
   model: string;
-  pricing: { kind: 'per_1m_tokens'; inputMicros: number; outputMicros: number } | { kind: 'per_request'; requestMicros: number };
+  pricing:
+    | { kind: 'per_1m_tokens'; inputMicros: number; outputMicros: number }
+    | { kind: 'per_request'; requestMicros: number }
+    /** A plugin-provided translation service (HeoPress v1.2): micro-units per million characters. */
+    | { kind: 'per_1m_chars'; charsMicros: number };
   currency: string;
   timeoutMs: number;
   capabilities: { tools: boolean; json: boolean; maxContext: number | null };
@@ -43,6 +47,8 @@ interface Usage {
   complete: boolean;
   inputTokens: number | null;
   outputTokens: number | null;
+  /** A `per_1m_chars` attempt's characters (a plugin translation); absent or null for token- and request-priced ones. */
+  characters?: number | null;
 }
 
 export type CallRow = typeof llmCalls.$inferSelect;
@@ -71,15 +77,17 @@ export function estimateTokens(text: string): number {
   return ceilDiv(text.length, 4);
 }
 
-/** The reservation for an attempt: estimated input plus the output cap, each rounded up. */
-export function reservationOf(c: Candidate, inputTokens: number, maxOutputTokens: number): number {
+/** The reservation for an attempt: estimated input plus the output cap (or the characters), each rounded up. */
+export function reservationOf(c: Candidate, inputTokens: number, maxOutputTokens: number, characters = 0): number {
   if (c.pricing.kind === 'per_request') return c.pricing.requestMicros;
+  if (c.pricing.kind === 'per_1m_chars') return ceilDiv(characters * c.pricing.charsMicros, 1_000_000);
   return ceilDiv(inputTokens * c.pricing.inputMicros, 1_000_000) + ceilDiv(maxOutputTokens * c.pricing.outputMicros, 1_000_000);
 }
 
-/** What complete usage costs (null without complete usage). */
+/** What complete usage costs (null without complete usage; characters are what a `per_1m_chars` attempt bills). */
 function costOf(pricing: Candidate['pricing'], usage: Usage): number | null {
   if (pricing.kind === 'per_request') return usage.complete ? pricing.requestMicros : null;
+  if (pricing.kind === 'per_1m_chars') return usage.characters === null || usage.characters === undefined ? null : ceilDiv(usage.characters * pricing.charsMicros, 1_000_000);
   if (!usage.complete || usage.inputTokens === null || usage.outputTokens === null) return null;
   return ceilDiv(usage.inputTokens * pricing.inputMicros, 1_000_000) + ceilDiv(usage.outputTokens * pricing.outputMicros, 1_000_000);
 }
@@ -163,6 +171,8 @@ export interface NewAttempt {
   reservedMicros: number;
   ownerId: string;
   leaseMs: number;
+  /** Characters of a `per_1m_chars` attempt (a plugin translation); null for other pricing. */
+  characters?: number | null;
 }
 
 /** Insert an attempt `in_flight / reserved` with its lease (T1, T6b). */
@@ -195,6 +205,7 @@ export async function insertAttempt(tx: Tx, a: NewAttempt): Promise<AttemptRow> 
       ownerId: a.ownerId,
       leaseUntil: sql`now() + make_interval(secs => ${a.leaseMs / 1000})` as unknown as Date,
       reservedMicros: a.reservedMicros,
+      billedCharacters: a.characters ?? null,
     })
     .returning();
   return row!;
@@ -210,6 +221,7 @@ export interface Evidence {
 /** The billing columns the evidence supports (shared by T2, T4, T5, T8). */
 function billingFor(attempt: Pick<AttemptRow, 'reservedMicros' | 'snapshot'>, ev: Evidence) {
   const pricing = (attempt.snapshot as { pricing: Candidate['pricing'] }).pricing;
+  const characters = pricing.kind === 'per_1m_chars' ? (ev.usage.characters ?? null) : null;
   const actual = costOf(pricing, ev.usage);
   if (actual !== null) {
     return {
@@ -217,15 +229,25 @@ function billingFor(attempt: Pick<AttemptRow, 'reservedMicros' | 'snapshot'>, ev
       actualMicros: actual,
       inputTokens: ev.usage.inputTokens,
       outputTokens: ev.usage.outputTokens,
+      billedCharacters: characters,
       settledBy: 'auto',
       settledAt: new Date(),
       overspend: actual > attempt.reservedMicros,
     };
   }
   if (!ev.sent) {
-    return { billing: 'cancelled' as const, actualMicros: 0, inputTokens: null, outputTokens: null, settledBy: 'auto', settledAt: new Date(), overspend: false };
+    return {
+      billing: 'cancelled' as const,
+      actualMicros: 0,
+      inputTokens: null,
+      outputTokens: null,
+      billedCharacters: null,
+      settledBy: 'auto',
+      settledAt: new Date(),
+      overspend: false,
+    };
   }
-  return { billing: 'unknown' as const, inputTokens: ev.usage.inputTokens, outputTokens: ev.usage.outputTokens, overspend: false };
+  return { billing: 'unknown' as const, inputTokens: ev.usage.inputTokens, outputTokens: ev.usage.outputTokens, billedCharacters: characters, overspend: false };
 }
 
 export async function alertOverspend(tx: Tx, attempt: AttemptRow, actual: number): Promise<void> {

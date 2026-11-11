@@ -5,6 +5,7 @@ import type { AppEnv } from '../env';
 import { createHash } from 'node:crypto';
 import {
   ItemServiceError,
+  TIMELINESS_REASON_MAX,
   VersionConflictError,
   type IdempotencyInput,
   parseDeepQueryParams,
@@ -41,6 +42,8 @@ const listQuerySchema = z.object({
   // Opt out of the `count(*)` total (high-load-cache-readiness Req 5).
   // Defaults to `total_count` to preserve the historical response shape.
   meta: z.enum(['total_count', 'none']).optional(),
+  // Only the items carrying a timeliness mark (v1.1; spec content/timeliness-marks).
+  needs_update: z.enum(['true', 'false']).optional(),
 });
 
 const scheduleSchema = {
@@ -257,6 +260,7 @@ itemsRouter.get('/:collection', async (c) => {
       offset: parsed.data.offset,
       status: parsed.data.status,
       withTotal: parsed.data.meta !== 'none',
+      needsUpdate: parsed.data.needs_update === 'true',
     });
     return c.json(result);
   } catch (err) {
@@ -377,6 +381,53 @@ itemsRouter.put('/:collection/:id/published-at', async (c) => {
       actorEmail: c.get('auth')?.email ?? null,
     });
     withEtag(c, data);
+    return c.json({ data });
+  } catch (err) {
+    const { status, body } = toError(err);
+    return c.json(body, status as 400);
+  }
+});
+
+const timelinessSchema = z.object({
+  /** The operator's short reason (trimmed; 1–200 characters). */
+  reason: z.string().trim().min(1).max(TIMELINESS_REASON_MAX),
+  /** Optional deadline, recorded only; null/absent: none. */
+  dueAt: z.string().datetime({ offset: true }).nullable().optional(),
+  expectedVersion: z.number().int().min(1).optional(),
+});
+
+// Timeliness marks (v1.1; spec content/timeliness-marks): an editor marks an item as needing an update — a short
+// reason, an optional deadline — or clears the mark. Version-checked like hold, audited, and in the Change Feed;
+// readers see the mark in the item itself (list rows and detail carry its columns).
+itemsRouter.put('/:collection/:id/timeliness', async (c) => {
+  const parsed = timelinessSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json({ errors: parsed.error.issues.map((i) => ({ code: 'VALIDATION', message: i.message })) }, 400);
+  }
+  try {
+    const data = await buildService(c).setTimeliness(c.req.param('collection'), c.req.param('id'), {
+      reason: parsed.data.reason,
+      dueAt: parsed.data.dueAt ? new Date(parsed.data.dueAt) : null,
+      expectedVersion: expectedVersionOf(c, parsed.data.expectedVersion),
+      actorEmail: c.get('auth')?.email ?? null,
+    });
+    c.header('ETag', `"${data.version}"`);
+    return c.json({ data });
+  } catch (err) {
+    const { status, body } = toError(err);
+    return c.json(body, status as 400);
+  }
+});
+
+itemsRouter.delete('/:collection/:id/timeliness', async (c) => {
+  try {
+    const data = await buildService(c).setTimeliness(c.req.param('collection'), c.req.param('id'), {
+      reason: null,
+      dueAt: null,
+      expectedVersion: await deleteVersionOf(c),
+      actorEmail: c.get('auth')?.email ?? null,
+    });
+    c.header('ETag', `"${data.version}"`);
     return c.json({ data });
   } catch (err) {
     const { status, body } = toError(err);

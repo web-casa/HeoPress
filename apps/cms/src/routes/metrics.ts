@@ -46,7 +46,7 @@ if (canCollectDefaultMetrics()) {
 // ---------------------------------------------------------------------------
 
 /** Total HTTP requests processed. */
-export const httpRequestsTotal = new Counter({
+const httpRequestsTotal = new Counter({
   name: 'heopress_http_requests_total',
   help: 'Total number of HTTP requests',
   labelNames: ['method', 'path', 'status'] as const,
@@ -54,7 +54,7 @@ export const httpRequestsTotal = new Counter({
 });
 
 /** HTTP request duration in seconds. */
-export const httpRequestDuration = new Histogram({
+const httpRequestDuration = new Histogram({
   name: 'heopress_http_request_duration_seconds',
   help: 'HTTP request duration in seconds',
   labelNames: ['method', 'path'] as const,
@@ -93,7 +93,7 @@ export const revalidationDispatchesTotal = new Counter({
 });
 
 /** Queue jobs counter by queue name and status. */
-export const queueJobsTotal = new Counter({
+const queueJobsTotal = new Counter({
   name: 'heopress_queue_jobs_total',
   help: 'Total queue jobs processed',
   labelNames: ['queue', 'status'] as const,
@@ -101,7 +101,7 @@ export const queueJobsTotal = new Counter({
 });
 
 /** Search queries counter by collection. */
-export const searchQueriesTotal = new Counter({
+const searchQueriesTotal = new Counter({
   name: 'heopress_search_queries_total',
   help: 'Total search queries',
   labelNames: ['collection'] as const,
@@ -109,7 +109,7 @@ export const searchQueriesTotal = new Counter({
 });
 
 /** Search query duration in seconds. */
-export const searchDuration = new Histogram({
+const searchDuration = new Histogram({
   name: 'heopress_search_duration_seconds',
   help: 'Search query duration in seconds',
   labelNames: ['collection'] as const,
@@ -122,7 +122,7 @@ export const searchDuration = new Histogram({
 // ---------------------------------------------------------------------------
 
 /** Item mutations (create/update/delete) — used for SLO + business KPIs. */
-export const itemMutationsTotal = new Counter({
+const itemMutationsTotal = new Counter({
   name: 'heopress_item_mutations_total',
   help: 'Total item mutations performed',
   labelNames: ['collection', 'action', 'status'] as const,
@@ -130,7 +130,7 @@ export const itemMutationsTotal = new Counter({
 });
 
 /** Permission denials counter — security signal. */
-export const permissionDenialsTotal = new Counter({
+const permissionDenialsTotal = new Counter({
   name: 'heopress_permission_denials_total',
   help: 'Total permission denials',
   labelNames: ['collection', 'action'] as const,
@@ -138,7 +138,7 @@ export const permissionDenialsTotal = new Counter({
 });
 
 /** Realtime / WebSocket connection gauge (current open connections). */
-export const realtimeConnectionsTotal = new Counter({
+const realtimeConnectionsTotal = new Counter({
   name: 'heopress_realtime_connections_total',
   help: 'Cumulative realtime connections opened',
   labelNames: ['site'] as const,
@@ -146,7 +146,7 @@ export const realtimeConnectionsTotal = new Counter({
 });
 
 /** Webhook dispatch outcome counter (success / failure). */
-export const webhookDispatchTotal = new Counter({
+const webhookDispatchTotal = new Counter({
   name: 'heopress_webhook_dispatch_total',
   help: 'Total webhook dispatches',
   labelNames: ['target', 'status'] as const,
@@ -161,7 +161,7 @@ export const auditFallbackTotal = new Counter({
 });
 
 /** Database query duration histogram (per operation type). */
-export const dbQueryDuration = new Histogram({
+const dbQueryDuration = new Histogram({
   name: 'heopress_db_query_duration_seconds',
   help: 'Database query duration in seconds',
   labelNames: ['operation'] as const,

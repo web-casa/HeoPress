@@ -91,8 +91,8 @@ describe.skipIf(!hasDbIntegrationUrl)('model usage and reconciliation — DB int
     }>(await call('/usage', 'GET', a));
     expect(u.period).toBe(NOW_PERIOD);
     expect(u.byModel).toEqual([
-      { source: 'instance', providerId: null, instanceRef: 'llm-default', name: 'Backup', model: 'model-b', attempts: 1, settledCount: 0, settledMicros: 0, reservedCount: 0, reservedMicros: 0, unknownCount: 1, unknownMicros: 7, cancelledCount: 0, inputTokens: 0, outputTokens: 0, withoutUsageCount: 1 },
-      { source: 'instance', providerId: null, instanceRef: 'llm-default', name: 'Primary', model: 'model-a', attempts: 4, settledCount: 1, settledMicros: 100, reservedCount: 1, reservedMicros: 50, unknownCount: 1, unknownMicros: 30, cancelledCount: 1, inputTokens: 1200, outputTokens: 300, withoutUsageCount: 2 },
+      { source: 'instance', providerId: null, instanceRef: 'llm-default', name: 'Backup', model: 'model-b', attempts: 1, settledCount: 0, settledMicros: 0, reservedCount: 0, reservedMicros: 0, unknownCount: 1, unknownMicros: 7, cancelledCount: 0, inputTokens: 0, outputTokens: 0, billedCharacters: 0, withoutUsageCount: 1 },
+      { source: 'instance', providerId: null, instanceRef: 'llm-default', name: 'Primary', model: 'model-a', attempts: 4, settledCount: 1, settledMicros: 100, reservedCount: 1, reservedMicros: 50, unknownCount: 1, unknownMicros: 30, cancelledCount: 1, inputTokens: 1200, outputTokens: 300, billedCharacters: 0, withoutUsageCount: 2 },
     ]);
     expect(u.carriedOver).toEqual([{ period: OLD_PERIOD, unknownCount: 1, reservedCount: 0, micros: 20 }]);
     // Settled 100 + reserved 50 + unknown 30 + 7 + last years' unknown 20; site B's never counts.

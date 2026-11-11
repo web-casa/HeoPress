@@ -14,7 +14,7 @@ export type ExtensionType =
   | 'panel'
   | 'module';
 
-/** The nine extension points (ADR-0015). Using one needs the capability `ext:<point>`. */
+/** The eleven extension points (ADR-0015). Using one needs the capability `ext:<point>`. */
 export const EXTENSION_POINTS = [
   'collections',
   'routes',
@@ -25,6 +25,8 @@ export const EXTENSION_POINTS = [
   'events',
   'admin-panels',
   'build-steps',
+  'briefing-sections',
+  'translation-services',
 ] as const;
 
 export type ExtensionPoint = (typeof EXTENSION_POINTS)[number];
@@ -47,6 +49,8 @@ export const EXTENSION_POINT_VERSIONS = {
   events: '1.0.0',
   'admin-panels': '1.0.0',
   'build-steps': '1.0.0',
+  'briefing-sections': '1.0.0',
+  'translation-services': '1.0.0',
   context: '1.0.0',
 } as const;
 
@@ -153,6 +157,21 @@ export interface ExtensionManifest {
    * refused. A plugin that only subscribes to events declares none and never blocks publishing.
    */
   prePublishHooks?: Array<{ name: string; label?: string; description?: string; collections?: string[] }>;
+  /**
+   * The briefing sections the bundle registers for the Studio overview (need `ext:briefing-sections`), by id — see
+   * `defineBriefingSection`. The section's `compute` runs when the Studio asks for the briefing; the host bounds what it
+   * may return (a count and up to ten links) and how long it may take. A section registered under an id not listed here
+   * is refused; a listed one that is not registered does not appear.
+   */
+  briefingSections?: Array<{ id: string; title: string; description?: string }>;
+  /**
+   * The machine-translation services the bundle registers (need `ext:translation-services`), by id — see
+   * `defineTranslationService`. `engine` is the upstream engine the service stands for (it becomes the call's model) and
+   * `pricePerMillionChars` (decimal, in the site's currency; omitted → 0) is what the site pays per million characters.
+   * A service registered under an id not listed here is refused; the host fills in `provider`/`engine`/`callId` and records
+   * the call priced by characters.
+   */
+  translationServices?: Array<{ id: string; displayName: string; engine: string; pricePerMillionChars?: number }>;
 }
 
 /**
@@ -195,7 +214,11 @@ export interface PluginContext {
     put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
     delete(key: string): Promise<void>;
   };
-  /** Register on a declared extension point. */
+  /**
+   * Register on a declared extension point. A briefing section is declared in the manifest too
+   * (`briefingSections`: id and title); one registered under an id the manifest does not declare is refused and
+   * recorded. A translation service is likewise declared (`translationServices`: id, displayName, engine, price).
+   */
   readonly extensionPoints: { register(point: ExtensionPoint, definition: unknown): void };
   /**
    * Model calls (`ai:generate`): through the site's model gateway — one ledger entry per call, the site budget, the
@@ -399,6 +422,12 @@ export {
   defineEndpoint,
   defineSubscription,
   definePrePublishHook,
+  defineBriefingSection,
+  defineTranslationService,
+  type BriefingSectionContext,
+  type BriefingSectionDefinition,
+  type BriefingSectionItem,
+  type BriefingSectionPayload,
   type JobRunContext,
   type JobDefinition,
   type EndpointRequest,
@@ -407,6 +436,10 @@ export {
   type SubscriptionDefinition,
   type PrePublishItem,
   type PrePublishHookDefinition,
+  type TranslationAnswer,
+  type TranslationSegment,
+  type TranslationServiceContext,
+  type TranslationServiceDefinition,
   type StoredDocument,
   type StorageCollection,
 } from './runtime';

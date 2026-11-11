@@ -1212,6 +1212,39 @@ describe.skipIf(!hasDbIntegrationUrl)('translation groups — DB integration', (
       expect([401, 403, 404]).toContain((await call(`/api/v1/items/articles/${en.id}/translation-status`, 'GET', fx.headers('b', fx.apiKeys.bEditor.token))).status);
     });
 
+    it('the translation backlog lists published items by state for a language, with counts', async () => {
+      const { en, zh, g } = await setup();
+      await publish('a', en.id);
+      await publish('a', zh.id);
+      const pt = (await itemsOf('a').create('articles', { data: { title: 'backlog pt', slug: 'backlog-pt', locale: 'pt', body: body('p', ['Um']) } })) as { id: string };
+      await groups().addMember(g.id, { itemId: pt.id, expectedVersion: await groupVersion(g.id) });
+      await fixtures.update(items).set({ editorialState: 'in_review' }).where(eq(items.id, pt.id));
+      const backlog = async (locale: string) =>
+        (
+          (await (await call(`/api/v1/translation-groups/backlog?collection=articles&locale=${locale}`, 'GET', await as('onlyA'))).json()) as {
+            data: { locale: string; counts: Record<string, number>; items: Array<{ itemId: string; state: string; groupId: string | null; title: string }>; truncated: boolean };
+          }
+        ).data;
+      const ptView = await backlog('pt');
+      expect(ptView.locale).toBe('pt');
+      // The published source item is the one listed: its translation into pt is in review.
+      expect(ptView.items.map((i) => [i.itemId, i.state])).toContainEqual([en.id, 'in_review']);
+      expect(ptView.items.find((i) => i.itemId === en.id)!.groupId).toBe(g.id);
+      expect(ptView.counts['in_review']).toBeGreaterThanOrEqual(1);
+      // A missing translation is listed for a language with no member, and only those are.
+      const viView = await backlog('vi');
+      expect(viView.counts['missing']).toBeGreaterThanOrEqual(1);
+      expect(viView.items.every((i) => i.state === 'missing')).toBe(true);
+      expect(viView.truncated).toBe(false);
+      // The default language is not a translation target: en is published in its own language.
+      expect((await backlog('en')).counts['missing']).toBe(0);
+      // Validation and permissions.
+      expect((await call('/api/v1/translation-groups/backlog', 'GET', await as('onlyA'))).status).toBe(400);
+      // Site B's caller sees its own backlog, never site A's items.
+      const bView = ((await (await call('/api/v1/translation-groups/backlog?collection=articles', 'GET', fx.headers('b', fx.apiKeys.bEditor.token))).json()) as { data: { items: Array<{ itemId: string }> } }).data;
+      expect(bView.items.some((i) => i.itemId === en.id || i.itemId === zh.id)).toBe(false);
+    });
+
     it('a former source deleted later keeps the other translations\' review records', async () => {
       const { en, zh, g } = await setup();
       const pt = (await itemsOf('a').create('articles', { data: { title: 'pt', slug: 'fresh-pt', locale: 'pt', body: body('p', ['Um']) } })) as { id: string };

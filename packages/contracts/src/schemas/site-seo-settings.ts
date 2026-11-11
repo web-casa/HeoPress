@@ -79,8 +79,20 @@ export const SiteSeoSettingsSchema = z
     discovery: z
       .object({
         feeds: z.boolean().default(true),
+        /**
+         * The collection the site feed (`/feed.xml`, `/atom.xml`) lists (HeoPress v1.1 P12): a collection machine
+         * name, including a plugin's `<namespace>__<collection>`. A collection feed (`/feed/<collection>.xml`) is a
+         * different address; the site feed's collection is not repeated there.
+         */
+        feedCollection: z.string().trim().min(1).max(128).regex(/^[a-z][a-z0-9_]*$/, 'a collection machine name').default('articles'),
         llms: z.boolean().default(true),
         markdownCopies: z.boolean().default(true),
+        /**
+         * Markdown content negotiation (HeoPress v1.2 P07): the page's own address answers its Markdown when the
+         * request's `Accept` prefers `text/markdown` over `text/html`. Off by default — while off, every answer is
+         * the one it was before the setting existed.
+         */
+        markdownNegotiation: z.boolean().default(false),
         newsSitemap: z.boolean().default(false),
         newsPublicationName: z.string().trim().max(200).default(''),
         indexNow: z.boolean().default(false),
@@ -95,8 +107,10 @@ export const SiteSeoSettingsSchema = z
       .strict()
       .default({
         feeds: true,
+        feedCollection: 'articles',
         llms: true,
         markdownCopies: true,
+        markdownNegotiation: false,
         newsSitemap: false,
         newsPublicationName: '',
         indexNow: false,

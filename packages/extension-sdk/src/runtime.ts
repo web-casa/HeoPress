@@ -1,6 +1,7 @@
 /**
- * Runtime extension points (HeoPress P12): jobs, public endpoints, content-event subscriptions, pre-publish hooks and
- * private storage. A plugin registers each definition from its default export:
+ * Runtime extension points (HeoPress P12, plus the v1.1 briefing sections and the v1.2 translation services): jobs, public
+ * endpoints, content-event subscriptions, pre-publish hooks, briefing sections, translation services and private storage.
+ * A plugin registers each definition from its default export:
  *
  * ```ts
  * export default (ctx: PluginContext) => {
@@ -8,11 +9,13 @@
  *   ctx.extensionPoints.register('endpoints', defineEndpoint({ name: 'subscribe', kind: 'form', handle: async (req) => … }));
  *   ctx.extensionPoints.register('events', defineSubscription({ name: 'on-publish', collections: ['articles'], handle: … }));
  *   ctx.extensionPoints.register('events', definePrePublishHook({ name: 'require-summary', check: (item) => … }));
+ *   ctx.extensionPoints.register('briefing-sections', defineBriefingSection({ id: 'stale-drafts', compute: async () => … }));
+ *   ctx.extensionPoints.register('translation-services', defineTranslationService({ id: 'deepl', translate: async (req) => … }));
  *   return {};
  * };
  * ```
  *
- * Each point needs its capability (`ext:jobs`, `ext:endpoints`, `ext:events`); a subscription also needs
+ * Each point needs its capability (`ext:jobs`, `ext:endpoints`, `ext:events`, `ext:translation-services`); a subscription also needs
  * `cdc:subscribe:<collection>`, and a pre-publish hook must be declared by name in the manifest's `prePublishHooks`
  * (an undeclared one is refused). Limits are the host's: a plugin may ask for less, never for more.
  */
@@ -136,8 +139,98 @@ export interface PrePublishHookDefinition {
   check(item: PrePublishItem): Promise<void | { veto: string }> | void | { veto: string };
 }
 
+/** The context of one briefing-section `compute` call. */
+export interface BriefingSectionContext {
+  readonly siteId: string;
+  /** Aborted when the call runs out of time or the plugin is stopped. */
+  readonly signal: AbortSignal;
+}
+
+/** One link of a section: a label and a site-relative path in this Studio (`/content/…`). */
+export interface BriefingSectionItem {
+  label: string;
+  href: string;
+}
+
+/** What a section hands the Studio: how many things there are, and at most ten of them. */
+export interface BriefingSectionPayload {
+  count: number;
+  items?: BriefingSectionItem[];
+}
+
+/**
+ * A briefing section (the Studio overview's "what should I do today?"), registered on `briefing-sections` under an id the
+ * manifest's `briefingSections` also declares. `compute` runs on request — not on a schedule, not at load — inside the
+ * host's per-call limits (`maxDurationMs`, `maxRequests`); an invalid answer, a throw or a timeout leaves this one
+ * section out of the briefing, never the others.
+ */
+export interface BriefingSectionDefinition {
+  /** `[a-z][a-z0-9-]*`, at most 40; the manifest declares the same id (and the title the Studio shows). */
+  id: string;
+  /** Overrides the manifest's title (rarely needed). */
+  title?: string;
+  description?: string;
+  /** Per-call duration (ms, default 1 500, at most 5 000). */
+  maxDurationMs?: number;
+  /** Outbound requests per call (default 10, at most 50). */
+  maxRequests?: number;
+  compute(ctx: BriefingSectionContext): Promise<BriefingSectionPayload> | BriefingSectionPayload;
+}
+
+export function defineBriefingSection(def: BriefingSectionDefinition): BriefingSectionDefinition & { kind: 'briefing-section' } {
+  return { ...def, kind: 'briefing-section' };
+}
+
 export function definePrePublishHook(def: PrePublishHookDefinition): PrePublishHookDefinition & { kind: 'pre-publish' } {
   return { ...def, kind: 'pre-publish' };
+}
+
+/** One segment to translate: its stable id and its text (markup stays markup; the host checks the ids come back). */
+export interface TranslationSegment {
+  id: string;
+  text: string;
+}
+
+/** What one `translate` call receives: the host's context, never a provider key. */
+export interface TranslationServiceContext {
+  readonly siteId: string;
+  readonly sourceLocale: string;
+  readonly targetLocale: string;
+  readonly segments: TranslationSegment[];
+  /** Terms that must be rendered this way. */
+  readonly glossary: ReadonlyArray<{ source: string; target: string }>;
+  /** Fuzzy translation-memory matches, as references only. */
+  readonly memory: ReadonlyArray<{ source: string; target: string }>;
+  /** Aborted when the call runs out of time or the plugin is stopped. */
+  readonly signal: AbortSignal;
+}
+
+/** What a service hands back: exactly the requested ids, each once, with their translations. */
+export interface TranslationAnswer {
+  segments: Array<{ id: string; text: string }>;
+}
+
+/**
+ * A machine-translation service (HeoPress v1.2 P12), registered on `translation-services` under an id the manifest's
+ * `translationServices` also declares. A site selects it with `translationService = "<plugin name>:<id>"`; the host then
+ * runs `translate` inside its per-call limits (`maxDurationMs`, `maxRequests`), fills in `provider`/`engine`/`callId` and
+ * records the call priced by characters (the manifest's `pricePerMillionChars`, 0 when it declares none).
+ *
+ * The service reaches an external API only through the approved `http:fetch:<host>` capability (`ctx.fetch`) and a
+ * `secrets:<name>` reference (`ctx.secrets.get`); the plugin never holds an inline key or the site's model keys.
+ */
+export interface TranslationServiceDefinition {
+  /** `[a-z][a-z0-9-]*`, at most 40; the manifest declares the same id (with displayName, engine and price). */
+  id: string;
+  /** Per-call duration (ms, default 20 000, at most 60 000). */
+  maxDurationMs?: number;
+  /** Outbound requests per call (default 20, at most 100). */
+  maxRequests?: number;
+  translate(ctx: TranslationServiceContext): Promise<TranslationAnswer> | TranslationAnswer;
+}
+
+export function defineTranslationService(def: TranslationServiceDefinition): TranslationServiceDefinition & { kind: 'translation-service' } {
+  return { ...def, kind: 'translation-service' };
 }
 
 /** A stored document of the plugin's private storage. */

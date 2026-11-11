@@ -1,7 +1,8 @@
 import { and, asc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
 import { parseFragment, serializeOuter } from 'parse5';
 import type { DefaultTreeAdapterMap } from 'parse5';
-import type { AiCapability, UsageOperation } from '@heopress/contracts/schemas';
+import type { KeyProvider } from '@heopress/runtime';
+import { ArticleBriefSchema, briefSourceIds, type AiCapability, type ArticleBrief, type UsageOperation } from '@heopress/contracts/schemas';
 import {
   aiProductions,
   aiProductionSteps,
@@ -25,11 +26,12 @@ import { hashData } from '../content-version-service';
 import { assertUsageAllowed, type UsageDecision } from '../ingest/usage';
 import { recordDerivation } from '../ingest/licence-lapse';
 import { itemServiceForSystem } from '../item-service-factory';
-import type { ChatCallInput, ChatCallResult, LlmGateway } from '../llm/gateway';
+import type { ChatCallInput, ChatCallResult } from '../llm/gateway';
 import { claimDailyProcessing, type QuotaPlan } from '../llm/daily';
 import { afterTaskFailure } from '../llm/governance';
 import { assertPipelineRunnable } from '../llm/pipeline-control';
-import { LlmTranslationService, type TranslationService } from '../llm/translation-service';
+import { type TranslationService } from '../llm/translation-service';
+import { TranslationServiceRouter, type TranslationGateway } from '../llm/translation-router';
 import { runSiteTransaction, withSiteScope, type SiteTransaction } from '../rls-transaction';
 import { blocksOfItem, retranslation } from '../site-network/freshness';
 import { htmlBlocks, itemBlocks } from '../site-network/freshness-blocks';
@@ -51,6 +53,8 @@ import { DATA_NOT_INSTRUCTIONS, asData, keepOnlyLinks, parseModelJson, productio
  *   - `rewrite`: one or more licensed sources rewritten for the site's audience, following its editorial profile, with
  *     citations;
  *   - `write`: an original piece from facts, after a bounded research run (`research.ts`), with citations;
+ *   - `brief`: the briefing-style rewrite — a structured brief first (the `brief` capability, validated against
+ *     `ArticleBriefSchema` with one repair attempt), then the article written from it (spec "简报式改写");
  *   - `retranslate`: only the stale, not human-edited blocks of a translation (the P05 contract `retranslation`), into a
  *     new draft revision (a content version) — the live item stays as it is.
  *
@@ -74,13 +78,14 @@ type Tx = SiteTransaction;
 type Element = DefaultTreeAdapterMap['element'];
 type ProductionRow = typeof aiProductions.$inferSelect;
 
-type ProductionMode = 'translate' | 'rewrite' | 'write' | 'retranslate';
+type ProductionMode = 'translate' | 'rewrite' | 'write' | 'brief' | 'retranslate';
 
 const PROMPT_VERSIONS = {
   translate: 'translate@1',
   retranslate: 'translate@1',
   rewrite: 'rewrite@1',
   write: 'write@1',
+  brief: 'brief@1',
   seo_copy: 'seo-copy@1',
   value_assessment: 'value@1',
 } as const;
@@ -91,6 +96,8 @@ const MODE_OPERATION: Record<ProductionMode, UsageOperation> = {
   retranslate: 'translate',
   rewrite: 'rewrite',
   write: 'extract_facts',
+  // A briefing-style rewrite works from facts and writes its own article: the sources only need to allow that.
+  brief: 'extract_facts',
 };
 
 class PipelineError extends Error {
@@ -100,6 +107,20 @@ class PipelineError extends Error {
   ) {
     super(`${code}: ${message}`);
     this.name = 'PipelineError';
+  }
+}
+
+/**
+ * The structured brief is not the contract, after the one repair attempt (spec ai/content-pipeline "简报式改写").
+ * Ends the production at once — a second trigger must not silently spend more model calls on the same answer shape.
+ */
+class BriefInvalidError extends Error {
+  constructor(
+    readonly errors: string[],
+    readonly attempts: number,
+  ) {
+    super(`BRIEF_INVALID: ${errors.join('; ')}`);
+    this.name = 'BriefInvalidError';
   }
 }
 
@@ -114,9 +135,11 @@ class UsageRefusedError extends Error {
 export interface PipelineDeps {
   db: Database;
   siteId: string;
-  gateway: Pick<LlmGateway, 'chat'>;
-  /** Default: the LLM implementation over `gateway`. */
+  gateway: TranslationGateway;
+  /** Default: the site's selection decides (a plugin service, else the LLM implementation over `gateway`). */
   translator?: TranslationService;
+  /** Opens plugin secrets for a plugin translation service (spec extensions/plugin-secrets). */
+  keys?: KeyProvider;
   /** Default: the site's database memory for the language pair. */
   memoryFor?: (from: string, to: string) => TranslationMemoryStore;
   researchLimits?: Partial<ResearchLimits>;
@@ -143,7 +166,7 @@ export interface SourceRecord {
 }
 
 export interface ProduceRequest {
-  mode: 'translate' | 'rewrite' | 'write';
+  mode: 'translate' | 'rewrite' | 'write' | 'brief';
   sourceDocumentIds: string[];
   targetLocale: string;
   /** Default `articles`. */
@@ -201,10 +224,16 @@ function withBlockId(html: string, id: string): string {
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 export class ContentPipeline {
-  private readonly translator: TranslationService;
+  private translatorService: TranslationService | null = null;
 
-  constructor(private readonly deps: PipelineDeps) {
-    this.translator = deps.translator ?? new LlmTranslationService(deps.gateway);
+  constructor(private readonly deps: PipelineDeps) {}
+
+  /** The translator of this site: an injected one, else the router (the site's plugin service, else the LLM). */
+  private translator(): TranslationService {
+    this.translatorService ??=
+      this.deps.translator ??
+      new TranslationServiceRouter({ db: this.deps.db, gateway: this.deps.gateway, keys: this.deps.keys });
+    return this.translatorService;
   }
 
   private get siteId(): string {
@@ -351,7 +380,18 @@ export class ContentPipeline {
     prod: ProductionRow,
     step: string,
     capability: AiCapability,
-    input: { systemPrompt: string; data: unknown; maxOutputTokens: number; n?: number; promptVersion?: string },
+    input: {
+      systemPrompt: string;
+      data: unknown;
+      maxOutputTokens: number;
+      n?: number;
+      promptVersion?: string;
+      /**
+       * What the step records, once the answer is parsed (the default: `ok` for JSON, `failed` otherwise). A validated
+       * answer can still be a failed step — the brief that does not match its contract — and the detail carries why.
+       */
+      describe?: (json: Record<string, unknown> | null) => { outcome?: string; detail?: Record<string, unknown> };
+    },
   ): Promise<{ json: Record<string, unknown> | null; result: ChatCallResult }> {
     const req: ChatCallInput = {
       siteId: this.siteId,
@@ -366,11 +406,13 @@ export class ContentPipeline {
     };
     const result = await this.deps.gateway.chat(req);
     const json = parseModelJson(result.response.content);
+    const described = input.describe?.(json);
     await this.step(prod, step, {
       capability,
       call: { callId: result.callId, provider: result.provider, model: result.model, usage: result.response.usage },
       promptVersion: input.promptVersion,
-      outcome: json ? 'ok' : 'failed',
+      outcome: described?.outcome ?? (json ? 'ok' : 'failed'),
+      detail: described?.detail,
     });
     return { json, result };
   }
@@ -426,6 +468,10 @@ export class ContentPipeline {
     if (err instanceof ResearchTerminatedError) {
       await this.step(prod, 'research', { outcome: 'terminated', capability: 'write', detail: { reason: err.reason, steps: err.steps } });
       return this.finish(prod, { status: 'terminated', statusReason: err.reason });
+    }
+    if (err instanceof BriefInvalidError) {
+      // Retroactive retries would only spend more model calls on the same answer shape: the reason is typed and final.
+      return this.finish(prod, { status: 'failed', statusReason: 'brief_invalid' });
     }
     const out = afterTaskFailure({ attempts: prod.attempts, maxAttempts: prod.maxAttempts, notBefore: prod.notBefore }, err, this.now());
     const message = err instanceof Error ? err.message : String(err);
@@ -487,22 +533,30 @@ export class ContentPipeline {
       }
       await this.checkUsage(prod, ids, operation, req.mode);
       const fieldsOf = await this.collectionFields(collection);
+      // The briefing-style rewrite: the structured brief first, then the article written from it.
+      const brief = req.mode === 'brief' ? await this.articleBrief(prod, sources, profile.content, req.targetLocale) : null;
       const draft =
         req.mode === 'translate'
           ? await this.translateDocument(prod, sources[0]!, req)
           : req.mode === 'rewrite'
             ? await this.compose(prod, 'rewrite', sources, profile.content, req.targetLocale, null)
-            : await this.compose(prod, 'write', sources, profile.content, req.targetLocale, await this.research(prod, sources, profile.content, req.targetLocale));
+            : req.mode === 'brief'
+              ? await this.compose(prod, 'write', sources, profile.content, req.targetLocale, null, brief)
+              : await this.compose(prod, 'write', sources, profile.content, req.targetLocale, await this.research(prod, sources, profile.content, req.targetLocale));
       // The draft write is a step too: the terms may have changed during the model calls.
       await this.checkUsage(prod, ids, operation, 'draft');
       const bodyField = [...fieldsOf.blocks].find(([, k]) => k === 'html')?.[0] ?? 'body';
-      const data = this.only(fieldsOf.names, {
-        title: draft.title,
-        slug: slugOf(draft.title, `${req.mode}-${prod.id.slice(0, 10).toLowerCase()}`),
-        locale: req.targetLocale,
-        [bodyField]: draft.bodyHtml,
-        excerpt: draft.summary,
-      });
+      const data = {
+        ...this.only(fieldsOf.names, {
+          title: draft.title,
+          slug: slugOf(draft.title, `${req.mode}-${prod.id.slice(0, 10).toLowerCase()}`),
+          locale: req.targetLocale,
+          [bodyField]: draft.bodyHtml,
+          excerpt: draft.summary,
+        }),
+        // The brief the article was written from: an operator inspecting the draft sees what it rests on.
+        ...(brief !== null ? { brief } : {}),
+      };
       const created = (await this.items().create(collection, { data, status: 'draft' })) as { id: string };
       // Block map of a translation: source block → the draft's block (ids assigned on write).
       let blockMap = draft.blockMap;
@@ -571,7 +625,7 @@ Answer with JSON only: {"score": <integer 0-100>, "reasons": ["<short reason>", 
       blocks,
       memory: this.memory(from, req.targetLocale),
       glossary,
-      service: this.translator,
+      service: this.translator(),
       callKey: `production:${prod.id}:translate:a${prod.attempts}`,
       origin: { kind: 'ai_production', id: prod.id },
       capability: 'translate',
@@ -637,10 +691,87 @@ Answer with JSON only: {"score": <integer 0-100>, "reasons": ["<short reason>", 
     return notes;
   }
 
-  /** Rewrite or write: the editorial policy, the sources as data, citations required. */
-  private async compose(prod: ProductionRow, mode: 'rewrite' | 'write', sources: SourceRecord[], policy: Record<string, unknown>, targetLocale: string, notes: string | null) {
-    const task =
-      mode === 'rewrite'
+  /**
+   * The structured brief of a briefing-style rewrite (P09): the answer the article is written from, validated against
+   * the contract (`ArticleBriefSchema`) with **one** repair attempt — the second answer is told what was wrong.
+   *
+   * An answer that is not JSON, or that breaks the contract (including a section naming a source this production does
+   * not have, or a brief that rests on no source at all), is a failed step with the errors in its detail. After the
+   * repair the production ends with `brief_invalid` instead of spending model calls on the same answer shape again.
+   * The accepted brief is written into the step's detail, so an operator sees what the article was based on.
+   */
+  private async articleBrief(prod: ProductionRow, sources: SourceRecord[], policy: Record<string, unknown>, targetLocale: string): Promise<ArticleBrief> {
+    const known = new Set(sources.map((s) => s.id));
+    const data = {
+      targetLocale,
+      editorialPolicy: policy,
+      sources: sources.map((s) => ({ id: s.id, title: s.title, url: s.finalUrl, text: s.bodyText.slice(0, 6000) })),
+    };
+    let errors: string[] = [];
+    let previousAnswer = '';
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      let parsed: { ok: true; brief: ArticleBrief } | { ok: false; errors: string[] } | null = null;
+      const { result } = await this.call(prod, 'brief', 'brief', {
+        systemPrompt: [
+          'Write the structured brief of an article for this site before any of it is written: what it argues, for whom, from what angle, in which sections, resting on which sources, in which tone and at what length, with its search title, description and keywords.',
+          DATA_NOT_INSTRUCTIONS,
+          'Everything in the brief must come from the data. Name a section\'s sources by their ids; name no source that is not in the data.',
+          'Answer with JSON only: {"thesis": "...", "audience": "...", "angle": "...", "sections": [{"heading": "...", "keyPoints": ["..."], "sourceIds": ["<source id>"]}], "tone": "...", "wordBudget": 800, "seo": {"title": "...", "description": "...", "keywords": ["..."]}}.',
+          ...(attempt === 1 ? [] : ['The previous answer was rejected. Fix these errors and answer with the whole brief again:', ...errors]),
+        ].join('\n'),
+        // The rejected answer is untrusted content like everything else: it goes in the data, never in the instructions.
+        data: { ...data, ...(attempt === 1 ? {} : { previousAnswer }) },
+        maxOutputTokens: 1200,
+        n: attempt,
+        promptVersion: PROMPT_VERSIONS.brief,
+        describe: (json) => {
+          parsed = this.validateBrief(json, known);
+          return parsed.ok
+            ? { outcome: attempt === 1 ? 'ok' : 'repaired', detail: { attempt, brief: parsed.brief } }
+            : { outcome: 'failed', detail: { attempt, errors: parsed.errors } };
+        },
+      });
+      const answer = parsed as { ok: true; brief: ArticleBrief } | { ok: false; errors: string[] } | null;
+      if (answer?.ok) return answer.brief;
+      errors = answer?.errors ?? ['the answer is not a JSON object'];
+      previousAnswer = (result.response.content ?? '').slice(0, 4000);
+    }
+    throw new BriefInvalidError(errors, 2);
+  }
+
+  /** The contract plus this production's sources: an unknown source id is an error the repair can fix, not a silent drop. */
+  private validateBrief(answer: Record<string, unknown> | null, known: ReadonlySet<string>): { ok: true; brief: ArticleBrief } | { ok: false; errors: string[] } {
+    // `parseModelJson` already answers null for anything that is not one JSON object: say so, rather than echo Zod.
+    if (answer === null) return { ok: false, errors: ['the answer is not a JSON object'] };
+    const parsed = ArticleBriefSchema.safeParse(answer);
+    if (!parsed.success) {
+      return { ok: false, errors: parsed.error.issues.slice(0, 20).map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`) };
+    }
+    const brief = parsed.data;
+    const ids = briefSourceIds(brief);
+    const unknown = ids.filter((id) => !known.has(id));
+    if (unknown.length) return { ok: false, errors: [`sections.sourceIds: not sources of this production: ${unknown.join(', ')}`] };
+    if (!ids.length) return { ok: false, errors: ['sections.sourceIds: the brief names no source, so its article could cite none'] };
+    return { ok: true, brief };
+  }
+
+  /**
+   * Rewrite or write: the editorial policy, the sources as data, citations required. A briefing-style rewrite is the
+   * write step with `brief` set: the structured brief replaces the free-form instruction as the outline, and the
+   * article may only cite the sources the brief names (spec ai/content-pipeline "简报式改写").
+   */
+  private async compose(
+    prod: ProductionRow,
+    mode: 'rewrite' | 'write',
+    sources: SourceRecord[],
+    policy: Record<string, unknown>,
+    targetLocale: string,
+    notes: string | null,
+    brief: ArticleBrief | null = null,
+  ) {
+    const task = brief
+      ? 'Write the article from the structured brief in the data: follow its sections in order, make their key points, keep its thesis, angle, audience and tone, and stay within its word budget. Do not copy the sources wording; follow the editorial policy.'
+      : mode === 'rewrite'
         ? 'Rewrite the sources into one article for this site: adapt it to the audience, add background and analysis the sources support, follow the editorial policy.'
         : 'Write an original article for this site from the facts in the sources and the research notes; do not copy their wording; follow the editorial policy.';
     const { json } = await this.call(prod, mode, mode, {
@@ -652,14 +783,19 @@ Answer with JSON only: {"title": "...", "summary": "...", "bodyHtml": "<p>...</p
         targetLocale,
         editorialPolicy: policy,
         sources: sources.map((s) => ({ id: s.id, title: s.title, url: s.finalUrl, attribution: s.source.attribution, text: mode === 'rewrite' ? s.bodyText.slice(0, 20_000) : s.bodyText.slice(0, 8000) })),
+        ...(brief !== null ? { brief } : {}),
         ...(notes !== null ? { researchNotes: notes } : {}),
       },
       maxOutputTokens: 4000,
+      // The step records the prompt it used, not the production's: a briefing-style rewrite writes with `write@1`.
+      promptVersion: PROMPT_VERSIONS[mode],
     });
     if (!json || typeof json.bodyHtml !== 'string' || typeof json.title !== 'string') throw new PipelineError('BAD_OUTPUT', `The ${mode} answer is not the expected JSON.`);
     const ids = new Set(sources.map((s) => s.id));
-    const cited = Array.isArray(json.citations) ? [...new Set(json.citations.filter((c): c is string => typeof c === 'string' && ids.has(c)))] : [];
-    if (!cited.length) throw new PipelineError('NO_CITATIONS', `The ${mode} answer cites none of its sources.`);
+    // From a brief, the citations must be among the sources the brief rests on: the draft is the brief's article.
+    const allowed = brief !== null ? new Set(briefSourceIds(brief)) : ids;
+    const cited = Array.isArray(json.citations) ? [...new Set(json.citations.filter((c): c is string => typeof c === 'string' && ids.has(c) && allowed.has(c)))] : [];
+    if (!cited.length) throw new PipelineError('NO_CITATIONS', brief !== null ? 'The answer cites none of the sources the brief rests on.' : `The ${mode} answer cites none of its sources.`);
     const citedSources = sources.filter((s) => cited.includes(s.id));
     const body = keepOnlyLinks(sanitizeModelHtml(json.bodyHtml), sources.flatMap((s) => [s.finalUrl, s.url]));
     return {
@@ -829,7 +965,7 @@ Answer with JSON only: {"seoTitle": "...", "seoDescription": "..."}.`,
         blocks,
         memory: this.memory(from, req.targetLocale),
         glossary,
-        service: this.translator,
+        service: this.translator(),
         callKey: `production:${prod.id}:translate:a${prod.attempts}`,
         origin: { kind: 'ai_production', id: prod.id },
         capability: 'translate',
@@ -948,7 +1084,7 @@ Answer with JSON only: {"seoTitle": "...", "seoDescription": "..."}.`,
         blocks,
         memory: this.memory(from, to),
         glossary: await loadGlossary(this.deps.db, this.siteId, from, to, (profile.content.glossary as Array<{ term: string; preferred?: string }>) ?? []),
-        service: this.translator,
+        service: this.translator(),
         callKey: `production:${prod.id}:retranslate:a${prod.attempts}`,
         origin: { kind: 'ai_production', id: prod.id },
         capability: 'translate',

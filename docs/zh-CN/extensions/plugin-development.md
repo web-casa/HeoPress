@@ -16,6 +16,8 @@
 | 内容事件订阅 | `ext:events` 与 `cdc:subscribe:<集合>` | `ctx.extensionPoints.register('events', defineSubscription({...}))` |
 | 发布前钩子 | `ext:events` 与清单 `prePublishHooks` | `ctx.extensionPoints.register('events', definePrePublishHook({...}))` |
 | 后台面板 | `ext:admin-panels` | 清单 `admin` 字段（声明式，无需代码） |
+| 简报分节 | `ext:briefing-sections` | `ctx.extensionPoints.register('briefing-sections', defineBriefingSection({...}))`，并在清单 `briefingSections` 声明 id |
+| 翻译服务 | `ext:translation-services`（另需 `http:fetch:<主机>`、`secrets:<名称>`） | `ctx.extensionPoints.register('translation-services', defineTranslationService({...}))`，并在清单 `translationServices` 声明 id、引擎与价格 |
 | 私有存储 | 清单 `storage` 字段 | `ctx.storage.collection('<命名空间>')` |
 
 ```ts
@@ -28,6 +30,9 @@ export default (ctx: PluginContext) => {
 };
 ```
 
+简报分节的完整说明（清单声明、返回值契约、端点与示例）见 [简报分节](briefing-sections.md)；
+翻译服务的完整说明（清单声明、站点选择、按字符计费与沙箱边界）见 [插件翻译服务](translation-services.md)。
+
 插件只在**已启用且权限已批准**时运行；等待重新确认权限（`reconfirm`）的插件不运行。插件代码不能直接访问数据库、环境变量或宿主文件：
 条目读写走 `ctx.items`（受站点边界、调用者权限、Hold 与质量门禁约束），网络请求只能发往清单声明的主机（`http:fetch:<host>`）。
 写入不蕴含发布：只有 `items:write:<集合>` 的插件只能修改草稿；设置 `published` / `scheduled`，以及修改、下架或删除已发布或已排期的条目，
@@ -37,7 +42,7 @@ export default (ctx: PluginContext) => {
 
 ## 2. 扩展点契约版本
 
-九个扩展点与插件宿主 API（`context`）各有独立的契约版本（语义化版本），由 `@heopress/extension-sdk` 的
+十一个扩展点与插件宿主 API（`context`）各有独立的契约版本（语义化版本），由 `@heopress/extension-sdk` 的
 `EXTENSION_POINT_VERSIONS` 公布，宿主按 `@heopress/contracts` 中的同一张表检查。破坏性变更只提升受影响扩展点的主版本，
 其他扩展点不变（ADR-0025）。
 
@@ -52,6 +57,8 @@ export default (ctx: PluginContext) => {
 | `events` | `1.0.0` | `ext:events` |
 | `admin-panels` | `1.0.0` | `ext:admin-panels` |
 | `build-steps` | `1.0.0` | `ext:build-steps` |
+| `briefing-sections` | `1.0.0` | `ext:briefing-sections` |
+| `translation-services` | `1.0.0` | `ext:translation-services` |
 | `context`（插件宿主 API） | `1.0.0` | 无需能力，始终要求 |
 
 清单为**每个申请的扩展点**与 `context` 声明它编写时兼容的版本范围：

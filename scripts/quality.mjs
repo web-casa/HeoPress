@@ -541,7 +541,7 @@ export const TIERS = {
  * group alone): a shard runs the db group's steps, the package suites only in shard 1; the merge runs the
  * workspace check and `db:cms:merge`.
  */
-export function planSteps(tier, groups = [], { shard, mergeShards } = {}) {
+export function planSteps(tier, groups = [], { shard, mergeShards, steps: only } = {}) {
   if (shard || mergeShards) {
     if (tier !== 'pr' || groups.length !== 1 || groups[0] !== 'db') throw new Error('--shard and --merge-shards go with "pr --group db" only');
     if (shard && mergeShards) throw new Error('--shard and --merge-shards are separate runs');
@@ -556,7 +556,9 @@ export function planSteps(tier, groups = [], { shard, mergeShards } = {}) {
   const chosen = groups.length > 0 ? tierGroups.filter((g) => groups.includes(g)) : tierGroups;
   const steps = [];
   for (const g of chosen) for (const s of GROUPS[g]) if (!steps.includes(s)) steps.push(s);
-  return steps;
+  if (!only || only.length === 0) return steps;
+  for (const s of only) if (!steps.includes(s)) throw new Error(`no step "${s}" in this selection (${steps.join(', ')})`);
+  return steps.filter((s) => only.includes(s));
 }
 
 function parseArgs(argv) {
@@ -565,14 +567,16 @@ function parseArgs(argv) {
   let list = false;
   let shard;
   let mergeShards;
+  let steps;
   for (let i = 0; i < rest.length; i += 1) {
     if (rest[i] === '--group') groups.push(rest[++i]);
     else if (rest[i] === '--list') list = true;
     else if (rest[i] === '--shard') shard = parseShard(rest[++i]);
     else if (rest[i] === '--merge-shards') mergeShards = parseShardCount(rest[++i]);
+    else if (rest[i] === '--steps') steps = String(rest[++i] ?? '').split(',').map((s) => s.trim()).filter(Boolean);
     else throw new Error(`unknown argument ${rest[i]}`);
   }
-  return { tier, groups, list, shard, mergeShards, root: repoRoot };
+  return { tier, groups, list, shard, mergeShards, steps, root: repoRoot };
 }
 
 function parseShardCount(value) {

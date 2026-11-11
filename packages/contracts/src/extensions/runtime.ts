@@ -48,6 +48,42 @@ export const EVENT_LIMITS = {
   maxAttempts: 5,
 } as const;
 
+/** Limits of a briefing section (HeoPress v1.1, spec extensions/briefing-sections). */
+export const BRIEFING_LIMITS = {
+  /** Sections one plugin may declare. */
+  sections: { max: 8 },
+  /** Links one section may list. */
+  items: { max: 10 },
+  /** Characters of a section title (and of an item label). */
+  titleChars: 80,
+  labelChars: 80,
+  descriptionChars: 200,
+  /** Characters of an item's site-relative href. */
+  hrefChars: 512,
+  /** Wall-clock budget of one `compute` call (ms): default, ceiling and floor. */
+  durationMs: { default: 1_500, max: 5_000, min: 100 },
+  /** Outbound requests one `compute` call may make (the plugin's own item reads included). */
+  requests: { default: 10, max: 50, min: 0 },
+} as const;
+
+/** Limits of a plugin-provided translation service (HeoPress v1.2, spec extensions/translation-services). */
+export const TRANSLATION_LIMITS = {
+  /** Services one plugin may declare. */
+  services: { max: 8 },
+  /** Segments one call may translate; a longer document is refused rather than silently truncated. */
+  segments: { max: 1000 },
+  /** Characters of one translated segment text. */
+  segmentTextChars: 200_000,
+  /** Characters of a service's display name. */
+  displayNameChars: 80,
+  /** Decimal currency units per million characters a declaration may state. */
+  maxPricePerMillionChars: 1_000_000,
+  /** Wall-clock budget of one `translate` call (ms): default, ceiling and floor. */
+  durationMs: { default: 20_000, max: 60_000, min: 100 },
+  /** Outbound requests one `translate` call may make (the service's own API calls included). */
+  requests: { default: 20, max: 100, min: 0 },
+} as const;
+
 /** Private storage limits (task 3.7). */
 export const STORAGE_LIMITS = {
   /** Bytes of one document (JSON). */

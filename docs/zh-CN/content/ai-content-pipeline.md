@@ -9,6 +9,18 @@
 `apps/cms/src/services/pipeline/block-translation.ts`（区块翻译）、`apps/cms/src/services/pipeline/research.ts`（撰写调研）、
 `apps/cms/src/services/pipeline/safety.ts`（幂等键、输出清洗、禁止的操作）、`apps/cms/src/services/pipeline/operations.ts`（Flows 操作）。
 
+## 抓取后的自动派发
+
+抓取成功的来源文档会写入加工 outbox（`lumibase_ingest_processing_jobs`，与文档同一个事务）。调度器每分钟把
+`kind = 'process'` 且仍为 `pending` 的行交给**站点自己的加工 Flow**：以 `pipeline:fetch-source` 为第一步的启用中 Flow，
+每个行与 Flow 组合入队一个 `flow:event` 任务（复用事件触发的 Flow 队列与 worker），随后行变为 `enqueued`。
+
+- 站点没有这样的 Flow 时行保持 `pending`——没有配置可做加工，系统不会替站点挑选 Flow；运营者配置后下一轮自动接上。
+- `kind = 'lead'` 的行（发现用途信源的线索）保持 `pending`，只记录标题与链接，供研究线索使用。
+- 同一行只派发一次；重复执行不会重复入队。
+
+实现：`apps/cms/src/services/ingest/processing-dispatch.ts`，调度在 `apps/cms/src/serve.ts`（`ingest-processing-dispatch`）。
+
 ## Flows 操作
 
 | 操作 | 作用 |
@@ -17,6 +29,7 @@
 | `pipeline:translate` | 来源文档 → 译文草稿；或 `sourceItemId`：翻译组源条目 → 新译文草稿；或 `targetItemId`：增量重译 |
 | `pipeline:rewrite` | 按编辑策略改写已授权来源，带引用；先做价值评估 |
 | `pipeline:write` | 受限调研后基于事实原创撰写，带引用；先做价值评估 |
+| `pipeline:brief` | 简报式改写：先生成结构化简报（论点、受众、角度、有序分节与支撑来源、语气、字数预算、SEO 标题/描述/关键词），再依据简报成文；先做价值评估 |
 | `pipeline:seo-copy` | 为草稿生成 SEO 标题与描述 |
 | `pipeline:run-gate` | 对草稿执行质量门禁（结果绑定条目版本） |
 | `pipeline:propose-publish` | 提议发布；由自动发布规则决定，未接入时一律进入审核队列 |
@@ -64,6 +77,23 @@
 已发布的译文在正常审核与发布之前保持不变。写回时在同一事务中重新核对：源区块在运行期间再次变化、或译文区块被修改的，不写回，进入复核列表。
 重译修订不自动发布，一律进入审核队列，由人工提升（promote）为线上内容。提升后，原样上线且其源区块未再变化的区块，其映射恢复为最新
 （记录译时的源哈希与上线后的目标哈希，清除过期与人工编辑标记，`pipeline/retranslation-promotion.ts`）；人工在修订中改过的区块保留人工编辑标记。
+
+## 简报式改写
+
+`pipeline:brief` 是「先生成结构化简报，再成文」的改写模式（v1.1 backlog P09）：
+
+1. **结构化简报**：以 `brief` 能力调用模型，产出论点（`thesis`）、受众（`audience`）、角度（`angle`）、
+   有序分节（`heading`、`keyPoints`、支撑该节的来源 id `sourceIds`）、语气（`tone`）、字数预算（`wordBudget`）
+   与 SEO 字段（`title`、`description`、`keywords`）。契约在 `packages/contracts/src/schemas/content-brief.ts`（`ArticleBriefSchema`），
+   字段全部必填、不接受未知字段；分节里的 `sourceIds` 必须是本次生产的来源，且简报至少要指明一个来源。
+2. **一次修复**：答案不是 JSON 或不符合契约时，第二次调用把校验错误（以及上一次的答案）附在系统提示里重试一次；
+   仍不合格则生产立即以 `failed` / `brief_invalid` 结束（不按普通失败重试，避免把模型调用反复花在同样的答案形状上）。
+3. **依据简报成文**：成文仍走 `write` 步骤与 `write` 能力，但提示词要求按简报的分节顺序与要点写作，数据里带 `brief`；
+   正文引用只能是简报指明过的来源（否则拒绝，`NO_CITATIONS`）。
+4. **可检查**：简报写入 `brief` 步骤的 `detail`（第几次尝试、是否修复），并作为 `data.brief` 写入草稿条目，
+   运营者能看到文章基于什么写成。费用分别记在 `brief` 与 `write` 能力下，各计一次。
+
+来源的使用方式按「提炼事实并成文」校验（`extract_facts`），与撰写模式一致。
 
 ## 改写、撰写与价值评估
 

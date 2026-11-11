@@ -25,6 +25,7 @@ import {
 } from './discovery';
 import type { Listable, PublicItemRow, SiteReads } from './read-port';
 import { sameLocale } from '@heopress/contracts/schemas';
+import type { PublicExtensionRoute } from '@heopress/contracts/extensions';
 import { bodyHtml, discoveryPageOf, titleOf, type SiteInfo } from './view-model';
 
 /**
@@ -45,8 +46,29 @@ export type DiscoveryFile =
   | { kind: 'news-sitemap' }
   | { kind: 'feed'; format: 'rss' | 'atom'; collection: string | null; locale: string | null };
 
-/** Collections with a feed of their own (`/feed/<collection>.xml`); the site's feed (`/feed.xml`) is its articles. */
-const FEED_COLLECTIONS = ['pages'] as const;
+/**
+ * The collections a site may publish a collection feed of (`/feed/<collection>.xml`), by the segment its address
+ * uses (HeoPress v1.1 P12): `pages` (a preset collection), and each collection a plugin route declares. A plugin
+ * collection's local name (`<namespace>__<collection>` → `<collection>`) is its address when no other plugin uses
+ * that local name; when it is ambiguous the machine name is. Each collection has exactly one segment, so no two
+ * paths make the same answer. The caller removes the site feed's own collection: `/feed.xml` is its one address.
+ */
+export function pluginFeedCollections(routes: readonly PublicExtensionRoute[]): Map<string, string> {
+  const byLocal = new Map<string, Set<string>>();
+  for (const route of routes) {
+    const i = route.collection.indexOf('__');
+    const local = i > 0 ? route.collection.slice(i + 2) : route.collection;
+    byLocal.set(local, (byLocal.get(local) ?? new Set()).add(route.collection));
+  }
+  const out = new Map<string, string>();
+  for (const route of routes) {
+    const i = route.collection.indexOf('__');
+    const local = i > 0 ? route.collection.slice(i + 2) : route.collection;
+    // A local name cannot contain `__`, so it never collides with another collection's machine name.
+    out.set((byLocal.get(local)?.size ?? 0) === 1 ? local : route.collection, route.collection);
+  }
+  return out;
+}
 
 /** Rows read at a time for a feed or the news sitemap, and how many such pages at most (a bound on one answer's work). */
 const SCAN_PAGE = 500;
@@ -70,9 +92,9 @@ export function discoveryFileOf(path: string): DiscoveryFile | null {
   const feed = FEED_PATH.exec(path);
   // A language tag is at most 35 characters (the settings' rule).
   if (feed && (feed[3]?.length ?? 0) <= 35) {
-    const collection = feed[2] ?? null;
-    if (collection && !(FEED_COLLECTIONS as readonly string[]).includes(collection)) return null;
-    return { kind: 'feed', format: feed[1] === 'atom' ? 'atom' : 'rss', collection, locale: feed[3] ?? null };
+    // The segment is a collection name; whether the site has that collection (and may address it) is decided when
+    // the file is answered (`discoveryAnswer`), where the site's routes and settings are known.
+    return { kind: 'feed', format: feed[1] === 'atom' ? 'atom' : 'rss', collection: feed[2] ?? null, locale: feed[3] ?? null };
   }
   if (root && !feed) return { kind: 'root-file', filename: root[1]! };
   return null;
@@ -423,7 +445,20 @@ export async function discoveryAnswer(file: DiscoveryFile, ctx: DiscoveryContext
         ? available.find((l) => l === file.locale && !sameLocale(l, ctx.site.defaultLanguage))
         : (available.find((l) => sameLocale(l, ctx.site.defaultLanguage)) ?? ctx.site.defaultLanguage);
       if (!locale) return null;
-      const collection = file.collection ?? 'articles';
+      // The site feed's collection is configurable (`discovery.feedCollection`); a collection feed addresses `pages` or
+      // a collection a plugin route declares (its local name when unambiguous, else its machine name). The site
+      // feed's collection has one address (`/feed.xml`), so it is not repeated as a collection feed.
+      const siteCollection = seo.discovery.feedCollection;
+      const routes = ctx.site.extensions?.routes ?? [];
+      const allowed = new Map<string, string>([['pages', 'pages'], ...pluginFeedCollections(routes)]);
+      for (const [segment, machine] of [...allowed]) if (machine === siteCollection) allowed.delete(segment);
+      let collection: string;
+      if (file.collection === null) collection = siteCollection;
+      else {
+        const machine = allowed.get(file.collection);
+        if (!machine) return null;
+        collection = machine;
+      }
       const hosts = await ctx.reads.hosts();
       const author = ctx.site.identity?.name || ctx.site.name;
       // Newest first, a page at a time, until the feed is full or the collection ends — only rows whose own setting can let
@@ -456,7 +491,7 @@ export async function discoveryAnswer(file: DiscoveryFile, ctx: DiscoveryContext
       const info = {
         self,
         home: /^https?:\/\//.test(home) ? home : `${origin}${home}`,
-        title: file.collection && file.collection !== 'articles' ? `${ctx.site.name} · ${collection}` : ctx.site.name,
+        title: collection === 'articles' ? ctx.site.name : `${ctx.site.name} · ${routes.find((r) => r.collection === collection)?.title ?? collection}`,
         description: ctx.site.name,
         language: locale,
         author,

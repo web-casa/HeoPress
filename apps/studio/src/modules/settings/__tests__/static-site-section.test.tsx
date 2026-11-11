@@ -9,7 +9,7 @@ import { initStudioI18n, setStudioLanguage } from '@/i18n';
 
 const yes = { support: 'yes' };
 const no = { support: 'no', note: 'runtime' };
-const row = { noindex: yes, 'markdown-canonical': yes, 'redirect-301': yes, 'gone-410': yes, feeds: yes, search: no, preview: no, analytics: no };
+const row = { noindex: yes, 'markdown-canonical': yes, 'markdown-negotiation': yes, 'redirect-301': yes, 'gone-410': yes, feeds: yes, search: no, preview: no, analytics: no };
 const VIEW = {
   enabled: true,
   theme: 'official:starter',

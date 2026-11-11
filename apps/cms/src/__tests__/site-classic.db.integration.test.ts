@@ -827,7 +827,7 @@ describe.skipIf(!hasDbIntegrationUrl)('site-classic over HTTP — DB integration
     // A current cached answer on a system path (as an older renderer could have stored) is not served either.
     const [v] = await fixtures.select({ v: siteRenderVersions.version, s: siteRenderVersions.structureVersion }).from(siteRenderVersions).where(eq(siteRenderVersions.siteId, A));
     const stale = cachedPage(200, 'cached content', null);
-    const key = cacheKey({ mode: 'public', siteId: A, host: HOST_A, path: '/.well-known/security.txt', query: new URLSearchParams() });
+    const key = cacheKey({ mode: 'public', siteId: A, host: HOST_A, path: '/.well-known/security.txt', query: new URLSearchParams(), variant: 'html' });
     await fixtures.insert(renderCache).values({ key, siteId: A, siteVersion: v?.v ?? 0, structureVersion: v?.s ?? 0, themeVersion: BUILTIN_THEME_ID, status: 200, body: stale.body, etag: stale.etag, location: null, contentType: stale.contentType, headers: {}, expiresAt: new Date(Date.now() + 3_600_000) });
     // System paths no handler answers (yet), and spellings of the discovery files that are not theirs (P07 batch 6 answers
     // `/feed.xml` and `/sitemap.xml` themselves: tested with the discovery files).
@@ -1364,6 +1364,152 @@ describe.skipIf(!hasDbIntegrationUrl)('site-classic over HTTP — DB integration
       await setDiscovery(A, { markdownCopies: false });
       expect((await get(HOST_A, '/md-post.md')).status).toBe(404);
       expect(headOf(await (await get(HOST_A, '/md-post/')).text())).not.toContain('text/markdown');
+    });
+  });
+
+  describe('HeoPress v1.2 P07: Markdown content negotiation', () => {
+    const seo = (siteId: string) => new SeoSettingsService({ db: siteDb(siteId), siteId, actor: { userId: null } });
+    const setDiscovery = async (siteId: string, discovery: Record<string, unknown>) => {
+      const { settings, version } = await seo(siteId).get();
+      await seo(siteId).update({ ...settings, version, discovery: { ...settings.discovery, ...discovery } });
+    };
+
+    it('task 4.3: the same address answers the page Markdown when Accept prefers it — its type, noindex, canonical Link and Vary on both; off is today\'s answer', async () => {
+      await article(A, 'neg-post', { excerpt: 'An excerpt.', body: '<h2>Part</h2><p>Hello <strong>world</strong>.</p>' });
+      // Off (the default): HTML, and no Vary — byte-identical to the answer before the setting existed.
+      const off = await get(HOST_A, '/neg-post/', { accept: 'text/markdown' });
+      expect(off.status).toBe(200);
+      expect(off.headers.get('content-type')).toBe('text/html; charset=utf-8');
+      expect(off.headers.get('vary')).toBeNull();
+      const offHtml = await off.text();
+      expect(offHtml).toContain('Title neg-post');
+      await setDiscovery(A, { markdownNegotiation: true });
+      // On: the same URL, the page's Markdown — the very body its `.md` copy serves.
+      const md = await get(HOST_A, '/neg-post/', { accept: 'text/markdown' });
+      expect(md.status).toBe(200);
+      expect(md.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
+      expect(md.headers.get('x-robots-tag')).toBe('noindex');
+      expect(md.headers.get('link')).toBe(`<https://${HOST_A}/neg-post/>; rel="canonical"`);
+      expect(md.headers.get('vary')).toBe('Accept');
+      const body = await md.text();
+      expect(body).toBe(await (await get(HOST_A, '/neg-post.md')).text());
+      expect(body).toContain('Hello **world**.');
+      expect(body.startsWith('# Title neg-post\n\n> An excerpt.')).toBe(true);
+      // The HTML variant of the same page carries Vary too (a shared cache must not cross them).
+      const html = await get(HOST_A, '/neg-post/', { accept: 'text/html' });
+      expect(html.headers.get('content-type')).toBe('text/html; charset=utf-8');
+      expect(html.headers.get('vary')).toBe('Accept');
+      expect(await html.text()).toContain('Title neg-post');
+      // A browser's default, and no header at all: HTML.
+      for (const accept of ['*/*', undefined]) {
+        const res = await get(HOST_A, '/neg-post/', accept ? { accept } : {});
+        expect(res.headers.get('content-type'), accept).toBe('text/html; charset=utf-8');
+      }
+      // The two representations have their own validators; HEAD and 304 replay each one's headers.
+      expect(html.headers.get('etag')).not.toBe(md.headers.get('etag'));
+      const head = await app.request('/neg-post/', { method: 'HEAD', headers: { host: HOST_A, accept: 'text/markdown' } });
+      expect(head.status).toBe(200);
+      expect(head.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
+      expect(head.headers.get('x-robots-tag')).toBe('noindex');
+      expect(head.headers.get('vary')).toBe('Accept');
+      const again = await get(HOST_A, '/neg-post/', { accept: 'text/markdown', 'if-none-match': md.headers.get('etag')! });
+      expect(again.status).toBe(304);
+      expect(again.headers.get('vary')).toBe('Accept');
+      expect(again.headers.get('x-robots-tag')).toBe('noindex');
+      expect(again.headers.get('link')).toBe(`<https://${HOST_A}/neg-post/>; rel="canonical"`);
+      // The HTML validator does not match the Markdown answer.
+      expect((await get(HOST_A, '/neg-post/', { 'if-none-match': html.headers.get('etag')! })).status).toBe(304);
+    });
+
+    it('task 4.3: the cache keys the variant in both orders — an HTML answer is never served for Markdown, nor the reverse', async () => {
+      await setDiscovery(A, { markdownNegotiation: true });
+      await article(A, 'neg-html-first', { body: '<p>HTML-FIRST</p>' });
+      await article(A, 'neg-md-first', { body: '<p>MD-FIRST</p>' });
+      // HTML cached first.
+      const html = await get(HOST_A, '/neg-html-first/', { accept: 'text/html' });
+      expect(html.headers.get('content-type')).toBe('text/html; charset=utf-8');
+      expect(html.headers.get('x-cache')).toBe('miss');
+      const md = await get(HOST_A, '/neg-html-first/', { accept: 'text/markdown' });
+      expect(md.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
+      // Its own entry: the cached HTML was not served.
+      expect(md.headers.get('x-cache')).toBe('miss');
+      expect(await md.text()).toContain('HTML-FIRST');
+      // Each variant then hits its own entry.
+      const htmlAgain = await get(HOST_A, '/neg-html-first/', { accept: 'text/html' });
+      expect(htmlAgain.headers.get('x-cache')).toBe('hit');
+      expect(htmlAgain.headers.get('content-type')).toBe('text/html; charset=utf-8');
+      expect((await get(HOST_A, '/neg-html-first/', { accept: 'text/markdown' })).headers.get('x-cache')).toBe('hit');
+      // Markdown cached first.
+      const mdFirst = await get(HOST_A, '/neg-md-first/', { accept: 'text/markdown' });
+      expect(mdFirst.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
+      expect(mdFirst.headers.get('x-cache')).toBe('miss');
+      const thenHtml = await get(HOST_A, '/neg-md-first/', { accept: 'text/html' });
+      expect(thenHtml.headers.get('content-type')).toBe('text/html; charset=utf-8');
+      expect(thenHtml.headers.get('x-cache')).toBe('miss');
+      expect(await thenHtml.text()).toContain('Title neg-md-first');
+      expect((await get(HOST_A, '/neg-md-first/', { accept: 'text/html' })).headers.get('x-cache')).toBe('hit');
+      // `Accept` spellings do not multiply entries: only the two representations share a page's keys.
+      const wildcard = await get(HOST_A, '/neg-md-first/', { accept: 'text/html, */*;q=0.1' });
+      expect(wildcard.headers.get('x-cache')).toBe('hit');
+    });
+
+    it('task 4.3: a noindex item does not negotiate; a published one does (and only on its own site)', async () => {
+      await setDiscovery(A, { markdownNegotiation: true });
+      await article(A, 'neg-open', { body: '<p>OPEN-BODY</p>' });
+      await article(A, 'neg-hidden', { seo_robots: 'noindex,follow', body: '<p>HIDDEN-BODY</p>' });
+      await article(A, 'neg-dup', { canonical_url: 'https://example.org/original/', body: '<p>DUP-BODY</p>' });
+      const open = await get(HOST_A, '/neg-open/', { accept: 'text/markdown' });
+      expect(open.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
+      expect(await open.text()).toContain('OPEN-BODY');
+      for (const path of ['/neg-hidden/', '/neg-dup/']) {
+        const res = await get(HOST_A, path, { accept: 'text/markdown' });
+        expect(res.status, path).toBe(200);
+        expect(res.headers.get('content-type'), path).toBe('text/html; charset=utf-8');
+        // One representation only: no Vary either.
+        expect(res.headers.get('vary'), path).toBeNull();
+      }
+      // Another site, negotiation off there: HTML and no Vary.
+      await article(B, 'neg-open', { body: '<p>B-BODY</p>' });
+      const other = await get(HOST_B, '/neg-open/', { accept: 'text/markdown' });
+      expect(other.headers.get('content-type')).toBe('text/html; charset=utf-8');
+      expect(other.headers.get('vary')).toBeNull();
+    });
+
+    it('task 4.3: never a non-page — 404, 301, 410, search, feeds and `.md` copies keep their answer whatever Accept says', async () => {
+      await setDiscovery(A, { markdownNegotiation: true });
+      await article(A, 'neg-redirect', { body: '<p>REDIRECT-BODY</p>' });
+      const deleted = await article(A, 'neg-deleted', { body: '<p>DELETED-BODY</p>' });
+      await softDeleteCurrent(items(A), 'articles', deleted.id);
+      const accept = { accept: 'text/markdown' };
+      // 404.
+      const notFound = await get(HOST_A, '/neg-no-such-thing/', accept);
+      expect(notFound.status).toBe(404);
+      expect(notFound.headers.get('content-type')).toContain('text/html');
+      expect(notFound.headers.get('vary')).toBeNull();
+      // 301 (a missing trailing slash), the same target with or without Accept.
+      const redirected = await get(HOST_A, '/neg-redirect', accept);
+      expect(redirected.status).toBe(301);
+      expect(redirected.headers.get('location')).toBe(`https://${HOST_A}/neg-redirect/`);
+      expect(redirected.headers.get('content-type')).not.toBe('text/markdown; charset=utf-8');
+      // 410.
+      const gone = await get(HOST_A, '/neg-deleted/', accept);
+      expect(gone.status).toBe(410);
+      expect(gone.headers.get('content-type')).toContain('text/html');
+      // A search page stays HTML.
+      const search = await get(HOST_A, '/search/?q=neg', accept);
+      expect(search.status).toBe(200);
+      expect(search.headers.get('content-type')).toBe('text/html; charset=utf-8');
+      expect(search.headers.get('x-robots-tag')).toBe('noindex');
+      // A feed stays RSS; a sitemap stays XML; llms.txt stays text.
+      expect((await get(HOST_A, '/feed.xml', accept)).headers.get('content-type')).toBe('application/rss+xml; charset=utf-8');
+      expect((await get(HOST_A, '/sitemap.xml', accept)).headers.get('content-type')).toBe('application/xml; charset=utf-8');
+      expect((await get(HOST_A, '/llms.txt', accept)).headers.get('content-type')).toBe('text/plain; charset=utf-8');
+      // A `.md` copy is answered as itself, with its own headers, whatever Accept says.
+      const copy = await get(HOST_A, '/neg-redirect.md', { accept: 'text/html' });
+      expect(copy.status).toBe(200);
+      expect(copy.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
+      expect(copy.headers.get('x-robots-tag')).toBe('noindex');
+      expect(copy.headers.get('link')).toBe(`<https://${HOST_A}/neg-redirect/>; rel="canonical"`);
     });
   });
 

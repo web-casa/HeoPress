@@ -67,6 +67,8 @@ function present(a: AttemptRow) {
     actualMicros: a.actualMicros,
     inputTokens: a.inputTokens,
     outputTokens: a.outputTokens,
+    /** Characters a `per_1m_chars` attempt is priced by (a plugin translation); null otherwise. */
+    billedCharacters: a.billedCharacters,
     errorCode: a.errorCode,
     settledBy: a.settledBy,
     reconciliation: a.reconciliation,
@@ -116,7 +118,9 @@ export class LlmUsageService {
                  COUNT(*) FILTER (WHERE ${a.billing} = 'cancelled')::int AS "cancelledCount",
                  (COALESCE(SUM(${a.inputTokens}), 0))::text AS "inputTokens",
                  (COALESCE(SUM(${a.outputTokens}), 0))::text AS "outputTokens",
-                 COUNT(*) FILTER (WHERE ${a.billing} <> 'cancelled' AND (${a.inputTokens} IS NULL OR ${a.outputTokens} IS NULL))::int AS "withoutUsageCount"
+                 (COALESCE(SUM(${a.billedCharacters}), 0))::text AS "billedCharacters",
+                 COUNT(*) FILTER (WHERE ${a.billing} <> 'cancelled' AND (${a.inputTokens} IS NULL OR ${a.outputTokens} IS NULL)
+                                    AND ${a.billedCharacters} IS NULL)::int AS "withoutUsageCount"
             FROM ${a}
            WHERE ${a.siteId} = ${this.siteId} AND ${a.period} = ${p}
            GROUP BY 1, 2, 3, 4, 5
@@ -159,6 +163,8 @@ export class LlmUsageService {
           cancelledCount: Number(r.cancelledCount),
           inputTokens: safeMicros(r.inputTokens),
           outputTokens: safeMicros(r.outputTokens),
+          /** Characters of the group's `per_1m_chars` attempts (a plugin translation); 0 for token- and request-priced ones. */
+          billedCharacters: safeMicros(r.billedCharacters),
           /** Attempts whose token counts are not (fully) known: the token sums leave them out. */
           withoutUsageCount: Number(r.withoutUsageCount),
         })),

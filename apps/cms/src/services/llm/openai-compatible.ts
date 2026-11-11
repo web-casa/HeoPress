@@ -53,7 +53,12 @@ export type ChatOutcome =
   /** No answer: the request may or may not have reached the service. */
   | { kind: 'network' }
   /** Refused by the outbound boundary; `sent` when it happened after a response (a redirect). */
-  | { kind: 'blocked'; sent: boolean };
+  | { kind: 'blocked'; sent: boolean }
+  /**
+   * A service that is not an HTTP model API — a plugin-provided translation service (HeoPress v1.2) — failed after it was
+   * called: it threw, timed out or answered outside its contract. `errorCode` is ours (e.g. `PLUGIN_TIMEOUT`).
+   */
+  | { kind: 'failed'; errorCode: string };
 
 export interface SendOptions {
   baseUrl: string;

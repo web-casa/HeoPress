@@ -47,6 +47,8 @@ const ItemRoute = lazyPage(() => import('./content/article-editor').then((m) => 
 const FilesPage = lazyPage(() => import('@/modules/files').then((m) => m.FilesPage));
 const TranslationsPage = lazyPage(() => import('@/modules/translations').then((m) => m.TranslationsPage));
 const TranslationMemoryPage = lazyPage(() => import('@/modules/translations/tm-page').then((m) => m.TranslationMemoryPage));
+const TranslationBacklogPage = lazyPage(() => import('@/modules/translations/backlog-page').then((m) => m.TranslationBacklogPage));
+const ReviewQueuePage = lazyPage(() => import('@/modules/content/review-queue-page').then((m) => m.ReviewQueuePage));
 const InsightsListPage = lazyPage(() => import('@/modules/insights/list-page').then((m) => m.InsightsListPage));
 const InsightsDashboardPage = lazyPage(() => import('@/modules/insights/dashboard-page').then((m) => m.DashboardViewPage));
 const DomainsSettingsPage = lazyPage(() => import('@/modules/settings/domains-page').then((m) => m.DomainsSettingsPage));
@@ -198,10 +200,10 @@ const SPEC: RouteSpec[] = [
         items: [
           { to: '/content', label: 'content.workspace', exact: true },
           // A collection's list and its items count as "Content types" too.
-          { to: '/content/collections', label: 'content.collections', also: /^\/content\/(?!new$|media|translations|translation-memory|sources$|ai-review$|workbench$|flow-drafts$)[^/]+/ },
+          { to: '/content/collections', label: 'content.collections', also: /^\/content\/(?!new$|media|translations|translation-memory|translation-backlog$|review-queue$|sources$|ai-review$|workbench$|flow-drafts$)[^/]+/ },
         ],
       },
-      { items: [{ to: '/content/media', label: 'content.media' }, { to: '/content/translations', label: 'content.translations' }, { to: '/content/translation-memory', label: 'content.translationMemory' }] },
+      { items: [{ to: '/content/review-queue', label: 'content.reviewQueue' }, { to: '/content/media', label: 'content.media' }, { to: '/content/translations', label: 'content.translations' }, { to: '/content/translation-memory', label: 'content.translationMemory' }, { to: '/content/translation-backlog', label: 'content.translationBacklog' }] },
       { items: [{ to: '/content/sources', label: 'content.sources' }] },
       { items: [{ to: '/content/ai-review', label: 'content.aiReview' }, { to: '/content/workbench', label: 'content.workbench' }, { to: '/content/flow-drafts', label: 'content.flowDrafts' }] },
     ]),
@@ -212,6 +214,8 @@ const SPEC: RouteSpec[] = [
       { path: 'media', component: page(FilesPage, 'wide') },
       { path: 'translations', component: page(TranslationsPage) },
       { path: 'translation-memory', component: page(TranslationMemoryPage) },
+      { path: 'translation-backlog', component: page(TranslationBacklogPage) },
+      { path: 'review-queue', component: page(ReviewQueuePage) },
       { path: 'sources', component: page(SourcesPage, 'wide') },
       { path: 'ai-review', component: page(AiReviewQueuePage, 'wide') },
       { path: 'workbench', component: page(PromptWorkbenchPage, 'wide') },

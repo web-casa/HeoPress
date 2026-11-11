@@ -33,7 +33,7 @@ Agent 工具目录、私有词表、扫描审核记录、`release/` 下任意层
 
 - 本机有 `git`、`pnpm`、Node 24 与 `gitleaks`。没有 gitleaks 时导出报告“密钥扫描未完成”并停止，不会当作通过。
 - 本机 `gh` 已登录（只读：查询公开仓库的工作流运行），并能访问 npm 仓库（`pnpm audit`）。
-- **安全扫描已通过**（P07 任务 8.1）：先对要发布的提交执行 `node scripts/ci-mirror.mjs push`，等公开仓库上该镜像提交的
+- **安全扫描已通过**（P07 任务 8.1）：先对要发布的提交执行 `node scripts/ci-mirror.mjs push --wait`（等待并写回状态），等公开仓库上该镜像提交的
   `Security scans`（`.github/workflows/security.yml`）运行成功，且开始时间在 7 天内。镜像提交由导出树唯一确定，
   `prepare` 会从发布树重新算出它并核对这次运行，见下文与 `docs/dev/security-scanning.md`。
 - 许可证文件齐全且已定稿：`LICENSE`、`LICENSE-EXCEPTION.md`、`COMMERCIAL-LICENSE.md`、`CLA.md`、`LICENSES/Apache-2.0.txt`、`NOTICE`。

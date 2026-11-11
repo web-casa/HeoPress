@@ -117,6 +117,11 @@ export const llmSiteSettings = pgTable('lumibase_llm_site_settings', {
   dailyProcessingLimit: integer('daily_processing_limit'),
   /** HeoPress P09 task 1.10: the value score (0–100) a source must reach before rewriting or writing. */
   valueThreshold: integer('value_threshold').default(60).notNull(),
+  /**
+   * HeoPress v1.2 (spec extensions/translation-services): the plugin-provided translation service the site translates with
+   * (`"<plugin name>:<service id>"`); null (the default) keeps the LLM path.
+   */
+  translationService: text('translation_service'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -214,6 +219,11 @@ export const llmAttempts = pgTable(
     actualMicros: bigint('actual_micros', { mode: 'number' }),
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
+    /**
+     * HeoPress v1.2: the characters a `per_1m_chars` attempt is priced by (a plugin-provided translation service); null for
+     * token- and request-priced attempts. Tokens stay null there: it is not a token call.
+     */
+    billedCharacters: integer('billed_characters'),
     /** A safe code; never the upstream's text. */
     errorCode: text('error_code'),
     /** `auto` | `manual`. */
@@ -263,6 +273,10 @@ export const llmAttempts = pgTable(
     reservedOnlyInFlight: check('llm_attempts_reserved_in_flight_check', sql`${t.billing} <> 'reserved' OR ${t.outcome} = 'in_flight'`),
     settledHasAmount: check('llm_attempts_settled_amount_check', sql`${t.billing} <> 'settled' OR ${t.actualMicros} IS NOT NULL`),
     amountsCheck: check('llm_attempts_amounts_check', sql`${t.reservedMicros} >= 0 AND (${t.actualMicros} IS NULL OR ${t.actualMicros} >= 0)`),
+    billedCharactersCheck: check(
+      'llm_attempts_billed_characters_check',
+      sql`${t.billedCharacters} IS NULL OR ${t.billedCharacters} >= 0`,
+    ),
     budgetIdx: index('llm_attempts_budget_idx').on(t.siteId, t.period, t.billing),
     // The daily budget sums a site's attempts of one local day (HeoPress P09 task 4.5).
     siteCreatedIdx: index('llm_attempts_site_created_idx').on(t.siteId, t.createdAt),

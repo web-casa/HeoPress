@@ -76,6 +76,12 @@ export interface PageDataSnapshot {
   files: PageDataFile[];
   /** Redirects and withdrawn addresses (absent in snapshots made before P11 task 4.4: none). */
   routes?: PageDataRoute[];
+  /**
+   * The site's discovery switches that change what a static target must answer (HeoPress v1.2 P11 task 4.5): whether
+   * the `.md` copies exist, and whether a page's own address negotiates Markdown. Absent in snapshots made before the
+   * negotiation change: a target then renders no negotiation rule.
+   */
+  discovery?: { markdownCopies: boolean; markdownNegotiation: boolean };
   unsupported: StaticUnsupported[];
   /**
    * The Astro sources of the site's enabled plugins (HeoPress P12 tasks 2.3, 2.4): route templates by `<namespace>/<template>`,
@@ -147,6 +153,10 @@ export function assertPageDataSnapshot(v: unknown): asserts v is PageDataSnapsho
     });
   }
   if (!Array.isArray(s.unsupported)) fail('unsupported missing');
+  if (s.discovery !== undefined) {
+    const d = s.discovery as Record<string, unknown>;
+    if (!isObj(d) || typeof d.markdownCopies !== 'boolean' || typeof d.markdownNegotiation !== 'boolean') fail('discovery: shape');
+  }
   if (s.extensions !== undefined) {
     const e = s.extensions as Record<string, unknown>;
     if (!isObj(e) || !isStr(e.hash) || !isObj(e.astro)) fail('extensions: shape');

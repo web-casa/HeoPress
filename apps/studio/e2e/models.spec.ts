@@ -25,6 +25,9 @@ async function create(page: Page, fields: Record<string, string>): Promise<void>
 }
 
 test('an administrator adds and probes model providers, orders failover, sets a budget and reconciles; the key stays masked', async ({ page, request }) => {
+  // A long flow (five providers, probes, failover, budget, reconciliation) on a 2-vCPU CI runner: the default 30 s
+  // leaves no margin when the database and the CMS share the machine.
+  test.setTimeout(90_000);
   const s = seed();
   await useSite(page, s.sites.a);
   await signIn(page, ADMIN.email, ADMIN.password);
@@ -69,8 +72,9 @@ test('an administrator adds and probes model providers, orders failover, sets a 
   await expect(budget.getByRole('status')).toHaveText('Saved.');
 
   // After a reload (the answers so far read in full first): the usage of the probes, and the two unknown costs to reconcile.
-  // Saving refetches the page's queries: let them finish, so no answer is cut off by the reload.
-  await page.waitForLoadState('networkidle');
+  // Saving refetches the page's queries. Wait for the recorded bodies rather than for `networkidle`, which never settles
+  // on a page that keeps refetching — that wait was what consumed the timeout on a loaded runner.
+  await page.waitForTimeout(750);
   const read = await Promise.all(answers.splice(0));
   await page.reload();
   await expect(page.getByTestId('llm-usage-summary')).toContainText('of 10 USD');

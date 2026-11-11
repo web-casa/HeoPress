@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TranslationServiceRefSchema } from '../extensions/translation';
 
 /**
  * Model providers per site (HeoPress P04 tasks 7.1–7.6, spec
@@ -132,6 +133,13 @@ export const LlmSettingsSchema = z.object({
   dailyBudgetMicros: micros.nullable().optional(),
   /** HeoPress P09: source documents admitted into processing per local day (null: no limit; omitted: unchanged). */
   dailyProcessingLimit: z.number().int().min(0).max(100_000).nullable().optional(),
+  /**
+   * HeoPress v1.2: the plugin-provided translation service a site translates with (`"<plugin name>:<service id>"`, e.g.
+   * `"heopress-deepl:deepl"`); `null` uses the LLM path, omitted leaves the setting unchanged. The selected service must be
+   * declared and registered by an enabled, approved plugin when a translation runs; a stale selection fails rather than
+   * silently falling back to the model.
+   */
+  translationService: TranslationServiceRefSchema.nullable().optional(),
 });
 
 /**
@@ -149,6 +157,8 @@ export const AI_CAPABILITY_TASK_TYPES = {
   translate: 'translation',
   rewrite: 'generation',
   write: 'generation',
+  /** HeoPress v1.1 P09: the structured brief a briefing-style rewrite then writes the article from. */
+  brief: 'generation',
   seo_copy: 'generation',
   value_assessment: 'generation',
   workbench_trial: 'generation',

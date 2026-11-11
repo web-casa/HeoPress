@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, sql, type SQL } from 'drizzle-orm';
 import { collections, contentReviews, items, siteDomains, siteSeoSettings, userSites, type Database } from '@heopress/database';
 import type { PermissionService } from '../permission-service';
 import { runSiteTransaction } from '../rls-transaction';
@@ -6,15 +6,33 @@ import { readableScope } from '../site-network/readable-items';
 import { isArticleCollection } from './article-collections';
 
 /**
- * The current site's overview feed (HeoPress P07a task 4.3; spec studio/overview). Every item it names or counts is
- * one the caller may read (its `read` grant, row rule included); the reviews card counts collections the caller may
- * both review and read, and is absent when there is none.
+ * The current site's overview feed (HeoPress P07a task 4.3; spec studio/overview; the briefing's current-site data,
+ * spec studio/briefing). Every item it names or counts is one the caller may read (its `read` grant, row rule
+ * included); the reviews card counts collections the caller may both review and read, and is absent when there is
+ * none.
  */
 
 interface FeedItem {
   itemId: string;
   collection: string;
   title: string;
+}
+
+/** A named item and when it changed (the briefing's examples). */
+interface BriefingItem extends FeedItem {
+  at: string;
+}
+
+/** What the three-section briefing needs from the current site (v1.1; spec studio/briefing). */
+interface OverviewBriefing {
+  /** Drafts nobody touched for longer than `days` — not waiting for review, not scheduled in the future. */
+  staleDrafts: { days: number; count: number; oldest: (FeedItem & { waitSeconds: number }) | null };
+  /** The rolling `days`-day window: publishes and other changes, each with its count and at most three examples. */
+  recent: {
+    days: number;
+    published: { count: number; examples: BriefingItem[] };
+    updated: { count: number; examples: BriefingItem[] };
+  };
 }
 
 export interface OverviewFeed {
@@ -26,10 +44,19 @@ export interface OverviewFeed {
   week: Array<FeedItem & { kind: 'published' | 'scheduled' | 'pending'; at: string }>;
   /** The setup checklist (task 4.5), from the site's actual state. */
   setup: { domainVerified: boolean; firstArticlePublished: boolean; crawlerPolicySet: boolean; membersInvited: boolean };
+  /** The briefing's current-site data (v1.1, spec studio/briefing). */
+  briefing: OverviewBriefing;
 }
 
 const ACTIVITY_LIMIT = 20;
 const WEEK_LIMIT = 200;
+/** A draft untouched for this long is one the briefing asks about ("放置超过几天"). */
+const STALE_DRAFT_DAYS = 3;
+/** The briefing's "recent changes" span. */
+const RECENT_DAYS = 7;
+/** Examples listed per kind, not a count. */
+const BRIEFING_EXAMPLES = 3;
+const DAY_MS = 86_400_000;
 const titleOf = sql<string>`coalesce(nullif(${items.data}->>'title', ''), nullif(${items.data}->>'name', ''), ${items.id})`;
 
 export async function overviewFeed(
@@ -50,7 +77,15 @@ export async function overviewFeed(
   }
 
   return runSiteTransaction(db, siteId, async (tx) => {
-    const feed: OverviewFeed = { activity: [], week: [], setup: { domainVerified: false, firstArticlePublished: false, crawlerPolicySet: false, membersInvited: false } };
+    const feed: OverviewFeed = {
+      activity: [],
+      week: [],
+      setup: { domainVerified: false, firstArticlePublished: false, crawlerPolicySet: false, membersInvited: false },
+      briefing: {
+        staleDrafts: { days: STALE_DRAFT_DAYS, count: 0, oldest: null },
+        recent: { days: RECENT_DAYS, published: { count: 0, examples: [] }, updated: { count: 0, examples: [] } },
+      },
+    };
 
     if (reviewable.length) {
       const pending = and(eq(contentReviews.siteId, siteId), eq(contentReviews.status, 'pending'), inArray(collections.name, reviewable), canRead);
@@ -129,6 +164,85 @@ export async function overviewFeed(
         .filter((r) => r.at >= window.from && r.at < window.to)
         .map((r) => ({ itemId: r.itemId, collection: r.collection, title: r.title, kind: 'pending' as const, at: r.at.toISOString() })),
     ].sort((a, b) => a.at.localeCompare(b.at));
+
+    // The briefing (v1.1, spec studio/briefing): drafts nobody touched for days, and the last week's changes.
+    const staleBefore = new Date(now.getTime() - STALE_DRAFT_DAYS * DAY_MS);
+    const notWaitingForReview = sql`NOT EXISTS (SELECT 1 FROM ${contentReviews} r WHERE r.item_id = ${items.id} AND r.site_id = ${siteId} AND r.status = 'pending')`;
+    const staleWhere = and(
+      eq(items.siteId, siteId),
+      eq(items.status, 'draft'),
+      isNull(items.deletedAt),
+      sql`${items.updatedAt} < ${staleBefore.toISOString()}::timestamptz`,
+      sql`(${items.publishAt} IS NULL OR ${items.publishAt} <= ${now.toISOString()}::timestamptz)`,
+      notWaitingForReview,
+      canRead,
+    );
+    const [stale] = await tx
+      .select({ n: sql<number>`count(*)`.mapWith(Number) })
+      .from(items)
+      .innerJoin(collections, eq(collections.id, items.collectionId))
+      .where(staleWhere);
+    const [oldestStale] = await tx
+      .select({ itemId: items.id, collection: collections.name, title: titleOf, updatedAt: items.updatedAt })
+      .from(items)
+      .innerJoin(collections, eq(collections.id, items.collectionId))
+      .where(staleWhere)
+      .orderBy(asc(items.updatedAt))
+      .limit(1);
+    feed.briefing.staleDrafts = {
+      days: STALE_DRAFT_DAYS,
+      count: stale?.n ?? 0,
+      oldest: oldestStale
+        ? {
+            itemId: oldestStale.itemId,
+            collection: oldestStale.collection,
+            title: oldestStale.title,
+            waitSeconds: Math.max(0, Math.round((now.getTime() - oldestStale.updatedAt.getTime()) / 1000)),
+          }
+        : null,
+    };
+
+    // Publishes and other changes are disjoint: a publish is also an update, and counting it twice would
+    // make the two numbers add up to more items than changed.
+    const recentFrom = new Date(now.getTime() - RECENT_DAYS * DAY_MS);
+    const publishedWhere = and(
+      eq(items.siteId, siteId),
+      eq(items.status, 'published'),
+      isNull(items.deletedAt),
+      sql`${items.publishedAt} >= ${recentFrom.toISOString()}::timestamptz AND ${items.publishedAt} <= ${now.toISOString()}::timestamptz`,
+      canRead,
+    );
+    const updatedWhere = and(
+      eq(items.siteId, siteId),
+      isNull(items.deletedAt),
+      sql`${items.updatedAt} >= ${recentFrom.toISOString()}::timestamptz AND ${items.updatedAt} <= ${now.toISOString()}::timestamptz`,
+      sql`(${items.publishedAt} IS NULL OR ${items.publishedAt} < ${recentFrom.toISOString()}::timestamptz)`,
+      canRead,
+    );
+    const countOf = async (where: SQL | undefined) => {
+      const [row] = await tx
+        .select({ n: sql<number>`count(*)`.mapWith(Number) })
+        .from(items)
+        .innerJoin(collections, eq(collections.id, items.collectionId))
+        .where(where);
+      return row?.n ?? 0;
+    };
+    const examplesOf = async (where: SQL | undefined, column: 'publishedAt' | 'updatedAt') => {
+      const at = column === 'publishedAt' ? items.publishedAt : items.updatedAt;
+      const rows = await tx
+        .select({ itemId: items.id, collection: collections.name, title: titleOf, at })
+        .from(items)
+        .innerJoin(collections, eq(collections.id, items.collectionId))
+        .where(where)
+        .orderBy(sql`${at} DESC`)
+        .limit(BRIEFING_EXAMPLES);
+      return rows.map((r) => ({ itemId: r.itemId, collection: r.collection, title: r.title, at: r.at!.toISOString() }));
+    };
+    feed.briefing.recent = {
+      days: RECENT_DAYS,
+      published: { count: await countOf(publishedWhere), examples: await examplesOf(publishedWhere, 'publishedAt') },
+      updated: { count: await countOf(updatedWhere), examples: await examplesOf(updatedWhere, 'updatedAt') },
+    };
 
     // Setup checklist: what the site has, regardless of the caller's reading rights (no item is named).
     const [domain] = await tx.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(siteDomains).where(and(eq(siteDomains.siteId, siteId), eq(siteDomains.status, 'active')));

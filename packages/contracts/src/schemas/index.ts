@@ -386,6 +386,8 @@ export {
 } from './site-identity';
 export { EditorialProfileContentSchema, type EditorialProfileContent } from './editorial-profile';
 
+export { ArticleBriefSchema, briefSourceIds, type ArticleBrief } from './content-brief';
+
 export {
   INGEST_SOURCE_TYPES,
   LICENCE_STATUSES,

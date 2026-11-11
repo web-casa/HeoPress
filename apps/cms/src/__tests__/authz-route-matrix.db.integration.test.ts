@@ -111,8 +111,15 @@ const ADMIN_WRITE_PREFIXES = [
   'schema-permissions', 'typegen',
 ].map((p) => new RegExp(`^/api/v1/${p.replace('/', '\\/')}(/|$)`));
 
-/** Writes under those prefixes that are editors' work: link updates of the items they edit. */
-const EDITOR_WRITES = new Set(['POST /api/v1/site/links/impact/:itemId/update-links']);
+/**
+ * Writes under those prefixes that are editors' work: link updates of the items they edit, and generating a briefing
+ * draft — an ordinary item create in the collection the caller may `create` (its own 403/404 cases live in
+ * `briefing-draft.db.integration.test.ts`), not an administration action.
+ */
+const EDITOR_WRITES = new Set([
+  'POST /api/v1/site/links/impact/:itemId/update-links',
+  'POST /api/v1/studio/overview/briefing/draft',
+]);
 
 type Route = { method: string; path: string };
 

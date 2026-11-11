@@ -1,7 +1,7 @@
 // Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
 import { and, asc, eq, gt, inArray, isNotNull, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { activity, collections, inScope, items, settings, scopeSite, sites, type Database } from '@heopress/database';
-import type { QueueProvider } from '@heopress/runtime';
+import type { KeyProvider, QueueProvider } from '@heopress/runtime';
 import { dispatchRevalidation, parseTargets } from './revalidation';
 import { AuditLogger } from '../modules/audit/logger';
 import { appendItemEvent } from '../modules/cdc/change-feed/outbox-writer';
@@ -36,6 +36,8 @@ export const SCHEDULER_QUEUE = 'content-scheduler';
 export interface SchedulerDeps {
   db: Database;
   queue?: QueueProvider;
+  /** Opens plugin secrets for a pre-publish hook (HeoPress v1.2, spec extensions/plugin-secrets). */
+  keys?: KeyProvider;
 }
 
 export interface SchedulerTickResult {
@@ -142,7 +144,7 @@ export async function sweepDuePublishInSite(deps: SchedulerDeps, siteId: string,
   for (const row of due) {
     // Plugins' pre-publish hooks (P12 task 3.4) first, outside the transaction: a veto leaves the item as it is.
     try {
-      await prePublishScheduled(deps.db, row.siteId, names.get(row.collectionId) ?? '', row.id);
+      await prePublishScheduled(deps, row.siteId, names.get(row.collectionId) ?? '', row.id);
     } catch (err) {
       await recordPublishFailure(deps, row, err);
       continue;
@@ -482,13 +484,13 @@ export function registerSchedulerWorker(deps: SchedulerDeps): void {
 }
 
 /** A scheduled publish asks the site's plugins' pre-publish hooks, with the item as it is now (P12 task 3.4). */
-async function prePublishScheduled(db: Database, siteId: string, collection: string, itemId: string): Promise<void> {
+async function prePublishScheduled(deps: SchedulerDeps, siteId: string, collection: string, itemId: string): Promise<void> {
   const { PluginHost } = await import('../extensions/runtime/plugin-host');
-  const host = new PluginHost({ db });
+  const host = new PluginHost({ db: deps.db, keys: deps.keys });
   if ((await host.enabledRows(siteId, 'events')).length === 0) return;
   const { runPrePublishHooks } = await import('../extensions/runtime/events');
-  const item = (await itemServiceForSystem({ db, siteId, suppressExtensionHooks: true }, 'scheduler').detail(collection, itemId)) as { data?: Record<string, unknown> } | null;
-  await runPrePublishHooks({ db, host, siteId }, { collection, itemId, status: 'published', data: item?.data ?? {} });
+  const item = (await itemServiceForSystem({ db: deps.db, siteId, suppressExtensionHooks: true }, 'scheduler').detail(collection, itemId)) as { data?: Record<string, unknown> } | null;
+  await runPrePublishHooks({ db: deps.db, host, siteId }, { collection, itemId, status: 'published', data: item?.data ?? {} });
 }
 
 /** A due item that could not be published: recorded for its site, the sweep goes on (HeoPress P05). */

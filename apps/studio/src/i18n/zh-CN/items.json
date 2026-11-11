@@ -751,5 +751,21 @@
     "bodyFields": "未删除：你打开此条目后，有人修改了它（{{fields}}；当前为第 {{version}} 版）。请刷新查看修改后再决定。",
     "reload": "刷新条目",
     "keep": "留在此页"
+  },
+  "timeliness": {
+    "heading": "时效",
+    "badge": "待更新",
+    "marked": "标记于 {{date}}",
+    "due": "截止 {{date}}",
+    "reason": "为什么需要更新？",
+    "reasonPlaceholder": "例如：文中的价格已经过期",
+    "dueAt": "更新截止时间（可选）",
+    "mark": "标记为待更新",
+    "save": "保存标记",
+    "cancel": "取消",
+    "clear": "解除标记",
+    "notMarked": "未标记为待更新。",
+    "failed": "未能修改时效标记。",
+    "filterOnly": "只看待更新"
   }
 }

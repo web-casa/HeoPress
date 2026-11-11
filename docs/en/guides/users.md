@@ -53,6 +53,12 @@ Simplified Chinese and English. `⌘K` / `Ctrl K` searches and jumps; `?` lists 
 - **Review workspace**: views such as Inbox, My drafts, Awaiting review and Scheduled. Approving and returning a
   draft are done by a person in Studio only; API keys, agents and MCP tools are always refused.
   See [Content and review workspace](../../zh-CN/studio/content.md) (Chinese).
+- **Timeliness marks and review reminders**: an item can be marked "needs update" with a short reason and an optional
+  review deadline; every day at 08:00 UTC, items whose deadline has arrived send one digest notification (up to five
+  titles and a link to the review queue) to each site member who may update their collection — administrators
+  included, readers excluded — at most once per item per seven days (`HEOPRESS_REVIEW_REMINDER_DAYS`). Re-marking or
+  clearing the mark re-arms it, and a reminder never changes an item's version, body or audit trail.
+  See [Content and review workspace](../../zh-CN/studio/content.md) (Chinese).
 - **Hold and scheduling**: an item can be put on Hold (no automated process will publish it) or given a future
   publication time.
 - **Preview**: signed, time-limited links preview a draft or an unpublished theme version in the site's real design;

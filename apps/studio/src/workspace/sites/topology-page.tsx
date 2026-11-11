@@ -36,7 +36,7 @@ export function DomainLabel({ site }: { site: SiteSummary }) {
 }
 
 /** A site's state in words: its health, or its availability. */
-export function useStateLabel() {
+function useStateLabel() {
   const { t } = useTranslation('sites');
   return (site: SiteSummary) => t(`groups.${groupOf(site)}`);
 }

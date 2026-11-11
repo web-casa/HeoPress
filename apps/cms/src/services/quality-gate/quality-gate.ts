@@ -256,7 +256,7 @@ function normaliseLevels(stored: Record<string, string> | undefined): Record<Gat
   return out;
 }
 
-const MODE_OPERATION: Record<string, UsageOperation> = { translate: 'translate', retranslate: 'translate', rewrite: 'rewrite', write: 'extract_facts' };
+const MODE_OPERATION: Record<string, UsageOperation> = { translate: 'translate', retranslate: 'translate', rewrite: 'rewrite', write: 'extract_facts', brief: 'extract_facts' };
 
 export class QualityGate {
   constructor(private readonly deps: QualityGateDeps) {}

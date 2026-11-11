@@ -1,3 +1,4 @@
+// Modified by the HeoPress project; based on LumiBase (Apache-2.0). See NOTICE.
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -6,7 +7,7 @@ const rootPackagePath = path.join(repoRoot, 'package.json');
 const rootPackage = JSON.parse(await readFile(rootPackagePath, 'utf8'));
 
 const expectedPackageManager = 'pnpm@9.12.0';
-const expectedNodeEngine = '>=20';
+const expectedNodeEngine = '>=24';
 
 const failures = [];
 

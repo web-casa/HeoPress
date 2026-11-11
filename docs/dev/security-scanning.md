@@ -14,7 +14,7 @@ P07 任务 8.1，依据 ADR-0017 §5：`pnpm audit`、Gitleaks 与 Trivy 镜像�
 
 ## 何时运行
 
-- **每次公开 CI 镜像推送**：`node scripts/ci-mirror.mjs push` 把私有提交推到公开仓库 `ci/b-*` 分支，`push` 触发同时运行
+- **每次公开 CI 镜像推送**：`node scripts/ci-mirror.mjs push`（加 `--wait` 则在公开运行结束后直接写回 `public-mirror-ci` 状态）把私有提交推到公开仓库 `ci/b-*` 分支，`push` 触发同时运行
   `ci.yml` 与本工作流，于是每个镜像提交都有一条扫描运行记录。`ci-mirror.mjs report` 写回私有提交的 `public-mirror-ci` 状态时只取
   `ci.yml` 的运行（`pickRun` 按工作流路径筛选），扫描结果不影响该状态；扫描结果在公开仓库的 Actions 页面查看，并由发布门禁使用。
 - **夜间**：`schedule` 每天 18:17 UTC（北京时间 02:17），只在默认分支上运行：在公开仓库上就是最新发布版本，新公布的漏洞第二天出现。

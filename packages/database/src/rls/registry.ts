@@ -222,6 +222,9 @@ export const RLS_REGISTRY: readonly RlsEntry[] = [
   site('lumibase_plugin_storage'),
   site('lumibase_plugin_endpoint_keys'),
   site('lumibase_plugin_endpoint_nonces'),
+  // HeoPress v1.2 (plugin secrets): the operator-configured values a plugin reads through ctx.secrets, sealed under the
+  // runtime KEK with the site, plugin and name in the AAD.
+  site('lumibase_plugin_secrets'),
   // P13 (data retention): retention holds (open disputes) and the deletion ledger. The ledger is replayed after a
   // restore site by site, in each site's scope.
   site('lumibase_retention_holds'),

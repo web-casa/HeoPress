@@ -17,7 +17,7 @@ import { RelativeTime } from '../ui/relative-time';
 import { SkeletonRows } from '../ui/skeleton';
 import { showUndo } from '../ui/undo-toast';
 
-export interface PageRef {
+interface PageRef {
   itemId: string;
   collection: string;
   title: string;
@@ -54,13 +54,13 @@ interface ResolvedIssue {
 }
 
 /** A rule's title in the interface language (the API answers in English). */
-export function useRuleTitle() {
+function useRuleTitle() {
   const { t } = useTranslation('audit');
   return (rule: string, fallback: string) => t(`rules.${rule.replace('/', '~')}`, { defaultValue: fallback });
 }
 
 /** Rule categories (spec studio/audit-workspace "问题清单"). */
-export const CATEGORIES: Record<string, (rule: string) => boolean> = {
+const CATEGORIES: Record<string, (rule: string) => boolean> = {
   links: (r) => r.startsWith('links/'),
   meta: (r) => r.startsWith('meta/'),
   hreflang: (r) => r.startsWith('hreflang/'),

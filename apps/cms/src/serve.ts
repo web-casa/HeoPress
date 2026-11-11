@@ -208,6 +208,8 @@ async function main() {
   let staleRunSweepTask: ScheduledTask | undefined;
   let llmRecoveryTask: ScheduledTask | undefined;
   let schedulerTask: ScheduledTask | undefined;
+  let staleContentSweepTask: ScheduledTask | undefined;
+  let reviewReminderTask: ScheduledTask | undefined;
   let retentionTask: ScheduledTask | undefined;
   let projectionTask: ScheduledTask | undefined;
   let themeRecheckTask: ScheduledTask | undefined;
@@ -228,6 +230,7 @@ async function main() {
   let ingestMaintenanceTask: ScheduledTask | undefined;
   let ingestSnapshotSweepTask: ScheduledTask | undefined;
   let ingestLicenceTask: ScheduledTask | undefined;
+  let ingestProcessingTask: ScheduledTask | undefined;
   let reachabilityTask: ScheduledTask | undefined;
   let presetUpgradeTask: ScheduledTask | undefined;
   let deploymentPollTask: ScheduledTask | undefined;
@@ -457,7 +460,12 @@ async function main() {
   const { PluginHost } = await import('./extensions/runtime/plugin-host');
   const { PluginJobRunner, PluginJobScheduler, queueJobDispatcher, queueJobEnqueuer, registerPluginJobWorker } = await import('./extensions/runtime/jobs');
   const { cachedPluginConsumers } = await import('./extensions/runtime/events');
-  const pluginHost = new PluginHost({ db: rotatorDb, env: process.env as Record<string, unknown>, enqueueJob: queueJobEnqueuer(runtime.queue) });
+  const pluginHost = new PluginHost({
+    db: rotatorDb,
+    env: process.env as Record<string, unknown>,
+    keys: runtime.keys,
+    enqueueJob: queueJobEnqueuer(runtime.queue),
+  });
   const pluginJobRunner = new PluginJobRunner({ db: rotatorDb, host: pluginHost });
   if (runtime.queue) registerPluginJobWorker(runtime.queue, pluginJobRunner);
   const pluginScheduler = new PluginJobScheduler({
@@ -622,7 +630,7 @@ async function main() {
   const { registerSchedulerWorker, runSchedulerTick, sweepRetention } = await import(
     './services/scheduler-worker'
   );
-  const schedulerDeps = { db: rotatorDb, queue: runtime.queue };
+  const schedulerDeps = { db: rotatorDb, queue: runtime.queue, keys: runtime.keys };
   registerSchedulerWorker(schedulerDeps);
   schedulerTask = cron.schedule(
     '* * * * *',
@@ -633,6 +641,55 @@ async function main() {
           console.error('[content-scheduler] tick failed', formatSafeError(err));
           throw err;
         });
+      },
+      jobOpts,
+    ),
+  );
+  // Staleness sweep (HeoPress v1.1; spec content/stale-content-queue): once an hour, each site's published items that
+  // nobody has touched for a year get an automatic "needs update" mark, and an automatic mark whose item was edited
+  // since is cleared. Derived state, so it writes no audit event per row (see services/staleness/detect.ts); the
+  // Change Feed still learns of each change, in that row's own site scope.
+  const { sweepStaleContent } = await import('./services/staleness/detect');
+  staleContentSweepTask = cron.schedule(
+    '15 * * * *',
+    scheduledJob(
+      'stale-content-sweep',
+      async () => {
+        await sweepStaleContent({ db: rotatorDb })
+          .then((sites) => {
+            const marked = sites.reduce((n, site) => n + site.marked.length, 0);
+            const cleared = sites.reduce((n, site) => n + site.cleared.length, 0);
+            if (marked || cleared) console.log('[stale-content-sweep] done', JSON.stringify({ sites: sites.length, marked, cleared }));
+          })
+          .catch((err) => {
+            console.error('[stale-content-sweep] failed', formatSafeError(err));
+            throw err;
+          });
+      },
+      jobOpts,
+    ),
+  );
+  // Review reminders (HeoPress v1.1; spec content/review-reminders): once a day, each site's marked items whose deadline
+  // has arrived notify the people who can resolve them, one digest per person, and are stamped so the same reminder is
+  // not repeated until the repeat interval (7 days) passes. 08:00 in the process time zone — the deployment image runs
+  // UTC, so 08:00 UTC, before a working day starts. A reminder is about a date, not an hour: a missed run is caught by
+  // the next one because the gate is the deadline and the watermark, not "yesterday".
+  const { sendReviewReminders } = await import('./services/staleness/reminders');
+  reviewReminderTask = cron.schedule(
+    '0 8 * * *',
+    scheduledJob(
+      'review-reminders',
+      async () => {
+        await sendReviewReminders({ db: rotatorDb })
+          .then((sites) => {
+            const reminded = sites.reduce((n, site) => n + site.reminded.length, 0);
+            const recipients = sites.reduce((n, site) => n + site.recipients.length, 0);
+            if (reminded || recipients) console.log('[review-reminders] done', JSON.stringify({ sites: sites.length, reminded, recipients }));
+          })
+          .catch((err) => {
+            console.error('[review-reminders] failed', formatSafeError(err));
+            throw err;
+          });
       },
       jobOpts,
     ),
@@ -915,6 +972,22 @@ async function main() {
       async () => {
         const { hidden, flagged } = await sweepLicenceLapses({ db: rotatorDb });
         if (hidden.length || flagged.length) console.info(`[ingest-licence-lapse] hidden ${hidden.length}, flagged ${flagged.length}`);
+      },
+      jobOpts,
+    ),
+  );
+  // The processing outbox (P15, spec ops/ingest-processing-outbox): pending source documents go to the site's own
+  // processing flows — the active ones whose first step is `pipeline:fetch-source` — through the `flow-events` queue
+  // that event-triggered flows already use. A site without such a flow keeps its rows pending (nothing is configured
+  // to process them); `kind = 'lead'` rows are discovery records and stay pending for the operator.
+  const { dispatchProcessingJobs } = await import('./services/ingest/processing-dispatch');
+  ingestProcessingTask = cron.schedule(
+    '40 * * * * *',
+    scheduledJob(
+      'ingest-processing-dispatch',
+      async () => {
+        const { dispatched, jobs } = await dispatchProcessingJobs({ db: rotatorDb, queue: runtime.queue });
+        if (dispatched) console.info(`[ingest-processing-dispatch] ${dispatched} document(s), ${jobs} flow job(s)`);
       },
       jobOpts,
     ),
@@ -1230,6 +1303,8 @@ async function main() {
         staleRunSweepTask,
         llmRecoveryTask,
         schedulerTask,
+        staleContentSweepTask,
+        reviewReminderTask,
         retentionTask,
         projectionTask,
         themeRecheckTask,
@@ -1246,6 +1321,7 @@ async function main() {
         ingestMaintenanceTask,
         ingestSnapshotSweepTask,
         ingestLicenceTask,
+        ingestProcessingTask,
         reachabilityTask,
         crawlPurgeTask,
         auditTriagePurgeTask,

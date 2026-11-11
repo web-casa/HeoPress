@@ -1,6 +1,6 @@
 import { index, integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
-import { sites } from './core';
+import { sites, users } from './core';
 
 /**
  * Plugin runtime (HeoPress P12 tasks 3.1–3.7; spec extensions/runtime-extensions). All rows are keyed by the site and
@@ -103,6 +103,36 @@ export const pluginEndpointKeys = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.siteId, t.extensionName] }),
+  }),
+);
+
+/**
+ * A site's per-plugin secrets (HeoPress v1.2, spec extensions/plugin-secrets): one named value per
+ * (site, plugin, name), the plugin's name (not the extension row) because a reinstall finds its secrets again.
+ *
+ * The value is never stored: `secret_ciphertext` is the versioned envelope sealed under the runtime KEK with the AAD
+ * `plugin-secret|<site>|<plugin>|<name>`, so a row copied to another site or plugin does not open. The primary key is
+ * the unique key; setting the same name again rotates that row.
+ */
+export const pluginSecrets = pgTable(
+  'lumibase_plugin_secrets',
+  {
+    siteId: text('site_id')
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    extensionName: text('extension_name').notNull(),
+    /** The name in the manifest's `secrets:<name>` capability (validated against the capability grammar). */
+    name: text('name').notNull(),
+    secretCiphertext: text('secret_ciphertext').notNull(),
+    /** The key version that sealed the envelope (diagnostics; decryption trusts the envelope's own version). */
+    keyId: text('key_id').notNull(),
+    /** Who set it; null for an API key or a system writer, and kept when the person is deleted. */
+    setByUserId: text('set_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.siteId, t.extensionName, t.name] }),
   }),
 );
 

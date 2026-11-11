@@ -61,6 +61,8 @@ export interface LlmSiteSettings {
   dailyBudgetMicros: number | null;
   /** HeoPress P09: source documents admitted into processing per local day (null: no limit). */
   dailyProcessingLimit: number | null;
+  /** HeoPress v1.2: the plugin-provided translation service used for translations (`"<plugin>:<service>"`), or null. */
+  translationService: string | null;
 }
 
 type ProviderRow = typeof llmProviders.$inferSelect;
@@ -149,8 +151,16 @@ export class LlmProviderService {
             budgetTimezone: row.budgetTimezone,
             dailyBudgetMicros: row.dailyBudgetMicros ?? null,
             dailyProcessingLimit: row.dailyProcessingLimit ?? null,
+            translationService: row.translationService ?? null,
           }
-        : { currency: this.deps.instanceCurrency, monthlyBudgetMicros: null, budgetTimezone: 'UTC', dailyBudgetMicros: null, dailyProcessingLimit: null };
+        : {
+            currency: this.deps.instanceCurrency,
+            monthlyBudgetMicros: null,
+            budgetTimezone: 'UTC',
+            dailyBudgetMicros: null,
+            dailyProcessingLimit: null,
+            translationService: null,
+          };
     };
     return tx ? run(tx) : this.tx(run);
   }
@@ -184,6 +194,8 @@ export class LlmProviderService {
         // Omitted: unchanged.
         dailyBudgetMicros: input.dailyBudgetMicros === undefined ? current.dailyBudgetMicros : input.dailyBudgetMicros,
         dailyProcessingLimit: input.dailyProcessingLimit === undefined ? current.dailyProcessingLimit : input.dailyProcessingLimit,
+        // Omitted: unchanged; null: back to the LLM path.
+        translationService: input.translationService === undefined ? current.translationService : input.translationService,
         updatedAt: dbNow(),
       };
       await tx.insert(llmSiteSettings).values(values).onConflictDoUpdate({ target: llmSiteSettings.siteId, set: values });
@@ -193,6 +205,7 @@ export class LlmProviderService {
         budgetTimezone: values.budgetTimezone,
         dailyBudgetMicros: values.dailyBudgetMicros,
         dailyProcessingLimit: values.dailyProcessingLimit,
+        translationService: values.translationService,
       };
     });
   }

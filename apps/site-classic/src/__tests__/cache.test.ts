@@ -6,16 +6,16 @@ const DEPS: CacheDeps = { siteVersion: 1, structureVersion: 1, themeVersion: 't'
 
 /** The page cache's key and validators (HeoPress P06 tasks 3.1, 7.2; design R9). */
 describe('page cache keys', () => {
-  const base = { mode: 'public' as const, siteId: 's', host: 'a.example.com', path: '/', query: new URLSearchParams() };
+  const base = { mode: 'public' as const, siteId: 's', host: 'a.example.com', path: '/', query: new URLSearchParams(), variant: 'html' as const };
   it('only the parameters that change the page count, normalised', () => {
     expect(cacheQuery('/', new URLSearchParams('utm_source=x&page=2&page=3&q=zz'))).toBe('page=2');
     expect(cacheQuery('/', new URLSearchParams('page=abc'))).toBe('page=invalid');
     expect(cacheQuery('/search/', new URLSearchParams('q=%20Hello%20&x=1'))).toBe('q=Hello');
     expect(cacheQuery('/search/', new URLSearchParams(`q=${'a'.repeat(500)}`))).toBe(`q=${'a'.repeat(200)}`);
   });
-  it('every part of the key matters: site, host, path, page', () => {
+  it('every part of the key matters: site, host, path, page, representation', () => {
     const k = cacheKey(base);
-    for (const over of [{ siteId: 't' }, { host: 'b.example.com' }, { path: '/x/' }, { query: new URLSearchParams('page=2') }]) {
+    for (const over of [{ siteId: 't' }, { host: 'b.example.com' }, { path: '/x/' }, { query: new URLSearchParams('page=2') }, { variant: 'markdown' as const }]) {
       expect(cacheKey({ ...base, ...over }), JSON.stringify(over)).not.toBe(k);
     }
     expect(cacheKey({ ...base, query: new URLSearchParams('utm=1') })).toBe(k);
@@ -144,7 +144,7 @@ describe('the answer envelope (HeoPress P07 task 1.3)', () => {
   });
 
   it('the output version is part of every key: entries of another format are never read', () => {
-    const k = { mode: 'public' as const, siteId: 's', host: 'a.example.com', path: '/', query: new URLSearchParams() };
+    const k = { mode: 'public' as const, siteId: 's', host: 'a.example.com', path: '/', query: new URLSearchParams(), variant: 'html' as const };
     expect(OUTPUT_VERSION).toBeGreaterThanOrEqual(2);
     // The P06 format (`v1`) cannot produce the same key.
     const p06 = createHash('sha256').update(['v1', 'public', 's', 'a.example.com', '/', '', 't', '1'].join('\u0000')).digest('hex');

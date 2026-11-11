@@ -155,6 +155,26 @@ describe('outboundFetch', () => {
     expect(Date.now() - started).toBeLessThan(2000);
   });
 
+  it('caps a response from another implementation, which is not `instanceof Response`', async () => {
+    // undici's own fetch (and any other realm) returns a Response whose prototype is not this realm's: keying the cap on
+    // `instanceof Response` would let its body through uncapped. The stream is what carries the bytes.
+    const h = hooks({});
+    const foreign = {
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers({ 'content-length': '5000' }),
+      body: new Blob([new Uint8Array(5000)]).stream(),
+    } as unknown as Response;
+    expect(foreign instanceof Response).toBe(false);
+    const original = globalThis.fetch;
+    globalThis.fetch = (async () => foreign) as typeof globalThis.fetch;
+    try {
+      await expect(outboundFetch(at('foreign.example.test', ok), { ...h, trusted: noTrust, maxResponseBytes: 1000 })).rejects.toThrow(/exceeds the 1000-byte limit/);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
   it('returnRedirect: past the limit the redirect itself is the answer, not followed and not refused (P07 task 3.9)', async () => {
     const h = hooks({});
     const target = at('b.example.test', ok, '/never-reached');

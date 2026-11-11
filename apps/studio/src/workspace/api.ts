@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import type { BriefingSectionItem } from '@heopress/contracts/extensions';
 import { getApiClient } from '@/lib/api';
 import { activeSession, activeSiteId } from '@/lib/session/current';
 
@@ -69,11 +70,42 @@ interface FeedItem {
   title: string;
 }
 
+/** The briefing's current-site data (v1.1; spec studio/briefing). */
+export interface OverviewBriefing {
+  /** Drafts untouched for longer than `days` — not waiting for review, not scheduled in the future. */
+  staleDrafts: { days: number; count: number; oldest: (FeedItem & { waitSeconds: number }) | null };
+  /** The rolling window: publishes and other changes, each with its count and at most three examples. */
+  recent: {
+    days: number;
+    published: { count: number; examples: Array<FeedItem & { at: string }> };
+    updated: { count: number; examples: Array<FeedItem & { at: string }> };
+  };
+}
+
 export interface OverviewFeed {
   reviews?: { count: number; oldest: (FeedItem & { waitSeconds: number }) | null };
   activity: Array<FeedItem & { kind: 'published' | 'submitted' | 'rejected'; at: string }>;
   week: Array<FeedItem & { kind: 'published' | 'scheduled' | 'pending'; at: string }>;
   setup: { domainVerified: boolean; firstArticlePublished: boolean; crawlerPolicySet: boolean; membersInvited: boolean };
+  briefing: OverviewBriefing;
+}
+
+/**
+ * One section a plugin contributes to the overview's briefing (v1.1; spec extensions/briefing-sections). Computed by the
+ * plugin host on every request: a count, at most ten site-relative links, and the plugin that owns it. A section the host
+ * could not compute is simply absent — the client is never told how many sections were expected.
+ */
+export interface BriefingSection {
+  /** The plugin's name (as installed). */
+  plugin: string;
+  /** The plugin's display name (its manifest's `displayName`, else its name). */
+  pluginName: string;
+  id: string;
+  title: string;
+  description: string | null;
+  /** How many things there are; may be larger than `items`, which lists at most ten. */
+  count: number;
+  items: BriefingSectionItem[];
 }
 
 export interface Check {
@@ -138,6 +170,11 @@ export function useOverviewFeed(window: { from: string; to: string }) {
     queryKey: siteKey('overview-feed', window.from, window.to),
     queryFn: () => get<OverviewFeed>(`/api/v1/studio/overview/feed?from=${encodeURIComponent(window.from)}&to=${encodeURIComponent(window.to)}`),
   });
+}
+
+/** The briefing sections of the active site's plugins (v1.1; spec studio/briefing "插件分节"). */
+export function useBriefingSections(enabled = true) {
+  return useQuery({ queryKey: siteKey('briefing-sections'), queryFn: () => get<BriefingSection[]>('/api/v1/extensions/briefing-sections'), enabled, ...FRESH });
 }
 
 export function useItemChecks(collection: string | null, id: string | null) {

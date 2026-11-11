@@ -19,7 +19,7 @@ import { FieldError } from '../ui/field-error';
 import { RelativeTime } from '../ui/relative-time';
 import { SkeletonRows } from '../ui/skeleton';
 
-export const VIEWS = ['inbox', 'mine', 'pending', 'scheduled', 'published', 'drafts'] as const;
+const VIEWS = ['inbox', 'mine', 'pending', 'scheduled', 'published', 'drafts'] as const;
 type View = (typeof VIEWS)[number];
 
 export interface ContentRow {
@@ -57,7 +57,7 @@ export function stateOf(row: Pick<ContentRow, 'status' | 'editorialState' | 'pub
 }
 
 /** Checks that did not pass (fail, or warn worth a second look). */
-export const failing = (checks: Check[] | undefined) => (checks ?? []).filter((c) => c.status === 'fail' || c.status === 'warn');
+const failing = (checks: Check[] | undefined) => (checks ?? []).filter((c) => c.status === 'fail' || c.status === 'warn');
 
 const STATE_TONE: Record<string, string> = {
   published: 'bg-ok-soft text-ok',

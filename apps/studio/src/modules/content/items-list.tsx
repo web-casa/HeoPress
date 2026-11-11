@@ -13,6 +13,7 @@ import { deleteBookmark, getEffectivePreset, saveUserView, viewDiffers, type Sco
 import { BookmarkSwitcher } from '@/modules/presets/bookmark-switcher';
 import { SaveBookmarkDialog } from '@/modules/presets/save-bookmark-dialog';
 import { BulkRawEditor } from './bulk-raw-editor';
+import { TimelinessBadge } from './timeliness-panel';
 import { resolveDisplay } from './displays/registry';
 import { FilterBuilder, compileFilter, type FilterCondition } from './filter-builder';
 import { collectionDisplayName, fieldDisplayName } from './display-name';
@@ -42,6 +43,8 @@ export function ItemsListPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showBulk, setShowBulk] = useState(false);
   const [liveMode, setLiveMode] = useState(false);
+  // Only the items marked "needs update" (v1.1; spec content/timeliness-marks).
+  const [needsUpdateOnly, setNeedsUpdateOnly] = useState(false);
   const [activeBookmarkId, setActiveBookmarkId] = useState<string | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -132,13 +135,15 @@ export function ItemsListPage() {
   const canCreate = perms.can(collection, 'create');
 
   const itemsQuery = useQuery({
-    queryKey: ['items', collection, filterPayload, sort, page],
+    queryKey: ['items', collection, filterPayload, sort, page, needsUpdateOnly],
     queryFn: () =>
       client.items(collection as never).list({
         filter: filterPayload,
         sort: [`${sort.dir === 'desc' ? '-' : ''}${sort.field}`],
         limit: PAGE_SIZE,
         offset: page * PAGE_SIZE,
+        // Timeliness mark filter (v1.1; spec content/timeliness-marks).
+        needsUpdate: needsUpdateOnly || undefined,
       }),
     enabled: !perms.isLoading && canRead,
   });
@@ -213,6 +218,20 @@ export function ItemsListPage() {
               className="accent-brand"
             />
             {t('list.liveMode')}
+          </label>
+
+          {/* Timeliness filter: the items an operator marked as needing an update. */}
+          <label className="flex items-center gap-1.5 text-xs text-dim mr-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={needsUpdateOnly}
+              onChange={(e) => {
+                setNeedsUpdateOnly(e.target.checked);
+                setPage(0);
+              }}
+              className="accent-brand"
+            />
+            {t('timeliness.filterOnly')}
           </label>
 
           {/* Preset / bookmark switcher (presets-inheritance) */}
@@ -324,6 +343,7 @@ export function ItemsListPage() {
               </th>
               <SortableTh label={t('list.columns.id')} field="id" sort={sort} onClick={toggleSort} />
               <SortableTh label={t('list.columns.status')} field="status" sort={sort} onClick={toggleSort} />
+              <th className="px-3 py-2">{t('timeliness.heading')}</th>
               {visibleFields.map((f) => (
                 <SortableTh
                   key={f.id}
@@ -338,10 +358,10 @@ export function ItemsListPage() {
           </thead>
           <tbody>
             {itemsQuery.isLoading && (
-              <tr><td colSpan={visibleFields.length + 4} className="px-4 py-6 text-center text-dim">{t('common:loading')}</td></tr>
+              <tr><td colSpan={visibleFields.length + 5} className="px-4 py-6 text-center text-dim">{t('common:loading')}</td></tr>
             )}
             {!itemsQuery.isLoading && rows.length === 0 && (
-              <tr><td colSpan={visibleFields.length + 4} className="px-4 py-6 text-center text-dim">{t('list.empty')}</td></tr>
+              <tr><td colSpan={visibleFields.length + 5} className="px-4 py-6 text-center text-dim">{t('list.empty')}</td></tr>
             )}
             {rows.map((row) => (
               <tr key={row.id} className="border-t border-line hover:bg-panel-2">
@@ -367,6 +387,19 @@ export function ItemsListPage() {
                   </Link>
                 </td>
                 <td className="px-4 py-2"><StatusBadge status={row.status} /></td>
+                <td className="px-4 py-2">
+                  {row.needsUpdateSince ? (
+                    <TimelinessBadge
+                      mark={{
+                        needsUpdateSince: row.needsUpdateSince,
+                        reason: row.needsUpdateReason ?? null,
+                        dueAt: row.needsUpdateDueAt ?? null,
+                      }}
+                    />
+                  ) : (
+                    <span className="text-dim">—</span>
+                  )}
+                </td>
                 {visibleFields.map((f) => {
                   const Display = resolveDisplay(f);
                   return (

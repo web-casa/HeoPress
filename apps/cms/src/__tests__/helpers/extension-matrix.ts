@@ -1,5 +1,5 @@
 /**
- * The extension-point test matrix (HeoPress P12 task 9.1; ADR-0015, ADR-0017): for each of the nine extension points,
+ * The extension-point test matrix (HeoPress P12 task 9.1; ADR-0015, ADR-0017): for each of the eleven extension points,
  * the tests that back each of its five cells. `extension-matrix.test.ts` checks that every cell has a test, that every
  * test named here exists in its file, and that a handoff carrying the matrix (after `MATRIX_MARKER`) shows this table.
  */
@@ -39,6 +39,8 @@ const ASTRO = `${CMS}/astro-engine.db.integration.test.ts`;
 const GLOSSARY = `${CMS}/glossary-plugin.db.integration.test.ts`;
 const PRE_PUBLISH = 'apps/cms/src/extensions/__tests__/pre-publish-manifest.test.ts';
 const STEPS = 'apps/site-astro/src/__tests__/build-steps.test.ts';
+const BRIEFING = `${CMS}/plugin-briefing.db.integration.test.ts`;
+const TRANSLATION = `${CMS}/translation-services.db.integration.test.ts`;
 
 const t = (file: string, test: string): MatrixTest => ({ file, test });
 const m = (test: string): MatrixTest => t(MATRIX_FILE, test);
@@ -191,6 +193,27 @@ export const EXTENSION_MATRIX: Record<ExtensionPoint, Record<MatrixCell, MatrixT
       t(PANELS, "an untrusted plugin's own frontend is not offered; a trusted one's is"),
     ],
     version: [version('admin-panels'), m('9.1 admin-panels × version: an official plugin whose listing declares an incompatible extension-point range is not auto-installed')],
+  },
+  'briefing-sections': {
+    declared: [t(BRIEFING, '9.1 briefing-sections × declared: a declared, registered section is listed with its computed count and links')],
+    undeclared: [
+      t(BRIEFING, '9.1 briefing-sections × undeclared: a section without the capability is not listed, and one the manifest does not declare is refused and recorded'),
+    ],
+    'cross-site': [t(BRIEFING, "9.1 briefing-sections × cross-site: a plugin's sections are its own site's; another site's are never asked")],
+    isolation: [
+      t(BRIEFING, '9.1 briefing-sections × isolation: a throwing, invalid or never-answering section is left out; the others are returned'),
+      t(BRIEFING, "9.1 briefing-sections × isolation: a plugin whose bundle does not load does not take the other plugins' sections down"),
+    ],
+    version: [version('briefing-sections')],
+  },
+  'translation-services': {
+    declared: [t(TRANSLATION, '9.1 translation-services × declared: a declared, registered service translates for its own site')],
+    undeclared: [
+      t(TRANSLATION, '9.1 translation-services × undeclared: a service without the capability is not offered, and one the manifest does not declare is refused and recorded'),
+    ],
+    'cross-site': [t(TRANSLATION, "9.1 translation-services × cross-site: a plugin's service translates for its own site only")],
+    isolation: [t(TRANSLATION, '9.1 translation-services × isolation: a service that throws or never answers fails its own translation; the next one runs')],
+    version: [version('translation-services')],
   },
   'build-steps': {
     declared: [

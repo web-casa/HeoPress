@@ -93,7 +93,7 @@ describe('SiteSwitcher', () => {
     expect(button).toHaveAttribute('data-site', 'site_a');
     fireEvent.click(button);
     const options = screen.getAllByRole('option');
-    expect(options.map((o) => o.textContent)).toEqual(['SSite Asite_a · Editor', 'SSite Bsite_b · Editor2FA']);
+    expect(options.map((o) => o.textContent)).toEqual(['Site Asite_a · Editor', 'Site Bsite_b · Editor2FA']);
     expect(options.map((o) => o.getAttribute('aria-selected'))).toEqual(['true', 'false']);
     fireEvent.click(options[1]!);
     expect(h.switchSite).toHaveBeenCalledWith('site_b', expect.objectContaining({ confirmUnknownWrites: expect.any(Function) }));

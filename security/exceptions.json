@@ -1,12 +1,12 @@
 {
-  "$comment": "Exceptions to the nightly and pre-release security scans (P07 task 8.1, ADR-0017 \u00a75), checked by scripts/check-security-scan.mjs; see docs/dev/security-scanning.md. A vulnerability exception (scanner pnpm-audit or trivy) names the advisory id (GHSA or CVE), the package, the exact installed versions it covers, its owner, the reason and the review deadline reviewBy (YYYY-MM-DD, at most 180 days ahead); once the deadline has passed every scan fails until it is reviewed and renewed or removed. A gitleaks exception records a finding reviewed as not a secret: its id is the review id (SHA-256 of path, rule and the exact line, as the public export computes it), so any change to the line makes it a new finding. A trivy exception lists the images it covers (images) and covers no other image; the same advisory and package may be excepted again for other versions or images, with its own reason. A finding with a published fix (Trivy FixedVersion, npm patched versions) is fixed, not excepted: an exception covers it only with fixBlockedBy (why the fix cannot be taken yet) and a review deadline at most 30 days ahead. The triage of the image findings is described in docs/dev/security-scanning.md.",
+  "$comment": "Exceptions to the nightly and pre-release security scans (P07 task 8.1, ADR-0017 §5), checked by scripts/check-security-scan.mjs; see docs/dev/security-scanning.md. A vulnerability exception (scanner pnpm-audit or trivy) names the advisory id (GHSA or CVE), the package, the exact installed versions it covers, its owner, the reason and the review deadline reviewBy (YYYY-MM-DD, at most 180 days ahead); once the deadline has passed every scan fails until it is reviewed and renewed or removed. A gitleaks exception records a finding reviewed as not a secret: its id is the review id (SHA-256 of path, rule and the exact line, as the public export computes it), so any change to the line makes it a new finding. A trivy exception lists the images it covers (images) and covers no other image; the same advisory and package may be excepted again for other versions or images, with its own reason. A finding with a published fix (Trivy FixedVersion, npm patched versions) is fixed, not excepted: an exception covers it only with fixBlockedBy (why the fix cannot be taken yet) and a review deadline at most 30 days ahead. The triage of the image findings is described in docs/dev/security-scanning.md.",
   "exceptions": [
     {
       "scanner": "gitleaks",
       "id": "8b00b298db6197cb40e433f352119f8d0d8b050cbf86cb5eb0f92c4f1f9a1675",
       "path": ".env.example:29",
       "owner": "maintainer",
-      "reason": "JWT_SECRET placeholder (replace-me-\u2026) in the example environment file; not a secret."
+      "reason": "JWT_SECRET placeholder (replace-me-…) in the example environment file; not a secret."
     },
     {
       "scanner": "gitleaks",
@@ -27,7 +27,7 @@
       "id": "fcc4c73c79af9a937e87b314032755a5c077ad2830a5cdbaa07ff9a6e2e54de9",
       "path": "docs/en/features/marketplace.md:46",
       "owner": "maintainer",
-      "reason": "An elided public key (BEGIN PUBLIC KEY \u2026 END PUBLIC KEY) in a configuration example."
+      "reason": "An elided public key (BEGIN PUBLIC KEY … END PUBLIC KEY) in a configuration example."
     },
     {
       "scanner": "gitleaks",
@@ -1050,6 +1050,790 @@
         "postgres",
         "cms",
         "site-classic"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112315",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112315",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112315",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112315",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112316",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112316",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112316",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112316",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112317",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112317",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112317",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112317",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112318",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112318",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112318",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112318",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112319",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112319",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112319",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112319",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112320",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112320",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112320",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112320",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112321",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112321",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112321",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112321",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112322",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112322",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112322",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112322",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112323",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112323",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112323",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-112323",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119079",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119079",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119079",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-119079",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed by the base image; PostgreSQL's GSSAPI authentication links them). Debian has published no fixed version: the security tracker lists krb5 as unfixed in trixie (1.21.3-5+deb13u1) for this batch. The flaws are in the KDC side — a memory leak in kadmind's RPCSEC_GSS handling and CPU exhaustion while decoding a large SEQUENCE OF in an unauthenticated AS-REQ/TGS-REQ — and the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-107364",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-107364",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-107364",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-107364",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-118380",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-118380",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-118380",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-118380",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71199",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71199",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71199",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71199",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71200",
+      "package": "libgssapi-krb5-2",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71200",
+      "package": "libk5crypto3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71200",
+      "package": "libkrb5-3",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
+      ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-71200",
+      "package": "libkrb5support0",
+      "versions": [
+        "1.21.3-5+deb13u1"
+      ],
+      "owner": "maintainer",
+      "reason": "krb5 client libraries of the Debian 13 postgres:18 base image (installed with the base image; PostgreSQL's GSSAPI authentication links them). Debian publishes no fix: the security tracker tracks this batch under bug 1153598 and lists krb5 as unfixed in trixie (1.21.3-5+deb13u1). The advisories are the MIT krb5 2026-11 batch (KDC-side memory handling and request decoding); the postgres image runs neither a KDC nor kadmind, and PostgreSQL does not speak RPC. Review when Debian ships a fix.",
+      "reviewBy": "2027-01-21",
+      "images": [
+        "postgres"
       ]
     }
   ]

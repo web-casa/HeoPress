@@ -48,6 +48,7 @@ HeoPress P07（任务 6.3）。本文逐项说明站点 SEO / GEO 设置与相�
 | 设置 | 效果 | 限制 |
 |---|---|---|
 | `discovery.feeds` | RSS / Atom feed（`/feed.xml`、`/atom.xml` 及按集合、按语言的 feed） | 只含可收录的页面 |
+| `discovery.feedCollection` | 站点订阅源读取的集合，默认 `articles`；插件集合可把 `/feed.xml` 指向自己 | 集合级订阅源只覆盖 `pages` 与已启用插件路由声明的集合；站点订阅源的集合没有集合级地址 |
 | `discovery.llms` | `/llms.txt` 与 `/llms-full.txt` | 每个列表最多查看最近发布的 2,000 条候选；`llms.txt` 不是搜索引擎或 AI 系统承诺读取的标准 |
 | `discovery.markdownCopies` | 每个可收录条目页的 Markdown 副本（`/<路径>.md`），响应带 `X-Robots-Tag: noindex` 与指向页面的 canonical | 真实存在的 `.md` 路由优先；副本无法承载嵌入内容（iframe、视频等），站点审计会提示 |
 | `discovery.newsSitemap` / `newsPublicationName` | 新闻 sitemap（`/news-sitemap.xml`，最近两天的文章） | 只对新闻类站点有意义 |

@@ -91,7 +91,7 @@ qualityGateRouter.post('/productions/:id/run', requireSiteEditor(), (c) =>
   run(c, async () => {
     const db = c.get('db');
     const gateway = gatewayFor({ db, keys: c.get('runtime').keys, env: (c.env ?? {}) as unknown as Record<string, string | undefined> });
-    const outcome = await new ContentPipeline({ db, siteId: c.get('siteId'), gateway }).runGate(c.req.param('id'));
+    const outcome = await new ContentPipeline({ db, siteId: c.get('siteId'), gateway, keys: c.get('runtime').keys }).runGate(c.req.param('id'));
     return c.json({ data: { ...outcome, checks: await present(c, outcome.checks) } });
   }),
 );

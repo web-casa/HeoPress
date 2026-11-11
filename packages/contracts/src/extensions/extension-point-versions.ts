@@ -1,7 +1,7 @@
 /**
  * Extension-point contract versions (HeoPress P14 task 7.1, spec extensions/extension-point-versions; ADR-0025).
  *
- * Each of the nine extension points and the plugin host API (`context`) carries its own semantic version. A breaking
+ * Each of the eleven extension points and the plugin host API (`context`) carries its own semantic version. A breaking
  * change bumps that point's major version and leaves the other points alone, so a plugin states for every point it uses
  * the range it was written for:
  *
@@ -29,6 +29,9 @@ export const EXTENSION_POINT_VERSIONS = {
   events: '1.0.0',
   'admin-panels': '1.0.0',
   'build-steps': '1.0.0',
+  'briefing-sections': '1.0.0',
+  // HeoPress v1.2: plugin-provided machine-translation services (spec extensions/translation-services).
+  'translation-services': '1.0.0',
   context: '1.0.0',
 } as const;
 
@@ -104,7 +107,7 @@ export function validateExtensionPointRanges(manifest: {
     if (!isExtensionPointVersionKey(key)) {
       issues.push({
         path: ['extensionPoints', key],
-        message: `extension point "${key}" is not one of the nine extension points or the plugin host API ("context")`,
+        message: `extension point "${key}" is not one of the eleven extension points or the plugin host API ("context")`,
       });
     }
   }

@@ -11,7 +11,7 @@ import type { DeploymentTargetResource, StaticDeployResource, StaticFeature, Sta
  * back to the previous successful deploy. Vercel's Hobby plan forbids commercial use: said whenever Vercel is chosen.
  */
 
-const FEATURES: StaticFeature[] = ['noindex', 'markdown-canonical', 'redirect-301', 'gone-410', 'feeds', 'search', 'preview', 'analytics'];
+const FEATURES: StaticFeature[] = ['noindex', 'markdown-canonical', 'markdown-negotiation', 'redirect-301', 'gone-410', 'feeds', 'search', 'preview', 'analytics'];
 const LEVEL_CLS = { yes: 'bg-ok-soft text-ok', degraded: 'bg-warn-soft text-warn', no: 'bg-panel-2 text-dim' } as const;
 const STATUS_CLS: Record<StaticDeployResource['status'], string> = {
   requested: 'bg-brand-soft text-brand',

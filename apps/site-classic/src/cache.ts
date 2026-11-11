@@ -7,8 +7,9 @@ import { renderCache, staleRenderCacheRows, type Database } from '@heopress/data
  * LRU (bounded in bytes) and `lumibase_render_cache` (shared by every renderer process) — of rendered answers:
  * 200, 301, 404, 410.
  *
- * The key holds the mode, the site, host, path and the query parameters that change the page (`page`; `q` on the
- * search page). The language is not a separate part: every language entry (path prefix, subdomain, own domain) is a
+ * The key holds the mode, the site, host, path, the query parameters that change the page (`page`; `q` on the
+ * search page) and the representation the request asked for (`html` or `markdown`; HeoPress v1.2 P07). The language is
+ * not a separate part: every language entry (path prefix, subdomain, own domain) is a
  * host or a path, so host and path decide it (Accept-Language never changes an answer). The mode is always `public`:
  * previews are never cached (they are answered before any lookup), and a key cannot be made for anything else.
  *
@@ -51,6 +52,8 @@ export const REPRESENTATION_HEADERS: ReadonlySet<string> = new Set([
   // A site's root file (P07 task 3.8): never sniffed as another type, and a sandbox when opened as a document.
   'x-content-type-options',
   'content-security-policy',
+  // A negotiated page's two representations (HeoPress v1.2 P07): a shared cache must key them by `Accept`.
+  'vary',
 ]);
 
 /** RFC 9110 §5.6.2 token. */
@@ -133,12 +136,19 @@ export function cachedPage(
   return { status, body, location, contentType, headers, etag: etagOf(status, body, location, contentType, headers) };
 }
 
+/**
+ * The representation of an answer a request asks for (HeoPress v1.2 P07): `html`, or `markdown` for a request whose
+ * `Accept` prefers `text/markdown`. Part of the key, so an answer of one representation is never served for the other.
+ */
+export type CacheVariant = 'html' | 'markdown';
+
 export interface CacheKeyInput {
   mode: 'public';
   siteId: string;
   host: string;
   path: string;
   query: URLSearchParams;
+  variant: CacheVariant;
 }
 
 /**
@@ -180,7 +190,7 @@ const L2_TTL_MS = 24 * 60 * 60 * 1000;
  * fails when the output changes and this does not). The sample covers the theme's output and what the service
  * generates around it: list and language-home canonicals, the head of each kind of page (from version 4).
  */
-export const OUTPUT_VERSION = 18;
+export const OUTPUT_VERSION = 20;
 /** The key format (P13 task 3.2: the render versions moved out of the key into each entry). */
 const KEY_FORMAT = 'k2';
 /** The fleet-wide sweep lock (an arbitrary constant: "render cache"). */
@@ -235,7 +245,7 @@ export function cacheQuery(path: string, query: URLSearchParams): string {
 
 export function cacheKey(k: CacheKeyInput): string {
   if (k.mode !== 'public') throw new Error('only public answers are cached');
-  const raw = [KEY_FORMAT, `o${OUTPUT_VERSION}`, k.mode, k.siteId, k.host, k.path, cacheQuery(k.path, k.query)].join('\u0000');
+  const raw = [KEY_FORMAT, `o${OUTPUT_VERSION}`, k.mode, k.siteId, k.host, k.path, cacheQuery(k.path, k.query), k.variant].join('\u0000');
   return createHash('sha256').update(raw).digest('hex');
 }
 

@@ -104,7 +104,9 @@ step setup "fresh stack ($COMPOSE_PROJECT_NAME)"
 if [ "${ACCEPT_SKIP_BUILD:-false}" = true ]; then
   "${compose[@]}" up -d --no-build >/dev/null
 else
-  "${compose[@]}" up -d --build >/dev/null
+  # The build's output stays visible: a failed build is the first thing to read in the log (a silent pull error is
+  # what it looks like when it is hidden).
+  "${compose[@]}" up -d --build || { echo "[accept] docker compose up --build failed" >&2; exit 1; }
 fi
 docker/scripts/smoke-minimal-deploy.sh "$base" "${files[@]}" > "$out/smoke.txt" 2>&1 || { cat "$out/smoke.txt" >&2; fail "smoke test"; }
 new_site accept-a "Accept A" news

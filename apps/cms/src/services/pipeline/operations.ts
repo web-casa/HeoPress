@@ -24,6 +24,7 @@ function pipelineOf(ctx: FlowRunContext): ContentPipeline {
     db,
     siteId,
     gateway: given.gateway ?? gatewayFor({ db, keys: ctx.env['keys'] as KeyProvider | undefined, env: process.env }),
+    keys: ctx.env['keys'] as KeyProvider | undefined,
     ...given,
     flowRunId: typeof ctx.env['runId'] === 'string' ? (ctx.env['runId'] as string) : (given.flowRunId ?? null),
   });
@@ -81,6 +82,7 @@ export const translateOperation = async (ctx: FlowRunContext, options: Record<st
 };
 export const rewriteOperation = produceOperation('rewrite');
 export const writeOperation = produceOperation('write');
+export const briefOperation = produceOperation('brief');
 
 export async function seoCopyOperation(ctx: FlowRunContext, options: Record<string, unknown>) {
   return pipelineOf(ctx).seoCopy(productionIdOf(ctx, options));

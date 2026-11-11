@@ -1,8 +1,8 @@
 ---
-version: 3
-lastUpdated: 2026-09-21T05:45:15.059Z
+version: 4
+lastUpdated: 2026-11-11T03:02:58.710Z
 sourceLang: en
-contentHash: 8239e8df5e0da2f5
+contentHash: c686c698a114eeb5
 ---
 
 # Contributing to HeoPress
@@ -26,8 +26,8 @@ Thank you for your interest in contributing to HeoPress! This guide covers how t
 
 | Tool | Version | Install |
 |------|---------|---------|
-| Node.js | ≥ 22 | [nodejs.org](https://nodejs.org) |
-| pnpm | ≥ 9 | `npm i -g pnpm` |
+| Node.js | 24 LTS (`engines.node` is `>= 24`) | [nodejs.org](https://nodejs.org) |
+| pnpm | 9.12 (`packageManager`) | `corepack enable` |
 | Docker + Docker Compose | Latest | [docker.com](https://docker.com) |
 | Git | ≥ 2.40 | System package manager |
 
@@ -122,10 +122,11 @@ Before opening a PR, verify:
 - [ ] `pnpm test` passes (or new tests added for changed behavior)
 - [ ] `pnpm lint` passes
 - [ ] Docs updated if the change affects public APIs, configuration, or behavior
-- [ ] Every user-facing doc change lands in **both** `docs/en/` and `docs/vi/` in the same commit, stamped with `node scripts/docs-i18n/stamp-pair.mjs <rel> <en|vi> --verified`. Check `sourceLang` in the front matter first — some docs are VI-source, and editing the translated side alone gets overwritten on the next sync. See the i18n workflow in `CLAUDE.md`
+- [ ] Every user-facing doc change lands in **both** `docs/en/` and `docs/zh-CN/` in the same commit, stamped with `node scripts/docs-i18n/stamp-pair.mjs <rel> <en|zh-CN> --verified`. Check `sourceLang` in the front matter first — some docs are zh-CN-source, and editing the translated side alone gets overwritten on the next sync. See the i18n workflow in `CLAUDE.md`
 - [ ] Release notes include a `Migrations` section for every release, even if it says `None`
 - [ ] Database migrations are backward-compatible for at least one release window: add nullable/defaults first, backfill separately, and defer destructive drops to a later cleanup release
 - [ ] PR title follows Conventional Commits format
+- [ ] The [CLA](../../../CLA.md) is signed (a first-time contributor comments on the PR that they accept it; a maintainer records it)
 - [ ] `docs/en/data-model.md` updated if schema changed
 - [ ] `docs/en/security/dependency-overrides.md` updated if a `pnpm` override or patch changed
 - [ ] ADR added if a significant architectural decision was made
@@ -138,7 +139,10 @@ Before opening a PR, verify:
 2. Make your changes following the conventions above
 3. Push to your fork and open a PR against `main`
 4. Fill in the PR template — describe the change, link to related issues, and add screenshots for UI changes
-5. A maintainer will review within 48 hours
+5. Wait for the required checks: the `CI` workflow (type check, unit tests, lint, static checks) and the database
+   suites. `main` is protected, so a PR cannot be merged with a red or missing check, and it needs one maintainer
+   review. Do not ask for a review before CI is green.
+6. A maintainer will review within 48 hours
 
 ### PR size guidelines
 
@@ -158,4 +162,4 @@ If you used an AI agent to generate code, please:
 
 - **GitHub Discussions** — for design questions and feature proposals
 - **GitHub Issues** — for bug reports
-- **Discord** — for real-time chat with maintainers (link in README)
+- **Security reports** — privately, through the repository's Security tab (see [SECURITY.md](../../../SECURITY.md)); never a public issue

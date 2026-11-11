@@ -310,6 +310,22 @@
     "untrust": "取消信任",
     "confirmTrust": "信任 {{name}}？其自带的后台页面将提供给本站成员。插件代码变更后信任会自动取消。",
     "trustHint": "只有受信任插件自带的前端页面才会加载；声明式页面不需要信任。",
+    "secrets": {
+      "title": "密钥",
+      "description": "此插件通过 secrets:<name> 读取的值。密钥加密落库，之后不会再显示。",
+      "configured": "已配置",
+      "notConfigured": "未配置",
+      "undeclared": "清单已不再声明",
+      "set": "设置",
+      "replace": "替换",
+      "delete": "删除密钥",
+      "confirmDelete": "删除 {{name}} 已存储的值？",
+      "valueLabel": "{{name}} 的值",
+      "valuePlaceholder": "粘贴密钥值（之后不会再显示）",
+      "save": "保存",
+      "cancel": "取消",
+      "failed": "密钥保存或删除失败，请重试。"
+    },
     "needsUpgrade": "需要升级：{{points}} — 本实例提供的契约版本不同。"
   },
   "keyboard": {

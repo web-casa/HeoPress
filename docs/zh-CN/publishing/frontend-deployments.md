@@ -8,6 +8,7 @@
 - `apps/cms/src/services/deployment/providers/cloudflare-pages.ts`：Cloudflare Pages 适配器（Direct Upload）；
 - `apps/cms/src/services/deployment/providers/vercel.ts`、`apps/cms/src/services/deployment/providers/netlify.ts`：Vercel、Netlify 适配器（含静态上传）；
 - `apps/cms/src/services/deployment/static/contract.ts`：静态目标响应契约与运行时功能支持矩阵；
+- `apps/cms/src/services/deployment/static/edge-negotiation.ts`：同一地址 Markdown 协商的每平台配置与回放判定；
 - `apps/cms/src/services/deployment/static/scan.ts`：上传前的产物扫描；
 - `apps/cms/src/services/deployment/static/static-deployer.ts`：部署、确认丢失后的核对、回滚与部署后体检；
 - `apps/cms/src/services/deployment/static/static-site.ts`：后台开关（启用引擎、主题、部署目标）与视图；
@@ -52,10 +53,68 @@ Vercel 的 Git 触发改为重新部署最近一次生产部署（`deploymentId`
 | Markdown 副本 canonical（`Link`） | 支持 | 受限：`_headers` 最多 100 条规则，超出时副本仍为 noindex 但不带 `Link` | 支持 | 支持 |
 | 301 重定向 | 支持 | 支持（最多 2000 条，超出拒绝部署） | 支持（最多 2048 条路由） | 支持 |
 | 撤回内容 410 | 支持 | 受限：`_redirects` 不能返回 410，按 404 回答 | 支持 | 支持 |
+| 同一地址 Markdown 协商 | 受限：Caddy 只按 `Accept` 头文本匹配 | 支持：随产物上传 `_worker.js`（Pages Function） | 受限：`vercel.json` 只按 `accept` 头文本匹配 | 不可用：`_headers`/`_redirects` 不能按 `accept` 变化 |
 | RSS / Atom | 支持 | 支持 | 支持 | 支持 |
 | 站内搜索、草稿预览、访问分析 | 不可用 | 不可用 | 不可用 | 不可用 |
 
 VPS 生成 `<root>/<siteId>/Caddyfile.static`，在服务 `current` 目录的站点块中 `import` 即可。受限项会写入部署记录的警告；无法表达的契约（规则数超限）拒绝部署。
+
+## 同一地址的 Markdown 协商（v1.2 P11 任务 4.5）
+
+站点开启 `discovery.markdownNegotiation`（默认关闭）后，Classic 引擎在页面**自己的地址**上按 `Accept` 返回该页的 Markdown
+（见《Classic 渲染服务》的「Markdown 内容协商」）。静态目标不运行这段代码，所以部署时把同一承诺写进各平台自己的配置：
+只有可收录、canonical 指向自身的文章与页面协商（与 `.md` 副本、sitemap 同一个收录判定），答案就是该页的 `.md` 副本。
+
+| 目标 | 做法 | 支持 |
+|---|---|---|
+| Cloudflare Pages | 随产物上传 `_worker.js`（Pages Function，advanced mode）：内置可协商路径表（查表判定，不在请求时扫描）、与运行时相同的 RFC 9110 规则；命中则改写为该页 `.md` 副本并补类型、`noindex` 与 canonical `Link`，两个变体都带 `Vary: Accept`；其他请求原样交给静态资源 | 支持（受 Pages Functions 计划限制：请求数、CPU、bundle 大小） |
+| Vercel | `vercel.json` 的 `routes`：一条 `Vary: Accept` 头路由，加每页一条带 `has`/`missing` 条件的改写路由（`accept` 含 `text/markdown`、不含 `text/html`/`text/*`/`*/*`、不以 `q=0` 拒绝） | 受限：只按请求头**文本**匹配，不比较 `q` |
+| VPS（Caddy） | `Caddyfile.static` 中每页一个 `@negotiate_md_N`（CEL 表达式：`path(...)` 与 `Accept` 正则）与 `rewrite` 到 `.md`；页面地址带 `header Vary "Accept"` | 受限：同上 |
+| Netlify | 不生成任何东西：`_headers` / `_redirects` 不能按 `accept` 变化，本部署路径也不打包 edge function；部署记录写明原因 | 不可用 |
+
+**受限意味着什么**（Vercel 与 VPS）：配置只能读请求头文本。
+
+| 请求 | 静态目标 | Classic 引擎 |
+|---|---|---|
+| 只列出 `text/markdown`（以及不覆盖 HTML 的类型） | Markdown | Markdown |
+| 浏览器默认头、`text/html`、`*/*`、`text/*`、缺头 | HTML | HTML |
+| `text/markdown;q=0`、`text/markdown;q=0.000` | HTML | HTML |
+| `text/markdown;q=0.9, text/html;q=0.5` | HTML（看两者都出现） | Markdown（`q` 更高） |
+| `text/markdown, */*` | HTML | HTML（并列） |
+| 其它 `q` 值、畸形 `q` | 不比较：出现即接受（`q=0` 除外） | 按 RFC 9110 计算 |
+
+也就是说静态目标只在运行时会回 Markdown 的请求上回 Markdown（保守方向）；唯一的偏差是它可能把 `q` 值偏好 Markdown、
+但同时列出 HTML 的请求当作 HTML。Cloudflare Pages 的 `_worker.js` 按运行时同一套规则判定，不受此限。
+
+**预算与降级**：
+
+- Vercel 2048 条路由：协商占 1 条 `Vary` 路由 + 每页 1 条改写路由；放不下的页面保留 HTML（`.md` 副本仍可访问），部署记录给出数量警告。
+- Cloudflare Pages：`_headers` 的 100 条规则不受影响（协商不进 `_headers`）；`_worker.js` 超过 256 KiB 时部署记录提醒核对 Pages Functions 的 bundle 上限。
+  路径表是显式列表，不随请求增长，也不在请求时扫描页面数据。
+- VPS：每个可协商页一行 matcher 加一段 header 块；站点关闭 `.md` 副本时静态目标不协商（没有可改写到的文件），部署记录会说明。
+  非 ASCII 的页面路径在快照里是百分号编码形式，而 Caddy 的 `path` matcher 会先解码请求路径，两者对不上时该页在 VPS 上不协商（保守失败，体检能发现）；
+  页面 slug 通常是 ASCII，本变更不为它发明解码规则。
+- 关闭协商（默认）时这一节的所有规则都不生成，产物与加入该能力之前逐字节相同。
+
+**部署后体检**：CI 只能证明生成的规则（下面「回放」）。真实平台行为要在每次部署后对一个可协商页面抽查四条，全部符合才算该目标成立：
+
+```bash
+curl -sI -H 'Accept: text/markdown' https://www.example.com/hello/
+curl -sI -H 'Accept: text/html' https://www.example.com/hello/
+curl -sI -H 'Accept: */*' https://www.example.com/hello/
+curl -sI https://www.example.com/hello.md
+```
+
+- 第 1 条：`content-type: text/markdown; charset=utf-8`、`x-robots-tag: noindex`、`link: <https://www.example.com/hello/>; rel="canonical"`、`vary: accept`；
+- 第 2、3 条：HTML 类型与 `vary: accept`，且没有 `link`（第 3 条在配置受限的目标上也必须是 HTML）；
+- 第 4 条：副本仍是 `text/markdown` 且带 `noindex` 与 `link`（协商不改变副本本身）。
+
+VPS 在重载前先校验配置：`caddy validate --config /etc/caddy/Caddyfile`（已 `import` 本片段），失败时重载不会替换正在运行的配置。
+
+**CI 能证明的部分**：`apps/cms/src/services/deployment/static/edge-negotiation.ts` 的 `replayEdgeNegotiation` 读回生成的配置
+（`vercel.json` 路由、`Caddyfile.static` 的 matcher 与 `rewrite`），并把 `_worker.js` 按其生成内容在隔离上下文里执行，
+给出 `(平台, 地址, Accept)` 会送哪个文件与哪些表示头；用例见 `apps/cms/src/services/deployment/static/__tests__/edge-replay.test.ts`。
+它证明规则本身，不证明平台真的这样执行——后者只能靠上面的体检。
 
 ## 回滚
 

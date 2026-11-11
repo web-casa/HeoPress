@@ -31,8 +31,16 @@ export interface CreateNotificationInput {
   item?: string | null;
 }
 
+/**
+ * The database work this service performs: insert, update and the undelivered query. A root handle and a site
+ * transaction both satisfy it, so a caller can persist a notification in the same transaction as the work that produced
+ * it (the review-reminder digest does exactly that: a rollback must not leave a reminder that was never recorded).
+ */
+type NotificationStore = Pick<Database, 'insert' | 'select' | 'update'>;
+
 export interface NotificationServiceDeps {
-  db: Database;
+  /** A root handle, or an open site transaction to write in (row-level security applies either way). */
+  db: NotificationStore;
   siteId: string;
   /** Runtime realtime provider for fan-out. Omit to persist only. */
   realtime?: RealtimeProvider;

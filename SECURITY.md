@@ -13,13 +13,13 @@ the newest minor before requesting a backport.
 
 | Version | Supported |
 |---------|-----------|
-| Latest `0.x` (pre-1.0) | ✅ Active development — fixes land on `main` and the latest release |
-| Older `0.x` | ❌ Best effort only; upgrade to the latest release |
+| `1.x` (latest minor) | ✅ Active development — fixes land on `main` and the latest release |
+| Previous major (`0.x`) | ✅ Security fixes for 6 months after `1.0.0` (until 2027-05-08) |
+| Anything older | ❌ Best effort only; upgrade to the latest release |
 
-> Until `1.0.0`, the `0.x` line is under active development and only the most
-> recent release is supported. Once `1.0.0` ships, this table is replaced by the
-> major/minor window described above and by the
-> [versioning policy](docs/en/contributing/versioning-policy.md).
+Only the newest patch of the newest minor of a supported major receives fixes: upgrade before requesting a backport.
+The window and the release rules are in the
+[versioning policy](docs/en/contributing/versioning-policy.md).
 
 ## Reporting a vulnerability
 

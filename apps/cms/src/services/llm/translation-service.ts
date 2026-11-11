@@ -51,7 +51,7 @@ export interface TranslationService {
 
 export class TranslationError extends Error {
   constructor(
-    readonly code: 'BAD_TRANSLATION' | 'EMPTY_REQUEST',
+    readonly code: 'BAD_TRANSLATION' | 'EMPTY_REQUEST' | 'SERVICE_UNAVAILABLE',
     message: string,
   ) {
     super(`${code}: ${message}`);

@@ -255,6 +255,10 @@ test('mirror branches hide the private branch name; the message carries only the
   assert.throws(() => mirrorBranch('HEAD'));
   const sha = 'a'.repeat(40);
   assert.equal(mirrorMessage(sha), `ci: mirror of a private commit (ADR-0018)\n\nPrivate-Commit: ${sha}\n`);
+  // The changed paths are a data trailer: the public CI classifies a branch's first push with them.
+  assert.equal(mirrorMessage(sha, ['docs/a.md', 'src/b.ts']), `ci: mirror of a private commit (ADR-0018)\n\nPrivate-Commit: ${sha}\n\nChanged-Paths: ["docs/a.md","src/b.ts"]\n`);
+  assert.equal(mirrorMessage(sha, Array.from({ length: 250 }, (_, i) => `f${i}.md`)).match(/"f199\.md"/) !== null, true);
+  assert.equal(mirrorMessage(sha, Array.from({ length: 250 }, (_, i) => `f${i}.md`)).includes('(and more)'), true);
   assert.throws(() => mirrorMessage('fix: real-site.example'));
 });
 

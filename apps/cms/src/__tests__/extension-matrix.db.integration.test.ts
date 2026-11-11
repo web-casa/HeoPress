@@ -1,7 +1,7 @@
 /**
- * The extension-point test matrix (HeoPress P12 task 9.1; ADR-0015 nine extension points, ADR-0017 quality gate).
+ * The extension-point test matrix (HeoPress P12 task 9.1; ADR-0015 eleven extension points, ADR-0017 quality gate).
  *
- * For each of the nine extension points five cells, each backed by a real test: (1) declared use works, (2) undeclared use
+ * For each of the eleven extension points five cells, each backed by a real test: (1) declared use works, (2) undeclared use
  * is refused, (3) another site is out of reach, (4) a plugin's failure is contained — the host, other plugins and other
  * sites carry on, (5) a contract version mismatch (the manifest's HeoPress version range) is refused. The matrix itself —
  * which test backs which cell, here or in the suites of tasks 1.x–4.x — is `helpers/extension-matrix.ts`; its
@@ -166,6 +166,11 @@ const POINT_DECLARATIONS: Record<ExtensionPoint, { capabilities: string[]; manif
     manifest: { storage: { results: { indexes: [] } }, admin: { pages: [{ id: 'results', title: 'Results', storage: 'results' }] } },
   },
   'build-steps': { capabilities: ['ext:build-steps'], manifest: { buildSteps: [{ id: 'pdf', label: 'PDF', source: 'console.log(1);' }] } },
+  'briefing-sections': { capabilities: ['ext:briefing-sections'], manifest: { briefingSections: [{ id: 'todo', title: 'To do' }] } },
+  'translation-services': {
+    capabilities: ['ext:translation-services'],
+    manifest: { translationServices: [{ id: 'stub', displayName: 'Stub', engine: 'stub' }] },
+  },
 };
 
 // ─── Ingest doubles (source adapters) ───────────────────────────────────────
@@ -882,5 +887,7 @@ describe.skipIf(!hasDbIntegrationUrl)('ADR-0015 extension-point matrix — DB in
   it('9.1 events × version: an incompatible extension-point range is refused at install, upgrade and approval', () => versionCell('events'));
   it('9.1 admin-panels × version: an incompatible extension-point range is refused at install, upgrade and approval', () => versionCell('admin-panels'));
   it('9.1 build-steps × version: an incompatible extension-point range is refused at install, upgrade and approval', () => versionCell('build-steps'));
+  it('9.1 briefing-sections × version: an incompatible extension-point range is refused at install, upgrade and approval', () => versionCell('briefing-sections'));
+  it('9.1 translation-services × version: an incompatible extension-point range is refused at install, upgrade and approval', () => versionCell('translation-services'));
 
 });

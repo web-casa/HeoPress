@@ -119,4 +119,49 @@ describe.skipIf(!hasDbIntegrationUrl)('overview feed', () => {
     await fixtures.update(siteDomains).set({ status: 'active', verifiedAt: new Date() }).where(eq(siteDomains.hostname, 'feed-setup.example.com'));
     expect((await feed('adminA')).setup.domainVerified).toBe(true);
   });
+
+  it('v1.1: stale drafts are the readable drafts untouched for more than 3 days — not pending, scheduled or unreadable ones', async () => {
+    const id = await idOf(SHARED.collection);
+    const now = Date.now();
+    const days = (n: number) => new Date(now - n * 86_400_000);
+    await item(id, 'Old draft', { updatedAt: days(5) });
+    await item(id, 'Fresh draft', { updatedAt: days(1) });
+    const waiting = await item(id, 'Waiting draft', { updatedAt: days(10) });
+    await pending(waiting, days(9));
+    await item(id, 'Future draft', { updatedAt: days(10), publishAt: new Date(now + 86_400_000) });
+    await item(await collection('secret'), 'Secret draft', { updatedAt: days(10) });
+
+    const f = await feed('onlyA');
+    expect(f.briefing.staleDrafts.days).toBe(3);
+    expect(f.briefing.staleDrafts.count).toBe(1);
+    expect(f.briefing.staleDrafts.oldest).toMatchObject({ title: 'Old draft', collection: SHARED.collection });
+    expect(f.briefing.staleDrafts.oldest!.waitSeconds).toBeGreaterThanOrEqual(5 * 86_400 - 60);
+    expect(JSON.stringify(f.briefing.staleDrafts)).not.toContain('Secret');
+    // The administrator reads every collection, so the secret draft is a second one.
+    expect((await feed('adminA')).briefing.staleDrafts.count).toBe(2);
+  });
+
+  it('v1.1: the last 7 days count publishes and other changes apart, with examples — a publish is not also an update', async () => {
+    const id = await idOf(SHARED.collection);
+    const now = Date.now();
+    const at = (n: number) => new Date(now - n * 86_400_000);
+    await item(id, 'New publish', { status: 'published', publishedAt: at(2), updatedAt: at(2) });
+    await item(id, 'Published then edited', { status: 'published', publishedAt: at(3), updatedAt: at(1) });
+    await item(id, 'Older article edited', { status: 'published', publishedAt: at(30), updatedAt: at(1) });
+    await item(id, 'Draft edited', { updatedAt: at(2) });
+    await item(id, 'Old edit', { status: 'published', publishedAt: at(40), updatedAt: at(40) });
+    await item(await collection('secret'), 'Secret published', { status: 'published', publishedAt: at(1), updatedAt: at(1) });
+
+    const f = await feed('onlyA');
+    expect(f.briefing.recent.days).toBe(7);
+    expect(f.briefing.recent.published.count).toBe(2);
+    expect(f.briefing.recent.published.examples.map((e) => e.title)).toEqual(['New publish', 'Published then edited']);
+    // 'Published then edited' is a publish, not a second change; the old article and the new draft are changes only,
+    // and the fixture's own draft (created moments ago) is one too.
+    expect(f.briefing.recent.updated.count).toBe(3);
+    expect(f.briefing.recent.updated.examples.map((e) => e.title)).toEqual(['Hello from A', 'Older article edited', 'Draft edited']);
+    expect(JSON.stringify(f.briefing.recent)).not.toContain('Secret');
+    // The administrator sees the secret publish in both the count and its example.
+    expect((await feed('adminA')).briefing.recent.published.count).toBe(3);
+  });
 });

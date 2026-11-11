@@ -6,9 +6,12 @@ import { Hono } from 'hono';
 import type { Context, MiddlewareHandler } from 'hono';
 import type { AppEnv } from '../env';
 import { ExtensionSandbox } from '../extensions/sandbox';
-import { upgradePointsOf } from '../extensions/runtime/plugin-host';
-import { EXTENSION_POINT_VERSIONS, extensionPointRangesOf } from '@heopress/contracts/extensions';
+import { PluginHost, upgradePointsOf } from '../extensions/runtime/plugin-host';
+import { PluginBriefing } from '../extensions/runtime/briefing-sections';
+import { requireSiteMember } from '../middleware/site-member';
+import { EXTENSION_POINT_VERSIONS, extensionPointRangesOf, secretNamesOf } from '@heopress/contracts/extensions';
 import { PermissionService, type PermissionAction } from '../services/permission-service';
+import { PluginSecretError, PluginSecretsService } from '../services/plugin-secrets-service';
 import {
   buildSandboxVerifyOptions,
 } from '../services/extension-verifier';
@@ -169,6 +172,89 @@ extensionsRouter.post('/:id/permissions/confirm', adminOnly, async (c) =>
 extensionsRouter.post('/:id/trust', adminOnly, async (c) =>
   mutate(c, async (svc) => svc.setTrusted(c.req.param('id'), await c.req.json())));
 
+/**
+ * Plugin secrets (HeoPress v1.2, spec extensions/plugin-secrets): the site administrator configures the values a plugin
+ * declared as `secrets:<name>`. The list returns names and a `configured` flag only; no response carries a value, a
+ * fragment of one or the ciphertext. Writes are audited with the name only. Mounted before the `/:name/*` endpoint
+ * catch-all so these paths are never treated as a plugin endpoint.
+ */
+function secretService(c: Context<AppEnv>, pluginRow: { name: string }) {
+  const auth = c.get('auth');
+  return new PluginSecretsService({
+    db: c.get('db'),
+    siteId: c.get('siteId'),
+    plugin: pluginRow.name,
+    // No key provider → the store refuses to seal/open (fail closed): plaintext is never stored instead.
+    keys: c.get('runtime')?.keys,
+    actor: { userId: auth?.userId ?? null, email: auth?.email ?? null },
+  });
+}
+
+/** The extension row of the active site, or the 404 the secret endpoints answer. */
+async function secretExtension(c: Context<AppEnv>): Promise<{ row: typeof extensions.$inferSelect } | { response: Response }> {
+  const [row] = await c
+    .get('db')
+    .select()
+    .from(extensions)
+    .where(and(eq(extensions.siteId, c.get('siteId')), eq(extensions.id, c.req.param('id') ?? '')))
+    .limit(1);
+  if (!row) {
+    return { response: c.json({ errors: [{ code: 'EXTENSION_NOT_FOUND', message: 'Extension not found.' }] }, 404) };
+  }
+  return { row };
+}
+
+/** The names the installed manifest declares (`requestedCapabilities`, else the approved `capabilities`). */
+function declaredSecretNamesOf(row: Pick<typeof extensions.$inferSelect, 'capabilities' | 'requestedCapabilities'>): string[] {
+  const requested = Array.isArray(row.requestedCapabilities) ? (row.requestedCapabilities as string[]) : [];
+  return secretNamesOf(requested.length > 0 ? requested : ((row.capabilities as string[]) ?? []));
+}
+
+function secretError(c: Context<AppEnv>, error: unknown) {
+  if (error instanceof PluginSecretError) {
+    return c.json({ errors: [{ code: error.code, message: error.message }] }, error.status);
+  }
+  throw error;
+}
+
+extensionsRouter.get('/:id/secrets', adminOnly, async (c) => {
+  const denied = await requireExtensionPermission(c, 'read');
+  if (denied) return denied;
+  const found = await secretExtension(c);
+  if ('response' in found) return found.response;
+  return c.json({ data: await secretService(c, found.row).list(declaredSecretNamesOf(found.row)) });
+});
+
+extensionsRouter.put('/:id/secrets/:name', adminOnly, async (c) => {
+  const denied = await requireExtensionPermission(c, 'update');
+  if (denied) return denied;
+  const found = await secretExtension(c);
+  if ('response' in found) return found.response;
+  const body = (await c.req.json().catch(() => null)) as { value?: unknown } | null;
+  try {
+    const declared = declaredSecretNamesOf(found.row);
+    const value = typeof body?.value === 'string' ? body.value : '';
+    return c.json({ data: await secretService(c, found.row).set(c.req.param('name'), value, declared) });
+  } catch (error) {
+    return secretError(c, error);
+  }
+});
+
+extensionsRouter.delete('/:id/secrets/:name', adminOnly, async (c) => {
+  const denied = await requireExtensionPermission(c, 'delete');
+  if (denied) return denied;
+  const found = await secretExtension(c);
+  if ('response' in found) return found.response;
+  try {
+    if (!(await secretService(c, found.row).delete(c.req.param('name')))) {
+      return c.json({ errors: [{ code: 'SECRET_NOT_FOUND', message: 'That secret is not configured.' }] }, 404);
+    }
+    return c.json({ data: null });
+  } catch (error) {
+    return secretError(c, error);
+  }
+});
+
 // HeoPress P12 task 2.1 (extensions/content-extensions): plugin collections — list, export, and the hard delete that
 // needs the plugin disabled, the namespace typed as confirmation and a current export. Before the endpoint mount.
 extensionsRouter.get('/collections', adminOnly, async (c) =>
@@ -177,6 +263,21 @@ extensionsRouter.get('/collections/:namespace/export', adminOnly, async (c) =>
   mutate(c, (svc) => svc.exportPluginCollections(c.req.param('namespace'))));
 extensionsRouter.post('/collections/:namespace/purge', adminOnly, async (c) =>
   mutate(c, async (svc) => svc.purgePluginCollections(c.req.param('namespace'), await c.req.json())));
+
+/**
+ * The Studio overview's briefing (HeoPress v1.1, spec extensions/briefing-sections "简报分节"): the sections the site's
+ * enabled plugins contribute, each computed on request under the host's per-call limits. Readable by a member of the
+ * active site — it is a Studio view, not an administration of the plugins — and mounted before the `/:name/*` endpoint
+ * catch-all so the reserved path is never treated as a plugin endpoint.
+ */
+extensionsRouter.get('/briefing-sections', requireSiteMember(), async (c) => {
+  const host = new PluginHost({
+    db: c.get('db'),
+    env: c.env as unknown as Record<string, unknown>,
+    keys: c.get('runtime')?.keys,
+  });
+  return c.json({ data: await new PluginBriefing(host).list(c.get('siteId')) });
+});
 
 /**
  * Dynamic endpoint mount — forwards requests to extension-provided Hono sub-apps.

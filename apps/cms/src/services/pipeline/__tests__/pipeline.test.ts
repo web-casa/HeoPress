@@ -132,7 +132,7 @@ describe('research agent (1.5)', () => {
 describe('operations (1.1, 1.9)', () => {
   it('registers the pipeline operations and no detection-evasion or cross-site linking operation', () => {
     const keys = listOperations().map((o) => o.key);
-    for (const k of ['pipeline:fetch-source', 'pipeline:translate', 'pipeline:rewrite', 'pipeline:write', 'pipeline:seo-copy', 'pipeline:run-gate', 'pipeline:propose-publish']) {
+    for (const k of ['pipeline:fetch-source', 'pipeline:translate', 'pipeline:rewrite', 'pipeline:write', 'pipeline:brief', 'pipeline:seo-copy', 'pipeline:run-gate', 'pipeline:propose-publish']) {
       expect(keys).toContain(k);
     }
     expect(keys.filter(isForbiddenOperationKey)).toEqual([]);

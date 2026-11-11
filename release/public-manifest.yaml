@@ -82,10 +82,16 @@ include:
   - README.md
   - CHANGELOG.md
   - SECURITY.md
+  # Community entry points (v1.1): how to contribute, and the behaviour expected in issues and reviews.
+  - CONTRIBUTING.md
+  - CODE_OF_CONDUCT.md
   - AGENTS.md
   - CLAUDE.md
 
 never:
+  # Dependabot runs in the private repository only: the public mirror is generated, and a dependency PR there would
+  # create a commit the next export overwrites (and each one runs the full matrix, delaying the release mirror).
+  - .github/dependabot.yml
   # Development process records (ADR-0010 §2).
   - docs/handoffs/**
   - docs/research/**

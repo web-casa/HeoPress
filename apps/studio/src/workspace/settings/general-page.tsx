@@ -33,7 +33,7 @@ interface Draft {
 }
 
 /** The IANA zones this browser knows (the CMS checks again); a short fallback where the list is unavailable. */
-export function knownTimeZones(): string[] {
+function knownTimeZones(): string[] {
   try {
     const zones = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf?.('timeZone');
     if (zones?.length) return zones.includes('UTC') ? zones : ['UTC', ...zones];

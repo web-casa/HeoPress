@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import { collections, contentRoutes, items, publicItems, siteContentSettings, sites, translationBlockMap, translationGroupMembers, translationGroups, type Database } from '@heopress/database';
 import { AuditLogger } from '../../modules/audit/logger';
 import type { OutboxActor } from '../../modules/cdc/change-feed/outbox-writer';
@@ -554,39 +554,103 @@ export class TranslationGroupService {
       const [settings] = await tx.select({ locales: siteContentSettings.availableLocales }).from(siteContentSettings).where(eq(siteContentSettings.siteId, this.deps.siteId));
       const [site] = await tx.select({ defaultLanguage: sites.defaultLanguage }).from(sites).where(eq(sites.id, this.deps.siteId));
       const locales = settings?.locales?.length ? settings.locales : [site!.defaultLanguage];
-      const member = await this.ownMember(tx, itemId);
-      const members: StatusMember[] = [];
-      const readableMembers: Array<{ itemId: string; siteId: string; locale: string; state: TranslationState }> = [];
-      if (member) {
-        const [group] = await tx.select().from(translationGroups).where(eq(translationGroups.id, member.groupId));
-        const switches = group ? await crossSiteSwitches(tx, group.siteIds) : new Map<string, boolean>();
-        for (const m of group ? await groupMemberItems(tx, group) : []) {
-          if (m.deleted) continue;
-          if (await this.readable(tx, m.siteId, m.itemId)) {
-            const [row] = await withSiteScope(tx, m.siteId, () => tx.select({ editorialState: items.editorialState }).from(items).where(eq(items.id, m.itemId)));
-            const [stale] = await withSiteScope(tx, m.siteId, () =>
-              tx
-                .select({ id: translationBlockMap.id })
-                .from(translationBlockMap)
-                .where(and(eq(translationBlockMap.siteId, m.siteId), eq(translationBlockMap.targetItemId, m.itemId), eq(translationBlockMap.stale, true)))
-                .limit(1),
-            );
-            const entry: StatusMember = { itemId: m.itemId, locale: m.locale, status: m.status, editorialState: row?.editorialState ?? null, deleted: false, stale: !!stale };
-            members.push(entry);
-            readableMembers.push({ itemId: m.itemId, siteId: m.siteId, locale: m.locale, state: memberState(entry) });
-          } else if ((m.siteId === this.deps.siteId || (switches.get(m.siteId) && switches.get(this.deps.siteId))) && (await this.publicMember(tx, m.siteId, m.itemId))) {
-            // Public only: published, nothing more is told (no item ID of another site).
-            members.push({ itemId: '', locale: m.locale, status: 'published', editorialState: null, deleted: false, stale: false });
-          }
-        }
-      } else {
-        const [row] = await tx.select({ status: items.status, editorialState: items.editorialState, data: items.data }).from(items).where(eq(items.id, itemId));
-        const entry: StatusMember = { itemId, locale: await itemLocale(tx, this.deps.siteId, row?.data), status: row!.status, editorialState: row!.editorialState ?? null, deleted: false, stale: false };
-        members.push(entry);
-        readableMembers.push({ itemId, siteId: this.deps.siteId, locale: entry.locale, state: memberState(entry) });
-      }
+      const { members, readableMembers } = await this.statusMembers(tx, itemId);
       return { locales: translationStatus(locales, members).map((l) => ({ ...l, itemId: l.itemId || null })), members: readableMembers };
     });
+  }
+
+  /**
+   * The translation backlog of a collection (v1.1; spec i18n/translation-backlog): the published items whose
+   * translation into `locale` (default: the site's first non-default language) is missing, stale or in review, with
+   * counts. States come from the same rule as the per-item status; a page is capped and `truncated` says whether more
+   * items were left out (the counts cover the page).
+   */
+  async backlog(collection: string, opts: { locale?: string; limit?: number } = {}): Promise<{
+    locale: string;
+    counts: { missing: number; stale: number; in_review: number };
+    items: Array<{ itemId: string; groupId: string | null; title: string; slug: string | null; state: TranslationState; updatedAt: string | null }>;
+    truncated: boolean;
+  }> {
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+    return runSiteTransaction(this.deps.db, this.deps.siteId, async (tx) => {
+      const [settings] = await tx.select({ locales: siteContentSettings.availableLocales }).from(siteContentSettings).where(eq(siteContentSettings.siteId, this.deps.siteId));
+      const [site] = await tx.select({ defaultLanguage: sites.defaultLanguage }).from(sites).where(eq(sites.id, this.deps.siteId));
+      const locales = settings?.locales?.length ? settings.locales : [site!.defaultLanguage];
+      const locale = opts.locale ?? locales.find((l) => l !== site!.defaultLanguage) ?? locales[0]!;
+      const [coll] = await tx
+        .select({ id: collections.id })
+        .from(collections)
+        .where(and(eq(collections.siteId, this.deps.siteId), eq(collections.name, collection)));
+      if (!coll) throw notFound();
+      const rows = await tx
+        .select({ id: items.id, data: items.data, updatedAt: items.updatedAt })
+        .from(items)
+        .where(and(eq(items.siteId, this.deps.siteId), eq(items.collectionId, coll.id), isNull(items.deletedAt), eq(items.status, 'published')))
+        .orderBy(desc(items.updatedAt))
+        .limit(limit + 1);
+      const truncated = rows.length > limit;
+      const counts = { missing: 0, stale: 0, in_review: 0 };
+      const out: Array<{ itemId: string; groupId: string | null; title: string; slug: string | null; state: TranslationState; updatedAt: string | null }> = [];
+      for (const row of rows.slice(0, limit)) {
+        const { members } = await this.statusMembers(tx, row.id);
+        const state = translationStatus([locale], members)[0]!.state;
+        if (state !== 'missing' && state !== 'stale' && state !== 'in_review') continue;
+        counts[state] += 1;
+        const member = await this.ownMember(tx, row.id);
+        const data = (row.data ?? {}) as Record<string, unknown>;
+        out.push({
+          itemId: row.id,
+          groupId: member?.groupId ?? null,
+          title: typeof data['title'] === 'string' ? data['title'] : '',
+          slug: typeof data['slug'] === 'string' ? data['slug'] : null,
+          state,
+          updatedAt: row.updatedAt ? row.updatedAt.toISOString() : null,
+        });
+      }
+      return { locale, counts, items: out, truncated };
+    });
+  }
+
+  /**
+   * The members that decide an item's translation status: its group's members the caller may read (each with its
+   * review state and stale maps), and members of another site that are public (published only, no item ID).
+   */
+  private async statusMembers(tx: SiteTransaction, itemId: string): Promise<{
+    members: StatusMember[];
+    readableMembers: Array<{ itemId: string; siteId: string; locale: string; state: TranslationState }>;
+  }> {
+    const member = await this.ownMember(tx, itemId);
+    const members: StatusMember[] = [];
+    const readableMembers: Array<{ itemId: string; siteId: string; locale: string; state: TranslationState }> = [];
+    if (member) {
+      const [group] = await tx.select().from(translationGroups).where(eq(translationGroups.id, member.groupId));
+      const switches = group ? await crossSiteSwitches(tx, group.siteIds) : new Map<string, boolean>();
+      for (const m of group ? await groupMemberItems(tx, group) : []) {
+        if (m.deleted) continue;
+        if (await this.readable(tx, m.siteId, m.itemId)) {
+          const [row] = await withSiteScope(tx, m.siteId, () => tx.select({ editorialState: items.editorialState }).from(items).where(eq(items.id, m.itemId)));
+          const [stale] = await withSiteScope(tx, m.siteId, () =>
+            tx
+              .select({ id: translationBlockMap.id })
+              .from(translationBlockMap)
+              .where(and(eq(translationBlockMap.siteId, m.siteId), eq(translationBlockMap.targetItemId, m.itemId), eq(translationBlockMap.stale, true)))
+              .limit(1),
+          );
+          const entry: StatusMember = { itemId: m.itemId, locale: m.locale, status: m.status, editorialState: row?.editorialState ?? null, deleted: false, stale: !!stale };
+          members.push(entry);
+          readableMembers.push({ itemId: m.itemId, siteId: m.siteId, locale: m.locale, state: memberState(entry) });
+        } else if ((m.siteId === this.deps.siteId || (switches.get(m.siteId) && switches.get(this.deps.siteId))) && (await this.publicMember(tx, m.siteId, m.itemId))) {
+          // Public only: published, nothing more is told (no item ID of another site).
+          members.push({ itemId: '', locale: m.locale, status: 'published', editorialState: null, deleted: false, stale: false });
+        }
+      }
+    } else {
+      const [row] = await tx.select({ status: items.status, editorialState: items.editorialState, data: items.data }).from(items).where(eq(items.id, itemId));
+      const entry: StatusMember = { itemId, locale: await itemLocale(tx, this.deps.siteId, row?.data), status: row!.status, editorialState: row!.editorialState ?? null, deleted: false, stale: false };
+      members.push(entry);
+      readableMembers.push({ itemId, siteId: this.deps.siteId, locale: entry.locale, state: memberState(entry) });
+    }
+    return { members, readableMembers };
   }
 
   /** The group's source and a translation member, with their blocks (group visible from this site). */

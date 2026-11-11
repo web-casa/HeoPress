@@ -73,6 +73,17 @@ translationGroupsRouter.get('/', (c) => {
   return answerGroup(c, () => translationGroupServiceFor(c).forItem(item));
 });
 
+// The translation backlog of a collection (v1.1; spec i18n/translation-backlog): the published items whose
+// translation into a language is missing, stale or in review. Registered before `/:id`, which would match `backlog`.
+translationGroupsRouter.get('/backlog', async (c) => {
+  const collection = c.req.query('collection');
+  if (!collection) return bad(c, 'Give ?collection=<name>.');
+  const limit = c.req.query('limit') ? Number(c.req.query('limit')) : undefined;
+  if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) return bad(c, 'limit must be a positive integer.');
+  return answerGroup(c, () =>
+    translationGroupServiceFor(c).backlog(collection, { locale: c.req.query('locale') || undefined, limit }),
+  );
+});
 translationGroupsRouter.get('/:id', (c) => answerGroup(c, () => translationGroupServiceFor(c).get(c.req.param('id'))));
 
 translationGroupsRouter.post('/', async (c) => {

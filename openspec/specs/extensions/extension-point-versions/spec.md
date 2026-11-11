@@ -6,12 +6,18 @@
 ## Requirements
 
 ### Requirement: 扩展点契约版本
-九个扩展点与插件宿主 API SHALL 各有独立的契约版本号（语义化版本），由 Extension SDK 公布，并与 HeoPress 在运行时检查使用的版本一致。
+十一个扩展点（`collections`、`routes`、`source-adapters`、`gate-checks`、`jobs`、`endpoints`、`events`、`admin-panels`、
+`build-steps`、`briefing-sections`、`translation-services`）与插件宿主 API SHALL 各有独立的契约版本号（语义化版本），由 Extension SDK 公布，
+并与 HeoPress 在运行时检查使用的版本一致。
 某个扩展点的破坏性变更 SHALL 只提升该扩展点的主版本，不改变其他扩展点的版本。发布说明 SHALL 列出每个版本变化的扩展点。
 
 #### Scenario: 只有一个扩展点变更
 - **WHEN** 新版本只对事件扩展点做了破坏性变更
 - **THEN** 只有事件扩展点的主版本提升；只使用任务与端点扩展点的插件仍然兼容
+
+#### Scenario: 新增的扩展点有独立版本
+- **WHEN** 实例新增一个扩展点（例如 v1.2 的 `translation-services`）
+- **THEN** 只有该扩展点出现在版本表中（`1.0.0`），既有扩展点的版本不变，既有的插件清单仍然有效
 
 ### Requirement: 清单声明扩展点版本范围
 插件清单 SHALL 为它申请的每个扩展点能力与宿主 API 声明兼容的版本范围。申请了扩展点能力却没有声明该扩展点版本范围、

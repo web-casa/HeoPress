@@ -36,6 +36,7 @@
 | 模式 | 只有 `public`：预览从不进入缓存，代码也无法为预览生成键 |
 | 站点、请求主机、路径 | 别名主机与语言入口主机各自独立；语言由主机与路径决定（三种语言入口都体现为主机或路径），不单列 |
 | 规范化查询参数 | 只有 `page`（非数字统一为一个 404 条目）与搜索页的 `q`（去首尾空白，最多 200 字符）；其他参数（如 `utm_*`）不影响输出，也不进入键 |
+| 表示形式 | `html` 或 `markdown`：请求的 `Accept` 偏好 Markdown 时为后者（v1.2 P07；见 `docs/zh-CN/rendering/site-classic.md` 的“Markdown 内容协商”）。先缓存的 HTML 不会回答 Markdown 请求，反之亦然；`Accept` 的其他写法不产生新条目 |
 
 版本号不在键中，而是与条目一起保存（见上节）；每个地址只保留一行，较新快照生成的回答替换较旧的。
 
@@ -55,7 +56,10 @@
 
 ## HTTP 头
 
-- `ETag`：弱校验值（状态、目标地址与正文的哈希）；`If-None-Match` 匹配时 200 页面返回 304。
+- `ETag`：弱校验值（状态、目标地址、类型、表示头与正文的哈希）；`If-None-Match` 匹配时 200 页面返回 304。
+  协商的 Markdown 应答与同一页的 HTML 各有自己的 ETag。
+- `Vary: Accept`：只在站点开启 Markdown 协商、且该页是可收录且 canonical 指向自身的条目页时出现（两个变体都带），
+  让共享缓存按 `Accept` 区分两个表示形式。
 - `Cache-Control: public, max-age=0, must-revalidate, s-maxage=5`：浏览器每次都校验，共享缓存（CDN）最多保留 5 秒。
 - `X-Cache: hit | miss`：便于排查。
 

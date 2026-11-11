@@ -32,6 +32,7 @@ import { useSiteLocales } from './use-site-locales';
 import { ItemCreate } from './item-create';
 import { EditorialActions } from './editorial-actions';
 import { TranslationGroupPanel } from './translation-group-panel';
+import { TimelinessPanel } from './timeliness-panel';
 
 type Tab = 'fields' | 'translation' | 'group' | 'revisions' | 'versions' | 'raw';
 
@@ -802,6 +803,20 @@ function ItemEditor({ collection, id }: { collection: string; id: string }) {
               />
             </label>
           </div>
+          {/* Timeliness mark (v1.1; spec content/timeliness-marks): an operator's dated, reasoned "needs an update". */}
+          <TimelinessPanel
+            collection={collection}
+            itemId={id}
+            version={baseVersion ?? itemQuery.data.version}
+            canUpdate={canUpdate}
+            mark={{
+              needsUpdateSince: itemQuery.data.needsUpdateSince ?? null,
+              reason: itemQuery.data.needsUpdateReason ?? null,
+              dueAt: itemQuery.data.needsUpdateDueAt ?? null,
+            }}
+            // The mark is a versioned write: the next save is based on its version, not the row read before it.
+            onChanged={setBaseVersion}
+          />
         </aside>
       </div>
     </div>

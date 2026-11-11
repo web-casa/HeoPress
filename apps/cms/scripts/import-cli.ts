@@ -4,6 +4,11 @@
  *
  *   heopress import schema                                         print the bundle's JSON Schema
  *   heopress import astro <site-root> --mapping <file> --out <dir> convert an Astro content directory to a bundle
+ *   heopress import wordpress <wxr-file> --source-site <name> --default-locale <tag> --out <dir> [--media <dir>]
+ *                                  | --rest <https://example.test>  read the site's REST API instead of a file
+ *                                  [--locales en,zh-CN] [--collections post=articles,page=pages]
+ *                                  [--permalink-structure '/%postname%/'] [--permalinks articles=/blog/:slug]
+ *                                                                  convert a WordPress WXR export to a bundle
  *   heopress import validate <bundle-dir>                          check a bundle (schema, credentials, paths, limits, media)
  *   heopress import dry-run --site <id> --bundle <dir> --actor <userId>
  *   heopress import run --site <id> --bundle <dir> --batch <id> --report-hash <hash> --actor <userId>
@@ -17,7 +22,9 @@
 
 export {};
 
+import { readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { schema, type Database } from '@heopress/database';
@@ -27,6 +34,10 @@ import { itemServiceForPrincipal } from '../src/services/item-service-factory';
 import { guardedProbe } from '../src/services/ssrf-guard';
 import { StorageProfileService } from '../src/services/storage/storage-profile-service';
 import { convertAstroSite, writeBundle } from '../src/services/site-import/astro/convert';
+import { writeImportBundle } from '../src/services/site-import/bundle-writer';
+import { convertWxr } from '../src/services/site-import/wordpress/convert';
+import { fetchWordPressRest } from '../src/services/site-import/wordpress/rest';
+import { parseWxr } from '../src/services/site-import/wordpress/wxr';
 import { BundleInvalidError, loadBundle } from '../src/services/site-import/bundle-reader';
 import { SiteImportService, storageMediaStore } from '../src/services/site-import/import-service';
 import { collectOldUrls, compareUrls, type PageFetcher } from '../src/services/site-import/url-compare';
@@ -82,6 +93,49 @@ try {
       print(conversion.report);
       break;
     }
+    case 'wordpress': {
+      const restUrl = flag('rest');
+      const file = restUrl ? undefined : rest[0];
+      if (!file && !restUrl) throw new Error('Give the WXR export file, or --rest <base-url>.');
+      const kv = (value: string | undefined): Record<string, string> | undefined => {
+        if (!value) return undefined;
+        return Object.fromEntries(
+          value
+            .split(',')
+            .map((pair) => pair.split('='))
+            .filter((pair): pair is [string, string] => pair.length === 2 && Boolean(pair[0]) && Boolean(pair[1]))
+            .map(([k, v]) => [k!.trim(), v!.trim()]),
+        );
+      };
+      const mediaDir = flag('media');
+      // REST is read through the outbound guard; a file is read as it is.
+      const rest = restUrl ? await fetchWordPressRest({ baseUrl: restUrl }) : undefined;
+      const mediaFiles = new Map<string, string>();
+      const conversion = convertWxr(rest ? rest.document : parseWxr(await readFile(file!)), {
+        sourceSite: need('source-site'),
+        defaultLocale: need('default-locale'),
+        locales: flag('locales')?.split(',').map((l) => l.trim()).filter(Boolean),
+        collections: kv(flag('collections')),
+        permalinkStructure: flag('permalink-structure'),
+        targetPermalinks: kv(flag('permalinks')),
+        readMedia: mediaDir
+          ? (rel) => {
+              const source = path.join(mediaDir, ...rel.split('/'));
+              try {
+                const bytes = readFileSync(source);
+                mediaFiles.set(rel, source);
+                return bytes;
+              } catch {
+                return undefined;
+              }
+            }
+          : undefined,
+      });
+      const report = rest ? { ...conversion.report, rest: rest.report } : conversion.report;
+      await writeImportBundle(need('out'), { records: conversion.records, mediaFiles, report, reportFile: 'wordpress-report.json' });
+      print(report);
+      break;
+    }
     case 'validate': {
       const b = await loadBundle(rest[0] ?? need('bundle'));
       print({ ok: true, namespace: b.namespace, items: b.items.length, media: b.media.length, redirects: b.redirects.length });
@@ -121,7 +175,7 @@ try {
       break;
     }
     default:
-      console.error('Usage: heopress import schema | astro | validate | dry-run | run | activate | compare (see docs/zh-CN/migration/astro-import.md)');
+      console.error('Usage: heopress import schema | astro | wordpress | validate | dry-run | run | activate | compare (see docs/zh-CN/migration/)');
       process.exit(1);
   }
 } catch (err) {

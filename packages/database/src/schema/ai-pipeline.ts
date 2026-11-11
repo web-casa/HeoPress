@@ -7,7 +7,8 @@ import { sites } from './core';
  * The AI content pipeline (HeoPress P09 tasks 1.1–1.10; spec ai/content-pipeline).
  *
  * A **production** is one request to turn source documents (or a translation group's source item) into a draft of the
- * site: translate, rewrite, write, or retranslate the stale blocks of a translation. Its idempotency key —
+ * site: translate, rewrite, write (briefing-style: a structured brief first, then the article from it), or
+ * retranslate the stale blocks of a translation. Its idempotency key —
  * `(sorted source ids and versions, site, target language, mode, prompt version, editorial policy version)` — is
  * unique per site, so triggering the same request twice never makes a second draft; a newer source version, another
  * target language or another policy version is another request.
@@ -25,7 +26,7 @@ export const aiProductions = pgTable(
       .references(() => sites.id, { onDelete: 'cascade' }),
     /** SHA-256 of the canonical idempotency tuple. */
     idempotencyKey: text('idempotency_key').notNull(),
-    /** `translate` | `rewrite` | `write` | `retranslate`. */
+    /** `translate` | `rewrite` | `write` | `brief` | `retranslate`. */
     mode: text('mode').notNull(),
     targetLocale: text('target_locale'),
     /** The collection the draft is (to be) written to. */
@@ -69,7 +70,7 @@ export const aiProductions = pgTable(
   (t) => ({
     keyUnique: uniqueIndex('ai_productions_site_key_unique').on(t.siteId, t.idempotencyKey),
     itemIdx: index('ai_productions_item_idx').on(t.siteId, t.itemId),
-    modeCheck: check('ai_productions_mode_check', sql`${t.mode} IN ('translate', 'rewrite', 'write', 'retranslate')`),
+    modeCheck: check('ai_productions_mode_check', sql`${t.mode} IN ('translate', 'rewrite', 'write', 'brief', 'retranslate')`),
     statusCheck: check(
       'ai_productions_status_check',
       sql`${t.status} IN ('running', 'drafted', 'low_value', 'refused_usage', 'terminated', 'retry_scheduled', 'failed', 'nothing_to_do')`,

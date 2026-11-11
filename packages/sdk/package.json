@@ -1,6 +1,6 @@
 {
   "name": "@heopress/sdk",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "HeoPress JS SDK (REST + WebSocket) + typegen core. Isomorphic ESM.",
   "license": "Apache-2.0",
   "type": "module",
@@ -36,7 +36,7 @@
   "devDependencies": {
     "tsup": "^8.5.1",
     "typescript": "^5.6.2",
-    "vitest": "^5.0.3"
+    "vitest": "^5.1.0"
   },
   "files": [
     "dist",

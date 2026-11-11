@@ -8,6 +8,7 @@ import { defaultSeoSettings, SiteSeoSettingsSchema } from '@heopress/contracts/s
 import { robotsTxt } from '@heopress/seo-geo';
 import { discoveryAnswer, type DiscoveryContext } from '../discovery-plan';
 import { buildPage, homeCanonical, pageHeadOf, pagedUrl, type PageInput } from '../view-model';
+import { negotiatedMarkdown } from '../negotiation';
 import type { PublicItemRow } from '../read-port';
 import { absoluteLinks, atomXml, fittingEntries, llmsTxt, newsLanguage, newsSitemapXml, pageMarkdown, rssXml, sitemapIndexXml, sitemapShards, sitemapTxt, sitemapXml } from '../discovery';
 
@@ -95,6 +96,13 @@ function serviceOutput(): string {
     }),
     page({ type: 'home', site: { ...site, identity: { kind: 'person', name: 'Sam', logo: '', email: '', telephone: '', address: { streetAddress: '', addressLocality: '', addressRegion: '', postalCode: '', addressCountry: '' }, sameAs: ['https://social.example.com/sam'] } }, canonical: `${HOST}/` }),
   ].map((p) => pageHeadOf(p));
+  // The negotiated Markdown answer (HeoPress v1.2 P07): the page's own body, its type and headers.
+  const negotiated = negotiatedMarkdown(
+    page({
+      item: row({ data: { title: 'A sample', excerpt: 'An excerpt', body: '<p>Negotiated <strong>body</strong>.</p>' }, richFields: ['body'] }),
+      canonical: `${HOST}/sample-item/`,
+    }),
+  );
   // The theme's language switch: the languages, not the x-default.
   const themeAlternates = buildPage(page({ item: row(), canonical: `${HOST}/sample-item/`, alternates })).vm.alternates;
   // The discovery files (P07 tasks 3.1, 3.3, 3.7): their serialisation, escaping included.
@@ -133,7 +141,7 @@ function serviceOutput(): string {
       feeds: [`${HOST}/feed.xml`],
     }),
   ];
-  return JSON.stringify({ canonicals, heads, themeAlternates, discovery });
+  return JSON.stringify({ canonicals, heads, themeAlternates, discovery, negotiated });
 }
 
 /** A root file's answer as the service makes it (task 3.8): its type and headers come from `discoveryAnswer`. */
@@ -153,6 +161,9 @@ async function digest(): Promise<string> {
     JSON.stringify(cachedPage(200, 'x', null, { contentType: 'application/xml; charset=utf-8', headers: { 'X-Robots-Tag': 'noindex' } })),
     // A Markdown copy's envelope (task 4.2): its type, noindex and the canonical Link.
     JSON.stringify(cachedPage(200, '# x\n', null, { contentType: 'text/markdown; charset=utf-8', headers: { 'X-Robots-Tag': 'noindex', Link: `<${HOST}/x/>; rel="canonical"` } })),
+    // A negotiated Markdown answer's envelope (v1.2 P07): the same, plus `Vary: Accept`; and the HTML answer's `Vary`.
+    JSON.stringify(cachedPage(200, '# x\n', null, { contentType: 'text/markdown; charset=utf-8', headers: { 'X-Robots-Tag': 'noindex', Link: `<${HOST}/x/>; rel="canonical"`, Vary: 'Accept' } })),
+    JSON.stringify(cachedPage(200, '<html></html>', null, { headers: { Vary: 'Accept' } })),
   ];
   return createHash('sha256').update(parts.join('\n\u0000\n')).digest('hex');
 }

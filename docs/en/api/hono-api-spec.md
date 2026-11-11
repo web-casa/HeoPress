@@ -469,6 +469,7 @@ active `siteId`.
 |--------|------|-------------|
 | `GET` | `/api/v1/items/:collection` | List items (paginated, filterable) |
 | `POST` | `/api/v1/items/:collection` | Create item (or array for bulk) |
+| `GET` | `/api/v1/items/:collection?needs_update=true` | List only the items marked as needing an update |
 | `GET` | `/api/v1/items/:collection/:id` | Get single item |
 | `PATCH` | `/api/v1/items/:collection/:id` | Partial update — **needs the item version** (see below) |
 | `PUT` | `/api/v1/items/:collection/:id` | Full replace — **needs the item version** |
@@ -478,6 +479,9 @@ active `siteId`.
 | `PATCH` | `/api/v1/items/:collection/:id/blocks/:field/:blockId` | Replace one block by its stable ID (`{ block, expectedVersion }`) — see [blocks](../features/content-write-safety.md#stable-block-ids) |
 | `POST` | `/api/v1/items/:collection/:id/hold` | Put on hold (never published by any path) — needs the item version |
 | `DELETE` | `/api/v1/items/:collection/:id/hold` | Release a hold — a person with publish permission only (403 for API keys and agents) |
+| `PUT` | `/api/v1/items/:collection/:id/timeliness` | Mark as needing an update (`{ reason, dueAt?, expectedVersion }`, a short dated mark; readers see it, `update` permission changes it) |
+| `DELETE` | `/api/v1/items/:collection/:id/timeliness` | Clear the mark — needs the item version (`If-Match`, `?expectedVersion=` or body) |
+| `GET` | `/api/v1/review-queue?collection=&limit=` | Everything that needs a human: manual marks, automatic staleness marks (`source = auto`) and items awaiting review, in three groups with counts (page capped at 50 by default, 200 max; counts cover the page; `truncated` says more matched) |
 | `GET` | `/api/v1/items/:collection/:id/revisions` | List revisions |
 | `POST` | `/api/v1/items/:collection/:id/revert/:revisionId` | Revert to revision — **needs the item version** |
 | `GET` | `/api/v1/items/:collection/:id/versions` | List named draft versions (each has a `mainChanged` flag) |
@@ -774,6 +778,19 @@ See `docs/legacy/kiro-specs/translation-memory-ui`.
 **Save-time gates:** an `active` flow must pass the shared graph validation — `400` with `GRAPH_DANGLING_EDGE` / `GRAPH_CYCLE` / `GRAPH_NO_ENTRY` / `GRAPH_UNKNOWN_OPERATION` (+ `nodeId`) otherwise; drafts may hold invalid work-in-progress. Schedule flows validate `triggerOptions.cron` (5-field, UTC): `400 CRON_INVALID` on a malformed expression, `400 CRON_REQUIRED` when activating without one; `next_run_at` is computed on save and advanced by the scheduler sweep before each enqueued run (idempotent).
 
 **Triggers:** `event` flows fire on item create/update/delete via the `flow-events` queue (`triggerOptions.collection` / `.action` filter, string or array, missing = all); `schedule` flows are swept every scheduler tick; `webhook` flows use the endpoint above; `manual` runs inline via `/run`.
+
+**Content pipeline operations (`pipeline:*`):** a flow step starts an AI production; every operation writes a **draft** (never publishes) and records its steps, model calls, tokens and cost in `lumibase_ai_production_steps`. Each step re-checks every source's current terms before it runs. `pipeline:rewrite`, `pipeline:write` and `pipeline:brief` assess the sources' value first: below the site's threshold no draft is made (`low_value`, with the score and reasons).
+
+| Operation | Options | What it does |
+|-----------|---------|--------------|
+| `pipeline:fetch-source` | `sourceDocumentIds`, `priority` | Admits source documents into today's processing quota and checks they may be used at all |
+| `pipeline:translate` | `targetLocale`, `collection`, `sourceItemId`, `targetItemId`, `promptVersion` | Block translation into a draft; a translation group's source item; or the stale blocks of a translation (a draft revision) |
+| `pipeline:rewrite` | `targetLocale`, `collection`, `promptVersion` | Rewrites licensed sources for the site's audience by its editorial policy, with citations |
+| `pipeline:write` | `targetLocale`, `collection`, `promptVersion` | Writes an original piece from facts after a bounded research run (whitelisted tools, step/time/cost caps), with citations |
+| `pipeline:brief` | `targetLocale`, `collection`, `promptVersion` | Writes the **structured brief** first — thesis, audience, angle, ordered sections with their key points and supporting source ids, tone, word budget, SEO title/description/keywords — then the draft from it, with citations. The brief is validated against its contract: one repair attempt with the errors appended, then the production ends with status `failed` and reason `brief_invalid`. The accepted brief is kept on the `brief` step and as `data.brief` on the draft; its article may cite only the sources the brief names. The brief call is ledgered under the `brief` capability and the article call under `write` |
+| `pipeline:seo-copy` | `productionId` | Generates the SEO title and description of a drafted production |
+| `pipeline:run-gate` | `productionId` | Runs the quality gate on the draft (bound to the item version it checked) |
+| `pipeline:propose-publish` | `productionId` | Hands the draft to the auto-publish rules; otherwise it enters the review queue |
 
 **Trigger a flow:**
 ```bash

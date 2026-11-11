@@ -37,9 +37,13 @@ const label = (s: MySite) => s.displayTitle || s.name;
 
 function SiteMark({ site }: { site: MySite }) {
   return (
-    <span aria-hidden="true" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-brand-soft text-[12px] font-semibold text-brand">
-      {label(site).trim().charAt(0).toUpperCase() || '·'}
-    </span>
+    // The initial is drawn by CSS (content), not as a text node: the button's accessible name then contains exactly
+    // the visible label (WCAG 2.5.3, axe label-content-name-mismatch).
+    <span
+      aria-hidden="true"
+      data-initial={label(site).trim().charAt(0).toUpperCase() || '·'}
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-brand-soft text-[12px] font-semibold text-brand before:content-[attr(data-initial)]"
+    />
   );
 }
 

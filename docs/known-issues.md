@@ -11,11 +11,7 @@
 
 不是测试失败，而是已确认、已排期的产品缺陷（ADR-0017）。
 
-| 缺陷 | 影响 | 复现方式 | 计划 |
-|---|---|---|---|
-| URL 采集的加工 outbox 没有消费者（P14 清点无人消费的队列时发现） | P08 把每篇代表来源文档的后续加工任务写入 `lumibase_ingest_processing_jobs`，原计划由 P09 消费，但 P09 的内容流水线只按来源文档 ID 处理（Flows 的 `pipeline:*` 操作、提示词工作台），没有任何进程读取这些行；P14 前它们被投递到无人消费的 `ingest-process` 队列。现在这些行保持 `pending`，抓取到的文档要由运营者或定时 Flow 指定 ID 送入流水线 | 抓取一个 `url` 信源后查询 `SELECT status, count(*) FROM lumibase_ingest_processing_jobs GROUP BY status` | 由后续 phase 实现 outbox 消费者（按站点范围、按行幂等）：登记 `ingest-process` 队列并在 worker 中注册，或由维护任务直接认领 `pending` 行 |
-| 页面浏览 `cdc` 策略不再向队列发出事件（P14） | 该策略原先把每次访问额外投递到无人消费的 `pageview-cdc` 队列；P14 删除了这次投递，策略现在与 `db-rollup` 相同，每次访问写入 `lumibase_pageview_events` | 设置 `pageviews.strategy = 'cdc'` 后访问页面，`pgboss.job` 中没有 `pageview-cdc` 任务 | 外部管道（如 Debezium → ClickHouse）从 `lumibase_pageview_events` 的变更读取；如需专门的事件出口，另立变更 |
-| 图片上传入队无人消费的 `media-processing` 任务（P13 镜像运行验收发现） | 上游 `POST /media/:key` 为每张图片入队 `generate-thumbnails`，但没有任何进程注册该队列（P03 起图片变换在请求时进程内完成）；这些任务停在 `created`，直到 pg-boss 按过期与保留策略清理，任务积压统计会一直包含它们 | 上传一张图片后查询 `SELECT count(*) FROM pgboss.job WHERE name = 'media-processing' AND state = 'created'` | 由维护者决定删除该入队还是补上缩略图 worker；在此之前 `docker/scripts/accept-mixed-load.mjs` 把该队列单独计为 `orphanQueued`，不计入积压 |
+无。
 
 ## 已修复的上游失败
 

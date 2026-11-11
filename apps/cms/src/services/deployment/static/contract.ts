@@ -1,4 +1,5 @@
 import type { PageDataSnapshot } from '@heopress/contracts/page-data';
+import { caddyNegotiation, negotiationContractOf, negotiationWorker, vercelNegotiationRoutes, type NegotiationContract } from './edge-negotiation';
 
 /**
  * The static target response contract (HeoPress P11 task 4.4; spec publishing/frontend-deployments, design "静态响应适配器必须
@@ -11,6 +12,11 @@ import type { PageDataSnapshot } from '@heopress/contracts/page-data';
  *   - Netlify: `_headers` and `_redirects` (`/path /404.html 410` for a withdrawn address);
  *   - Vercel: `vercel.json` `routes` (headers with `continue`, `status` 301 / 410, then the file system);
  *   - VPS: a Caddy snippet written next to the build (the operator's Caddyfile imports it).
+ *
+ * A page's **own** address can also answer its Markdown (v1.2 P11 task 4.5, `./edge-negotiation.ts`): the contract carries
+ * the pages that negotiate, and each platform expresses the rewrite in its own configuration — a Cloudflare Pages Function,
+ * Vercel `has`/`missing` route conditions, a Caddy matcher — or says it cannot (Netlify). The matrix's
+ * `markdown-negotiation` feature is what a target does at the address; `markdown-canonical` stays what its `.md` copy says.
  *
  * Pure: the deployer adds the files this returns to the upload. A contract that cannot be expressed on the platform is an
  * error (the deploy is refused, the live version stays); one expressed partially is a warning on the deploy record.
@@ -27,7 +33,7 @@ export interface FeatureSupport {
   note?: string;
 }
 
-const STATIC_FEATURES = ['noindex', 'markdown-canonical', 'redirect-301', 'gone-410', 'feeds', 'search', 'preview', 'analytics'] as const;
+const STATIC_FEATURES = ['noindex', 'markdown-canonical', 'markdown-negotiation', 'redirect-301', 'gone-410', 'feeds', 'search', 'preview', 'analytics'] as const;
 export type StaticFeature = (typeof STATIC_FEATURES)[number];
 
 const RUNTIME_ONLY: Record<'search' | 'preview' | 'analytics', FeatureSupport> = {
@@ -44,6 +50,10 @@ export const SUPPORT_MATRIX: Readonly<Record<StaticPlatform, Record<StaticFeatur
   vps: {
     noindex: { support: 'yes' },
     'markdown-canonical': { support: 'yes' },
+    'markdown-negotiation': {
+      support: 'degraded',
+      note: 'Caddy matches the `accept` header text: a request that also accepts HTML (or a wildcard, or refuses Markdown with q=0) gets HTML, and other q-values are not compared.',
+    },
     'redirect-301': { support: 'yes' },
     'gone-410': { support: 'yes' },
     feeds: { support: 'yes' },
@@ -52,6 +62,10 @@ export const SUPPORT_MATRIX: Readonly<Record<StaticPlatform, Record<StaticFeatur
   'cloudflare-pages': {
     noindex: { support: 'yes' },
     'markdown-canonical': { support: 'degraded', note: 'Cloudflare Pages allows 100 header rules: past that, Markdown copies keep noindex but lose their Link header.' },
+    'markdown-negotiation': {
+      support: 'yes',
+      note: 'A Pages Function (`_worker.js`) applies the runtime\'s full `Accept` rule from a bounded list of negotiable paths; Pages Functions plan limits (requests, CPU, bundle size) apply.',
+    },
     'redirect-301': { support: 'yes', note: 'At most 2000 redirects.' },
     'gone-410': { support: 'degraded', note: 'Cloudflare Pages redirects cannot answer 410: withdrawn addresses answer 404.' },
     feeds: { support: 'yes' },
@@ -60,6 +74,10 @@ export const SUPPORT_MATRIX: Readonly<Record<StaticPlatform, Record<StaticFeatur
   vercel: {
     noindex: { support: 'yes' },
     'markdown-canonical': { support: 'yes' },
+    'markdown-negotiation': {
+      support: 'degraded',
+      note: '`vercel.json` matches the `accept` header text: a request that also accepts HTML (or a wildcard, or refuses Markdown with q=0) gets HTML, and other q-values are not compared.',
+    },
     'redirect-301': { support: 'yes', note: 'At most 2048 routes.' },
     'gone-410': { support: 'yes' },
     feeds: { support: 'yes' },
@@ -68,6 +86,10 @@ export const SUPPORT_MATRIX: Readonly<Record<StaticPlatform, Record<StaticFeatur
   netlify: {
     noindex: { support: 'yes' },
     'markdown-canonical': { support: 'yes' },
+    'markdown-negotiation': {
+      support: 'no',
+      note: '`_headers` and `_redirects` cannot vary on `accept`, and this deploy path ships no edge function: Markdown stays at each page\'s `.md` address.',
+    },
     'redirect-301': { support: 'yes' },
     'gone-410': { support: 'yes' },
     feeds: { support: 'yes' },
@@ -78,6 +100,8 @@ export const SUPPORT_MATRIX: Readonly<Record<StaticPlatform, Record<StaticFeatur
 export const CF_HEADER_RULES = 100;
 const CF_REDIRECTS = 2000;
 const VERCEL_ROUTES = 2048;
+/** A Pages Function this large is worth checking against the plan's bundle limit (the generated map is the only growth). */
+export const CF_WORKER_WARN_BYTES = 256 * 1024;
 
 /** The configuration files a platform reads (the build output must not bring its own: the scan refuses them). */
 export const PLATFORM_CONFIG_FILES = ['_headers', '_redirects', '_routes.json', '_worker.js', 'vercel.json', 'netlify.toml', '.vercel', 'Caddyfile.static'];
@@ -95,6 +119,8 @@ export interface StaticContract {
   headers: HeaderRule[];
   redirects: Array<{ path: string; location: string }>;
   gone: string[];
+  /** Markdown negotiation at a page's own address (v1.2 P11 task 4.5; absent in contracts stored before it: none). */
+  negotiation?: NegotiationContract;
 }
 
 export interface RenderedContract {
@@ -121,11 +147,22 @@ export function staticContractOf(snapshot: PageDataSnapshot): StaticContract {
     headers.push({ path: p.path, headers: [['X-Robots-Tag', p.xRobotsTag]], metaCovered: /<meta[^>]+name="robots"[^>]+noindex/i.test(p.headHtml) });
   }
   const routes = snapshot.routes ?? [];
+  const negotiation = negotiationContractOf(snapshot);
   return {
     headers,
     redirects: routes.filter((r) => r.status === 301 && r.location).map((r) => ({ path: r.path, location: r.location! })),
     gone: routes.filter((r) => r.status === 410).map((r) => r.path),
+    ...(negotiation ? { negotiation } : {}),
   };
+}
+
+/** What the site's negotiation switches mean for this deploy, said on the record when a target cannot keep them. */
+function negotiationWarnings(platform: StaticPlatform, negotiation: NegotiationContract | undefined): string[] {
+  if (!negotiation?.enabled) return [];
+  if (!negotiation.copies) return ['Markdown negotiation is on, but the site has no Markdown copies: a static target cannot answer Markdown at a page\'s address (turn Markdown copies on).'];
+  if (!negotiation.rules.length) return [];
+  if (platform === 'netlify') return ['Netlify cannot answer Markdown at a page\'s own address (`_headers`/`_redirects` cannot vary on `accept`): the Markdown of these pages stays at their `.md` copies.'];
+  return [];
 }
 
 /**
@@ -182,11 +219,18 @@ export function renderContract(platform: StaticPlatform, contract: StaticContrac
       if (rules.length > CF_HEADER_RULES) errors.push(`The site needs ${rules.length} header rules; Cloudflare Pages allows ${CF_HEADER_RULES}.`);
       if (contract.redirects.length > CF_REDIRECTS) errors.push(`The site has ${contract.redirects.length} redirects; Cloudflare Pages allows ${CF_REDIRECTS}.`);
       if (contract.gone.length) warnings.push(`${contract.gone.length} withdrawn address(es) answer 404, not 410 (Cloudflare Pages redirects cannot answer 410).`);
+      const worker = negotiationWorker(contract.negotiation ?? { enabled: false, copies: true, rules: [] });
+      if (worker) {
+        files.push({ path: '_worker.js', body: worker });
+        if (worker.length > CF_WORKER_WARN_BYTES) warnings.push(`The Markdown negotiation worker is ${Math.ceil(worker.length / 1024)} KiB: check the project plan's Pages Functions bundle limit.`);
+      }
+      warnings.push(...negotiationWarnings('cloudflare-pages', contract.negotiation));
       files.push({ path: '_headers', body: headersFile(rules) });
       files.push({ path: '_redirects', body: contract.redirects.map((r) => `${r.path} ${r.location} 301`).join('\n') + '\n' });
       break;
     }
     case 'netlify': {
+      warnings.push(...negotiationWarnings('netlify', contract.negotiation));
       files.push({ path: '_headers', body: headersFile(folded(contract.headers)) });
       files.push({
         path: '_redirects',
@@ -195,13 +239,14 @@ export function renderContract(platform: StaticPlatform, contract: StaticContrac
       break;
     }
     case 'vercel': {
-      const routes: Array<Record<string, unknown>> = [
-        ...contract.headers.map((r) => ({ src: r.path.startsWith('/*.') ? `^/.*\\.${r.path.slice(3)}$` : regexOf(r.path), headers: Object.fromEntries(r.headers), continue: true })),
-        ...contract.redirects.map((r) => ({ src: regexOf(r.path), status: 301, headers: { Location: r.location } })),
-        ...contract.gone.map((p) => ({ src: regexOf(p), status: 410, dest: '/404.html' })),
-        { handle: 'filesystem' },
-        { src: '/.*', status: 404, dest: '/404.html' },
-      ];
+      const headerRoutes = contract.headers.map((r) => ({ src: r.path.startsWith('/*.') ? `^/.*\\.${r.path.slice(3)}$` : regexOf(r.path), headers: Object.fromEntries(r.headers), continue: true }));
+      const redirectRoutes = contract.redirects.map((r) => ({ src: regexOf(r.path), status: 301, headers: { Location: r.location } }));
+      const goneRoutes = contract.gone.map((p) => ({ src: regexOf(p), status: 410, dest: '/404.html' }));
+      const tail = [{ handle: 'filesystem' }, { src: '/.*', status: 404, dest: '/404.html' }];
+      const negotiation = vercelNegotiationRoutes(contract.negotiation ?? { enabled: false, copies: true, rules: [] }, VERCEL_ROUTES - headerRoutes.length - redirectRoutes.length - goneRoutes.length - tail.length);
+      if (negotiation.dropped) warnings.push(`${negotiation.dropped} page(s) keep HTML at their own address (Vercel allows ${VERCEL_ROUTES} routes); their Markdown stays at the .md copies.`);
+      warnings.push(...negotiationWarnings('vercel', contract.negotiation));
+      const routes: Array<Record<string, unknown>> = [...headerRoutes, ...(negotiation.vary ? [negotiation.vary] : []), ...negotiation.rewrites, ...redirectRoutes, ...goneRoutes, ...tail];
       if (routes.length > VERCEL_ROUTES) errors.push(`The site needs ${routes.length} routes; Vercel allows ${VERCEL_ROUTES}.`);
       files.push({ path: 'vercel.json', body: JSON.stringify({ version: 2, cleanUrls: false, trailingSlash: true, routes }, null, 2) });
       break;
@@ -212,8 +257,10 @@ export function renderContract(platform: StaticPlatform, contract: StaticContrac
         const m = r.path.startsWith('/*.') ? `path *.${r.path.slice(3)}` : `path ${r.path}`;
         lines.push(`@h${lines.length} ${m}`, `header @h${lines.length - 1} {`, ...r.headers.map(([k, v]) => `\t${k} "${v.replace(/"/g, '\\"')}"`), '}');
       }
+      lines.push(...caddyNegotiation(contract.negotiation ?? { enabled: false, copies: true, rules: [] }));
       for (const r of contract.redirects) lines.push(`redir ${r.path} ${r.location} 301`);
       for (const p of contract.gone) lines.push(`respond ${p} 410`);
+      warnings.push(...negotiationWarnings('vps', contract.negotiation));
       files.push({ path: 'Caddyfile.static', body: lines.join('\n') + '\n' });
       break;
     }

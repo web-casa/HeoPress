@@ -473,6 +473,7 @@
       "feature": {
         "noindex": "noindex headers",
         "markdown-canonical": "Markdown copy canonical",
+        "markdown-negotiation": "Markdown at the page address",
         "redirect-301": "301 redirects",
         "gone-410": "410 for withdrawn pages",
         "feeds": "RSS / Atom feeds",

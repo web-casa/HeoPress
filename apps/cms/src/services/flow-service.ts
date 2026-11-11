@@ -94,6 +94,10 @@ const OPERATION_DOCS: Record<string, { description: string; options?: Record<str
     description: 'Write an original draft from facts after a bounded research run (whitelisted tools, step/time/cost caps), with citations',
     options: { targetLocale: 'string', collection: 'string', promptVersion: 'string' },
   },
+  'pipeline:brief': {
+    description: 'Write the structured brief first, then the draft from it, with citations (value assessed first; one repair attempt on a brief that breaks its contract)',
+    options: { targetLocale: 'string', collection: 'string', promptVersion: 'string' },
+  },
   'pipeline:seo-copy': { description: 'Generate the SEO title and description of a drafted production', options: { productionId: 'string — or the previous step' } },
   'pipeline:run-gate': { description: 'Run the quality gate on a drafted production (bound to the item version)', options: { productionId: 'string — or the previous step' } },
   'pipeline:propose-publish': {
@@ -332,6 +336,7 @@ registerHandler('pipeline:fetch-source', async (ctx, options) => (await pipeline
 registerHandler('pipeline:translate', async (ctx, options) => (await pipelineOps()).translateOperation(ctx, options));
 registerHandler('pipeline:rewrite', async (ctx, options) => (await pipelineOps()).rewriteOperation(ctx, options));
 registerHandler('pipeline:write', async (ctx, options) => (await pipelineOps()).writeOperation(ctx, options));
+registerHandler('pipeline:brief', async (ctx, options) => (await pipelineOps()).briefOperation(ctx, options));
 registerHandler('pipeline:seo-copy', async (ctx, options) => (await pipelineOps()).seoCopyOperation(ctx, options));
 registerHandler('pipeline:run-gate', async (ctx, options) => (await pipelineOps()).runGateOperation(ctx, options));
 registerHandler('pipeline:propose-publish', async (ctx, options) => (await pipelineOps()).proposePublishOperation(ctx, options));

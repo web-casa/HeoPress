@@ -1,6 +1,6 @@
 {
   "name": "@heopress/seo-geo",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "description": "HeoPress SEO / GEO data layer: the indexing decision, page head, sitemap, feed and llms entries as structured objects (pure functions: no database, no HTTP).",
   "license": "Apache-2.0",
@@ -19,8 +19,8 @@
     "@heopress/contracts": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.6",
     "typescript": "^5.6.2",
-    "vitest": "^5.0.3"
+    "vitest": "^5.1.0"
   }
 }

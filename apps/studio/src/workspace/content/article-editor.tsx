@@ -51,7 +51,7 @@ const RICH_TEXT = 'wysiwyg';
 
 type SaveState = { kind: 'idle' } | { kind: 'dirty' } | { kind: 'saving' } | { kind: 'saved'; at: Date } | { kind: 'failed'; reason: string };
 
-export function ArticleEditor({ collection, id, workflow }: { collection: string; id: string; workflow: boolean }) {
+function ArticleEditor({ collection, id, workflow }: { collection: string; id: string; workflow: boolean }) {
   const { t } = useTranslation(['editor', 'content']);
   const client = getApiClient();
   const qc = useQueryClient();

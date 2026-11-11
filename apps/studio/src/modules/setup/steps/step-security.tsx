@@ -1207,4 +1207,3 @@ export default StepSecurity;
 // Re-export the constant for consumers of the same preset table (e.g.
 // the recovery step's review summary in task 10.3) so they don't have
 // to reach into the schema module directly.
-export { STANDARD_PRESET };

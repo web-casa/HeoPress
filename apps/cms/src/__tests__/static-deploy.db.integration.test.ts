@@ -13,6 +13,7 @@ import { buildDir, buildSiteGeneration, liveGeneration, type SiteBuildOptions } 
 import type { PageDataSnapshot } from '@heopress/contracts/page-data';
 import { ItemService } from '../services/item-service';
 import { ContentSettingsService } from '../services/site-network/content-settings-service';
+import { SeoSettingsService } from '../services/site-network/seo-settings-service';
 import { upgradeSitePreset } from '../services/site-network/preset-installer';
 import { rebuildSiteProjection } from '../services/site-network/public-projection';
 import { AstroEngine } from '../services/astro/astro-engine';
@@ -278,6 +279,33 @@ describe.skipIf(!hasDbIntegrationUrl)('Static deployments — DB integration (P1
     const md = r.issues.find((i) => i.url.endsWith('.md'))!;
     expect(md.code).toBe('wrong-type');
     expect(md.advice).toContain('_headers');
+  });
+
+  it('task 4.5: with negotiation on, Cloudflare Pages ships the Pages Function and Netlify says it cannot', async () => {
+    // This suite's sites keep their target between tests: start from Cloudflare Pages.
+    await configureStaticSite(db, A.id, { enabled: true, deployTargetId: targets[`${A.id}:cloudflare-pages`] });
+    await deployer().runPending();
+    const seo = new SeoSettingsService({ db: scopedDatabase(db, { site: A.id }), siteId: A.id, actor: { userId: null } });
+    const { settings, version } = await seo.get();
+    await seo.update({ ...settings, version, discovery: { ...settings.discovery, markdownNegotiation: true } });
+
+    // The snapshot the build reads carries the switch, so its contract — and a rollback to it — keeps it.
+    const snap = await exportSnapshot(A.id);
+    expect(snap.discovery).toEqual({ markdownCopies: true, markdownNegotiation: true });
+
+    const { row } = await buildAndDeploy();
+    expect(row.status, row.error ?? '').toBe('succeeded');
+    const worker = providers['cloudflare-pages'].fileOf('/_worker.js') ?? '';
+    expect(worker).toContain('const NEGOTIABLE = new Map([["/first/"');
+    expect(worker).toContain('function prefersMarkdown(accept)');
+    expect(worker).toContain('env.ASSETS.fetch(request)');
+
+    // Netlify cannot express it: no artifact, and the deploy record says so instead of faking support.
+    await configureStaticSite(db, A.id, { enabled: true, deployTargetId: targets[`${A.id}:netlify`] });
+    const moved = (await deployer().runPending()).filter((d) => d.provider === 'netlify').at(-1)!;
+    expect(moved.status, moved.error ?? '').toBe('succeeded');
+    expect(moved.warnings?.join(' ')).toMatch(/Netlify cannot answer Markdown at a page's own address/);
+    expect(providers.netlify.last().files.some((f) => f.path === '/_worker.js')).toBe(false);
   });
 
   it('task 5.2: an output carrying a sample secret is refused before it leaves the server', async () => {

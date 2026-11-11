@@ -310,6 +310,22 @@
     "untrust": "Remove trust",
     "confirmTrust": "Trust {{name}}? Its own admin pages will be offered to this site's members. Trust is dropped when the plugin's code changes.",
     "trustHint": "Only a trusted plugin's own frontend pages load; declarative pages work without trust.",
+    "secrets": {
+      "title": "Secrets",
+      "description": "Values this plugin reads through secrets:<name>. They are encrypted at rest and never shown again.",
+      "configured": "Configured",
+      "notConfigured": "Not configured",
+      "undeclared": "no longer declared",
+      "set": "Set",
+      "replace": "Replace",
+      "delete": "Delete secret",
+      "confirmDelete": "Delete the stored value of {{name}}?",
+      "valueLabel": "Value for {{name}}",
+      "valuePlaceholder": "Paste the value (it is never shown again)",
+      "save": "Save",
+      "cancel": "Cancel",
+      "failed": "The secret could not be saved or deleted. Try again."
+    },
     "needsUpgrade": "Needs upgrade: {{points}} — this instance provides a different contract version."
   },
   "keyboard": {

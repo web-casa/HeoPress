@@ -98,7 +98,7 @@ describe.skipIf(!hasDbIntegrationUrl)('model providers — DB integration', () =
     await call(`/providers/${p.id}`, 'DELETE', a);
     const moved = await call('/settings', 'PUT', a, { currency: 'CNY', monthlyBudgetMicros: 50_000_000, budgetTimezone: 'Asia/Shanghai' });
     expect(moved.status).toBe(200);
-    expect(((await moved.json()) as { data: unknown }).data).toEqual({ currency: 'CNY', monthlyBudgetMicros: 50_000_000, budgetTimezone: 'Asia/Shanghai', dailyBudgetMicros: null, dailyProcessingLimit: null });
+    expect(((await moved.json()) as { data: unknown }).data).toEqual({ currency: 'CNY', monthlyBudgetMicros: 50_000_000, budgetTimezone: 'Asia/Shanghai', dailyBudgetMicros: null, dailyProcessingLimit: null, translationService: null });
     // Usage on record: the currency is locked; the budget can still change.
     const [c] = await fixtures
       .insert(llmCalls)

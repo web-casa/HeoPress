@@ -95,6 +95,7 @@ import { internalPreviewRouter } from './routes/internal-preview';
 import { redirectsRouter } from './routes/redirects';
 import { editorialProfileRouter } from './routes/editorial-profile';
 import { translationGroupsRouter } from './routes/translation-groups';
+import { reviewQueueRouter } from './routes/review-queue';
 // Registers the public projection flush that every site transaction runs before committing (P06).
 import './services/site-network/public-projection';
 import { systemRouter } from './routes/system';
@@ -342,6 +343,9 @@ api.route('/preview-links', previewLinksRouter);
 api.route('/redirects', redirectsRouter);
 api.route('/editorial-profile', editorialProfileRouter);
 api.route('/translation-groups', translationGroupsRouter);
+// The items that need a human (v1.1; spec content/stale-content-queue): manual marks, automatic marks and items
+// awaiting review, one page, site-scoped.
+api.route('/review-queue', reviewQueueRouter);
 api.route('/domains', domainsRouter);
 api.route('/storage-profiles', storageProfilesRouter);
 api.route('/notification-channels', notificationChannelsRouter);

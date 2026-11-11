@@ -21,7 +21,7 @@ import {
   type RenderPoolOptions,
   type ThemeAsset,
 } from '@heopress/public-site';
-import { cachedPage, cacheKey, cacheQuery, isCurrent, matchesEtag, isRedirectTarget, PageCache, redirectLocation, type CacheDeps, type CachedPage, type RenderState } from './cache';
+import { cachedPage, cacheKey, cacheQuery, isCurrent, matchesEtag, isRedirectTarget, PageCache, redirectLocation, type CacheDeps, type CachedPage, type CacheVariant, type RenderState } from './cache';
 import { clientAddress, parseTarget, requestHost, trustedProxies } from './host';
 import { statusPage } from './html';
 import { addressHasher, crawlHitOf, TrafficRecorder } from './ai-traffic';
@@ -41,6 +41,7 @@ import { renderPort, type SiteReads } from './read-port';
 import { buildPage, homeCanonical, pageHeadOf, pagedUrl, type PageInput, type SiteInfo } from './view-model';
 import { discoveryAnswer, discoveryFileOf, type DiscoveryAnswer } from './discovery-plan';
 import { markdownCopyAnswer } from './markdown-copy';
+import { negotiable, negotiatedMarkdown, prefersMarkdown } from './negotiation';
 import { markdownUrlOf } from './discovery';
 import { classicTemplateName, EMPTY_PUBLIC_EXTENSIONS, itemRouteOf, listRouteAt, type PublicExtensions } from '@heopress/contracts/extensions';
 
@@ -59,7 +60,9 @@ import { classicTemplateName, EMPTY_PUBLIC_EXTENSIONS, itemRouteOf, listRouteAt,
  *   - pages are rendered by the site's theme in the rendering pool (worker threads: a runaway template is
  *     terminated, other sites keep being served); a theme failure gives the site's error page, or the
  *     built-in minimal one — never a stack or an internal path;
- *   - the language never comes from `Accept-Language`;
+ *   - the language never comes from `Accept-Language`; `Accept` decides only one thing — while the site has Markdown
+ *     negotiation on, an indexable item page canonical to itself answers its Markdown when the request prefers
+ *     `text/markdown` (v1.2 P07, `./negotiation.ts`), and both representations say `Vary: Accept`;
  *   - previews only on the preview origin (`./preview.ts`), never cached.
  */
 
@@ -148,7 +151,11 @@ type Plan =
   | { kind: 'system' }
   /** A discovery file (P07 tasks 3.1, 3.3, 3.7), freshly made. */
   | { kind: 'discovery'; answer: DiscoveryAnswer }
-  | { kind: 'page'; site: SiteInfo; page: PageInput }
+  /**
+   * A page; `markdown`: answer it as Markdown (HeoPress v1.2 P07) instead of rendering the theme's HTML; `vary`: its
+   * HTML answer varies by `Accept` (the site has negotiation on and the page is negotiable).
+   */
+  | { kind: 'page'; site: SiteInfo; page: PageInput; markdown?: DiscoveryAnswer; vary?: boolean }
   | { kind: 'status'; status: number; site: SiteInfo | null; locale: string; homeUrl: string };
 
 export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
@@ -547,8 +554,12 @@ export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
 
     const query = new URLSearchParams(target.query);
     const system = isSystemPathSegment(first);
+    // The representation this request asks for (HeoPress v1.2 P07): part of the cache key, so an HTML answer is never
+    // served for a Markdown request and the other way round. Only the header decides it — the site's setting is read
+    // later, inside the request's snapshot, and decides whether the Markdown answer is actually made.
+    const variant: CacheVariant = prefersMarkdown(c.req.header('accept')) ? 'markdown' : 'html';
     // A discovery file's query changes nothing (P07 task 3.5): its key holds none.
-    const key = cacheKey({ mode: 'public', siteId, host, path: target.path, query: system ? new URLSearchParams() : query });
+    const key = cacheKey({ mode: 'public', siteId, host, path: target.path, query: system ? new URLSearchParams() : query, variant });
     // A system path on a plain alias goes to the primary domain before any cached answer (after the rebuild check).
     const aliasFirst = system && !hostInfo.isPrimary && !hostInfo.entryLocale && !!hostInfo.primaryHostname;
 
@@ -629,10 +640,21 @@ export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
       const locale = result.kind === 'item' ? result.locale : result.kind === 'gone' ? result.at.locale : (result.at?.locale ?? info.defaultLanguage);
       const homeUrl = publicUrlOf(space, locale, '/') ?? '/';
       const decision = await plan(reads, { ...info, origin: siteOrigin(space, info.defaultLanguage) }, result, target.path, new URLSearchParams(target.query), locale, homeUrl);
-      if (decision.kind === 'page') decision.page.ownHosts = await reads.hosts();
+      if (decision.kind === 'page') {
+        decision.page.ownHosts = await reads.hosts();
+        // Markdown content negotiation (HeoPress v1.2 P07; spec rendering/markdown-negotiation): while the site has it
+        // on, an indexable item page canonical to itself answers its Markdown at this same address when the request
+        // prefers `text/markdown`. Its HTML answer then carries `Vary: Accept` too, so a shared cache cannot hand the
+        // HTML to a Markdown request. Everything else (404, 301, 410, a search page, a feed, a `.md` copy) never gets
+        // here, and a page that is not listed keeps one answer only.
+        if (info.seo.discovery.markdownNegotiation && negotiable(decision.page)) {
+          decision.vary = true;
+          if (variant === 'markdown') decision.markdown = negotiatedMarkdown(decision.page) ?? undefined;
+        }
+      }
       // An item page's Markdown copy is declared only when its address is free: a real route there (or one it redirects
       // to, or a 410) answers it instead (P07 task 4.2, Codex review of batch 9).
-      if (decision.kind === 'page' && decision.page.type === 'item' && decision.page.canonical && info.seo.discovery.markdownCopies) {
+      if (decision.kind === 'page' && !decision.markdown && decision.page.type === 'item' && decision.page.canonical && info.seo.discovery.markdownCopies) {
         const copy = markdownUrlOf(decision.page.canonical);
         const at = copy ? new URL(copy) : null;
         if (at && at.host.toLowerCase() === host.toLowerCase()) {
@@ -689,11 +711,22 @@ export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
       }
       return fresh(decided.status, html, null);
     }
+    // The negotiated Markdown answer (HeoPress v1.2 P07): the page's own body, under the same cache entry rules as its
+    // HTML (an article's page by its item's render version), with its own type, headers and entity tag.
+    if (decided.markdown) {
+      const page = cachedPage(200, decided.markdown.body, null, { contentType: decided.markdown.contentType, headers: decided.markdown.headers ?? {} });
+      if (deps && useCache) void cache.store(key, siteId, deps, page, { shared: !keyedByQuery });
+      return answer(c, page, '', 'miss');
+    }
     try {
       const listPage = decided.page.type === 'home' || decided.page.type === 'taxonomy';
       // A page not indexed says so in a header too (P07 task 2.3): stored with the answer, replayed on HEAD and 304.
       const { xRobotsTag } = pageHeadOf(decided.page);
-      return fresh(200, await render(siteId, decided.page, theme), null, !keyedByQuery || listPage, xRobotsTag ? { 'X-Robots-Tag': xRobotsTag } : {});
+      // `Vary: Accept` on the HTML answer too while the page negotiates (v1.2 P07): a shared cache must keep the two
+      // representations apart. Stored with the answer, replayed on HEAD and 304 as every representation header is.
+      const headers: Record<string, string> = { ...(xRobotsTag ? { 'X-Robots-Tag': xRobotsTag } : {}) };
+      if (decided.vary) headers['Vary'] = 'Accept';
+      return fresh(200, await render(siteId, decided.page, theme), null, !keyedByQuery || listPage, headers);
     } catch (err) {
       // The theme failed on this page: this site's error page; other sites are not affected.
       const busy = err instanceof RenderError && (err.code === 'RENDER_QUEUE_FULL' || err.code === 'RENDER_CLOSED');

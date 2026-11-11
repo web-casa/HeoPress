@@ -10,6 +10,8 @@
     "media": "媒体",
     "translations": "翻译",
     "translationMemory": "翻译记忆",
+    "translationBacklog": "翻译待办",
+    "reviewQueue": "复核队列",
     "sources": "信源",
     "aiReview": "AI 审核",
     "workbench": "提示词工作台",

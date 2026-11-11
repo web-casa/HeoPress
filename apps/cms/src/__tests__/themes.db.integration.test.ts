@@ -462,7 +462,7 @@ describe.skipIf(!hasDbIntegrationUrl)('site themes — DB integration', () => {
       }), 3);
       // A page cached under the former theme, as an older renderer would have stored it.
       const before = await renderVersion(A);
-      const key = cacheKey({ mode: 'public', siteId: A, host: HOST_A, path: '/hello/', query: new URLSearchParams() });
+      const key = cacheKey({ mode: 'public', siteId: A, host: HOST_A, path: '/hello/', query: new URLSearchParams(), variant: 'html' });
       const stale = cachedPage(200, '<p class="marker">LEGACY</p><script type="application/ld+json">{}</script>', null);
       const [structure] = await fixtures.select({ v: siteRenderVersions.structureVersion }).from(siteRenderVersions).where(eq(siteRenderVersions.siteId, A));
       await fixtures.insert(renderCache).values({ key, siteId: A, siteVersion: before, structureVersion: structure!.v, themeVersion: legacy.id, status: 200, body: stale.body, etag: stale.etag, location: null, contentType: stale.contentType, headers: {}, expiresAt: new Date(Date.now() + 3_600_000) });

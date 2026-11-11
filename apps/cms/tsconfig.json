@@ -9,7 +9,10 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@heopress/extension-sdk": ["../../packages/extension-sdk/src/index.ts"]
+    }
   },
   "include": [
     "src/**/*.ts",

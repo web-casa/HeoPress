@@ -2,6 +2,26 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.2.0] - 2026-11-11
+
+### Added
+
+- 内容：WordPress 导入（WXR / REST）、翻译待办分栏、简报式改写（结构化简报 → 成文）、时效标记与复核提醒、
+  自动陈旧判定与审核队列。
+- 简报：官方简报插件（概览分节、可编辑草稿、`/briefing` 路由）、按集合的 feed（插件集合自动获得 `/feed/<集合>.xml`）。
+- 机器可读：同一 URL 的 Markdown 内容协商（`Vary: Accept`、按表示分键的缓存），静态目标的边缘协商
+  （Cloudflare Pages / Vercel / Caddy 各自实现，Netlify 如实标注不支持）与 CI 回放器。
+- 扩展：翻译服务扩展点（第十一个，按字符计费）、DeepL 官方插件（含术语表镜像）、插件密钥的加密存储与 Studio 配置。
+- 对外贡献：`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、中文贡献指南。
+
+### Changed
+
+- 工作区版本 `1.0.0` → `1.2.0`；`docs/en/contributing/index.md` 的工具链与实际一致（Node 24、pnpm 9.12）。
+
+### Fixed
+
+- `scripts/version-check.mjs` 里陈旧的 Node 版本期望（`>=20` → `>=24`）。
+
 ## [1.0.0] - 2026-11-08
 
 ### Added

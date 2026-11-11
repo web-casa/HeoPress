@@ -89,7 +89,7 @@ export function backupCodesFileHeader(): string {
 /**
  * Filename suggested by the "Download .txt" action.
  */
-export const BACKUP_CODES_FILENAME = 'heopress-backup-codes.txt';
+const BACKUP_CODES_FILENAME = 'heopress-backup-codes.txt';
 
 /**
  * Build the plaintext body of the downloadable backup-codes file:

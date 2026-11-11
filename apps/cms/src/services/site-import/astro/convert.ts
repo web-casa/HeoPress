@@ -1,12 +1,10 @@
 import { createHash } from 'node:crypto';
-import { copyFile, lstat, mkdir, readdir, readFile, realpath, writeFile } from 'node:fs/promises';
+import { lstat, readdir, readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 import {
   IMPORT_BUNDLE_FORMAT,
-  IMPORT_BUNDLE_MEDIA_DIR,
-  IMPORT_BUNDLE_RECORDS_FILE,
   IMPORT_BUNDLE_VERSION,
   IMPORT_MEDIA_REF_PREFIX,
   ImportRecordSchema,
@@ -16,6 +14,7 @@ import {
   type ImportRedirect,
 } from '@heopress/contracts/schemas';
 import { convertBody } from './mdx';
+import { writeImportBundle } from '../bundle-writer';
 
 /**
  * The Astro content-collection importer (HeoPress P12 tasks 7.1, 7.2; spec migration/astro-content-import
@@ -445,12 +444,10 @@ async function readRedirects(root: string, mapping: AstroMapping, inside: (p: st
 
 /** Write a conversion as a bundle directory (`bundle.ndjson`, `media/`, `astro-report.json`). */
 export async function writeBundle(outDir: string, conversion: AstroConversion): Promise<void> {
-  await mkdir(path.join(outDir, IMPORT_BUNDLE_MEDIA_DIR), { recursive: true });
-  await writeFile(path.join(outDir, IMPORT_BUNDLE_RECORDS_FILE), `${conversion.records.map((r) => JSON.stringify(r)).join('\n')}\n`);
-  for (const [rel, from] of conversion.mediaFiles) {
-    const to = path.join(outDir, IMPORT_BUNDLE_MEDIA_DIR, ...rel.split('/'));
-    await mkdir(path.dirname(to), { recursive: true });
-    await copyFile(from, to);
-  }
-  await writeFile(path.join(outDir, 'astro-report.json'), `${JSON.stringify(conversion.report, null, 2)}\n`);
+  await writeImportBundle(outDir, {
+    records: conversion.records,
+    mediaFiles: conversion.mediaFiles,
+    report: conversion.report,
+    reportFile: 'astro-report.json',
+  });
 }
