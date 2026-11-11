@@ -25,3 +25,5 @@
 ## 许可证
 
 本项目基于 LumiBase（Apache-2.0）修改，保留其版权与 NOTICE。本项目自身许可证为 AGPL-3.0-only（`LICENSE`）；上游 Apache-2.0 文本见 `LICENSES/`。
+
+<!-- verification of branch protection, removed before merge -->
