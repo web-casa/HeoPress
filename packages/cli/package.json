@@ -1,6 +1,6 @@
 {
   "name": "heopress",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "HeoPress in one package — the JS/TS client (re-exports @heopress/sdk) plus the `heopress` CLI: generate TypeScript types from a live schema, check your setup, scaffold a project.",
   "license": "Apache-2.0",
   "type": "module",

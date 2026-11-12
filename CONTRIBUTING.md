@@ -46,8 +46,10 @@ offering HeoPress under AGPL-3.0 *and* a commercial licence while you keep the c
 
 1. Read [CLA.md](CLA.md).
 2. Comment on your pull request, exactly: `I have read and agree to the HeoPress CLA.`
-3. A maintainer records the acceptance in [`.github/cla-signatures.json`](.github/cla-signatures.json) and pushes to
-   your branch; the check runs again and passes.
+3. A maintainer records the acceptance in [`.github/cla-signatures.json`](.github/cla-signatures.json) **on `main`**
+   (a small pull request of its own) and re-runs the failed check. The check reads the signatures file from the *base*
+   branch on purpose — it must not execute or trust anything from the pull request — so adding the entry to your branch
+   alone does not make it pass.
 
 The **CLA signed** check (`.github/workflows/cla.yml`, logic in `scripts/cla-check.mjs`) is required on `main`, so a
 pull request from an unrecorded author cannot merge. You sign once, not per pull request — the record stays in the

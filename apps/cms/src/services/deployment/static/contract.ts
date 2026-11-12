@@ -97,8 +97,8 @@ export const SUPPORT_MATRIX: Readonly<Record<StaticPlatform, Record<StaticFeatur
     noindex: { support: 'yes' },
     'markdown-canonical': { support: 'yes' },
     'markdown-negotiation': {
-      support: 'yes',
-      note: 'A Netlify Edge Function (`netlify/edge-functions/negotiate.ts`, declared in `netlify.toml` for `/*`) applies the runtime\'s full `Accept` rule from a bounded list of negotiable paths. The deploy must bundle Edge Functions and honour the generated `netlify.toml`; Edge Functions plan limits (invocations, 50 ms CPU per request, 20 MB bundle) apply.',
+      support: 'degraded',
+      note: 'A Netlify Edge Function (`netlify/edge-functions/negotiate.ts`, declared in `netlify.toml` for `/*`) applies the runtime\'s full `Accept` rule from a bounded list of negotiable paths — but this deploy path uploads files only and never sends the Deploy API\'s `edge_functions`, so a deploy made here does not register the function and nothing negotiates. It takes effect only where Netlify itself builds the site from a repository that contains these files (Git builds); Edge Functions plan limits (invocations, 50 ms CPU per request, 20 MB bundle) apply.',
     },
     'redirect-301': { support: 'yes' },
     'gone-410': { support: 'yes' },

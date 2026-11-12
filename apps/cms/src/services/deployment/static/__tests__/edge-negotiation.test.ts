@@ -63,10 +63,12 @@ describe('the negotiation contract', () => {
       expect(SUPPORT_MATRIX[platform]['markdown-negotiation'].support).toBe('degraded');
       expect(SUPPORT_MATRIX[platform]['markdown-negotiation'].note).toMatch(/q-values are not compared/);
     }
-    // Netlify is code too (an Edge Function), so it compares q-values like the runtime; the note names the requirement.
-    expect(SUPPORT_MATRIX.netlify['markdown-negotiation'].support).toBe('yes');
+    // Netlify is code too (an Edge Function, so it compares q-values like the runtime), but this deploy path uploads
+    // files only and never sends `edge_functions`: the function exists only where Netlify builds the site itself.
+    expect(SUPPORT_MATRIX.netlify['markdown-negotiation'].support).toBe('degraded');
     expect(SUPPORT_MATRIX.netlify['markdown-negotiation'].note).toMatch(/Edge Function/);
     expect(SUPPORT_MATRIX.netlify['markdown-negotiation'].note).toMatch(/netlify\.toml/);
+    expect(SUPPORT_MATRIX.netlify['markdown-negotiation'].note).toMatch(/edge_functions/);
     // Every target that is not `yes` says why (the matrix is read by the Studio next to the target choice).
     for (const platform of STATIC_PLATFORMS) {
       const feature = SUPPORT_MATRIX[platform]['markdown-negotiation'];

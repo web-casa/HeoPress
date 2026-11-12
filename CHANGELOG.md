@@ -2,6 +2,26 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.3.1] - 2026-11-12
+
+### Fixed
+
+- **能力声明修正**：Netlify 的 `markdown-negotiation` 由 `yes` 改为 `degraded`。v1.3.0 把「部署必须打包 Edge Functions」
+  写成前提，但本仓库的 Netlify 适配器走 Deploy API 的文件摘要上传，只上传普通文件、从不发送 `edge_functions`，
+  因此经它部署的站点不会注册该函数。Netlify 的公开 API 文档只文档化了服务端函数的上传，Edge Functions 的部署方式
+  是 Git 连续部署或 CLI ≥12.2.8。改为 `degraded` 并在中英两份部署文档里写明「怎样才能真的生效」。
+- 中文部署文档的能力矩阵仍写着「支持」，与代码和英文版不一致；已改为「受限」并重新盖章。
+
+### Added
+
+- `docs/en/publishing/frontend-deployments.md`、`docs/en/publishing/git-snapshots.md`：运维部署必读的两篇补齐英文版。
+- `scripts/docs-i18n/parity-gate.mjs` 与 `docs/i18n-parity-baseline.json`：中英文档一致性门禁接入 `pnpm check:all`，
+  冻结现有 190 篇单边文档与 3 对允许的漂移；新增单边文档、基线过期都会失败。
+
+### Changed
+
+- 工作区版本 `1.3.0` → `1.3.1`。
+
 ## [1.3.0] - 2026-11-12
 
 ### Added

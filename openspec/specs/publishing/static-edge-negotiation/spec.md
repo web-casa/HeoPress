@@ -71,7 +71,7 @@ Netlify 的桩 `context` MUST 以 `next()` 返回该地址的资源响应、以 
 （`Accept: text/markdown`、`text/html`、`*/*` 与直接取 `.md`；VPS 另在重载前校验 Caddyfile），
 同时 MUST 说明 CI 的回放只证明规则、不证明平台的真实行为，并 MUST 写出代码型目标的前提
 （Cloudflare Pages 执行 `_worker.js`；Netlify 打包 Edge Functions 且读取生成的 `netlify.toml`）。
-支持矩阵中 Netlify 的 `markdown-negotiation` SHALL 为 `yes`，其说明 MUST 点名该前提与平台限制。
+支持矩阵中 Netlify 的 `markdown-negotiation` SHALL 为 `degraded`，其说明 MUST 点名两件事：该函数只在 Netlify 从仓库构建时被注册，本仓库的部署路径只上传文件、不发送 Deploy API 的 `edge_functions`，因此经本路径部署的站点不协商；以及平台限制。
 
 #### Scenario: 部署后确认承诺成立
 - **WHEN** 运维按文档对一个已部署的可协商页面执行四条 `curl`

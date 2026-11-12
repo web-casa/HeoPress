@@ -66,6 +66,12 @@ pnpm docs:i18n:detect
 # Structural parity of every pair (or one rel). Read-only.
 pnpm docs:i18n:parity
 
+# Enforcing repo-wide gate: fails on new single-sided docs or new drift.
+pnpm docs:i18n:gate
+
+# Shrink the frozen baseline after paying debt down (its diff is the record).
+pnpm docs:i18n:gate:update
+
 # Preserve at-risk Vietnamese content + stamp versions, but do not translate.
 pnpm docs:i18n:preserve
 
@@ -129,26 +135,24 @@ Without an API key, `--apply` exits `2` and points you at `docs:i18n:detect` /
 ## CI
 
 The upstream workflow (archived at `docs/legacy/upstream/workflows/docs-i18n-sync.yml`, not run by HeoPress CI) ran on changes under `docs/**` or
-`scripts/docs-i18n/**`; HeoPress CI runs the code-reference check in the `checks` job:
+`scripts/docs-i18n/**`. HeoPress CI runs `pnpm check:all` in the `checks` job, and that is where the two enforcing
+docs checks live:
 
-- **Pull requests:** detect + code-reference + parity checks, then an
-  **enforcing gate scoped to the pairs this PR changed**. The repo-wide parity
-  run stays report-only — the inherited backlog still fails and blocking PRs
-  that never touched it would punish the wrong person — but a pair you edited
-  must be consistent, or the check fails. Reports are uploaded as artifacts
-  before the gate runs, so a failing run still leaves them attached.
-  The gate reads the changed-file list **including deletions and renames**: a
-  pair with one surviving locale fails (that is the orphan case), and a pair
-  deleted in both locales passes, since retiring a doc is legitimate. Together
-  with `stamp-pair.mjs`, which no new translation gets past unchecked, that is
-  two gates rather than one advisory report.
-- **Push to `main`:** preservation + version stamps, committed back. It does
-  **not** translate, and the outstanding-pair count is echoed into the job
-  summary so the backlog stays visible.
+- **Code references** — `pnpm docs:i18n:verify`: a doc claim that no longer matches the source tree fails the job.
+- **Structural parity, repo-wide** — `pnpm docs:i18n:gate`: compares the whole tree against
+  `docs/i18n-parity-baseline.json`. A doc present in only one locale is *single-sided*; the baseline freezes the
+  inherited ones and records, per drifting pair, the problem codes it is allowed to have. A single-sided doc or a
+  problem code that is not in the baseline fails. So does a baseline entry the tree no longer matches — debt that was
+  paid down must be removed with `pnpm docs:i18n:gate:update`, so the shrinking diff is the record. The gate reads no
+  git history, which is why it also works in the public mirror (ADR-0018), where the commit is checked out with no
+  shared history with `main`.
+- **The diff-scoped gate** `scripts/docs-i18n/gate-changed-parity.mjs` remains for the one case it alone can see — a
+  pull request deleting or renaming one side of a pair — but it is not wired into CI and cannot be: it needs a git
+  base the mirror does not have. `parity-gate.mjs` is the authoritative gate; see the headers of both scripts.
 
-No repository secret is involved. Translations land through pull requests, by
-hand, in the same commit as the change that made them necessary — see the
-bilingual-docs rule in `CLAUDE.md`.
+Translations still land through pull requests, by hand, in the same commit as the change that made them necessary —
+see the bilingual-docs rule in `CLAUDE.md`. `stamp-pair.mjs` refuses to stamp a pair that has drifted, so no new
+translation gets past unchecked.
 
 ## Front-matter fields
 

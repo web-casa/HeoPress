@@ -16,6 +16,7 @@
 // Exempt: GitHub's own accounts and dependabot, which contribute machine-generated changes and sign nothing.
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 /** Accounts that never sign: they are GitHub's, not people. */
 export const EXEMPT_LOGINS = new Set([
@@ -141,4 +142,8 @@ function main(argv) {
   return 1;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) process.exit(main(process.argv));
+// `file://${process.argv[1]}` breaks on a path with a space (import.meta.url is percent-encoded) and would skip the
+// check silently, exiting 0 — a fail-open in the one place that must not have one.
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  process.exit(main(process.argv));
+}

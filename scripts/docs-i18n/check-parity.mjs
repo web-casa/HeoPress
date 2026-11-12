@@ -361,7 +361,12 @@ function walk(dir, onFile) {
   }
 }
 
-function allRels() {
+/**
+ * Every rel that exists in at least one locale, sorted. Exported so the
+ * repo-wide gate (`parity-gate.mjs`) enumerates exactly the set this checker
+ * reports on, instead of growing a second walk that could drift from it.
+ */
+export function allRels() {
   const rels = new Set();
   for (const locale of LOCALES) {
     const root = path.join(DOCS_ROOT, locale);

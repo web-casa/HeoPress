@@ -33,6 +33,10 @@ include:
   - docs/openapi.yaml
   - docs/en/**
   - docs/zh-CN/**
+  # The docs-parity gate's committed baseline (`scripts/docs-i18n/parity-gate.mjs`): the public CI mirror runs
+  # `pnpm check:all`, which reads it. It records documentation debt (single-sided pages, drifting pairs), not the
+  # development process, and the gate is meaningless without it.
+  - docs/i18n-parity-baseline.json
   # The v1 audience guides (users, developers, operations) live in docs/en/guides/ and docs/zh-CN/guides/ (above).
   # Operations runbooks (P13: the manual Git history rewrite process, ADR-0013).
   - docs/ops/**

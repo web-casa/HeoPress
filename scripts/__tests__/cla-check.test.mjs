@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -114,6 +114,29 @@ test('the CLI passes a signed author, refuses an unsigned one, and skips a bot',
       return true;
     },
   );
+});
+
+test('the CLI runs from a path with a space (the entry-point guard must not fail open)', () => {
+  // `file://${process.argv[1]}` never equals `import.meta.url` when the path holds a space (the URL is
+  // percent-encoded), so the guard skipped main() and exited 0 — a check that silently passes everyone.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cla space '));
+  madeDirs.push(dir);
+  const script = path.join(dir, 'cla-check.mjs');
+  fs.copyFileSync(path.join(process.cwd(), 'scripts/cla-check.mjs'), script);
+  const signatures = path.join(dir, 'signatures.json');
+  fs.writeFileSync(signatures, JSON.stringify(signaturesOf('alice')));
+
+  const refused = spawnSync(process.execPath, [script, '--signatures', signatures, '--author', 'bob'], {
+    encoding: 'utf8',
+  });
+  assert.equal(refused.status, 1, 'an unrecorded author must fail, not pass silently');
+  assert.match(String(refused.stderr), /could not find a recorded acceptance/);
+
+  const allowed = spawnSync(process.execPath, [script, '--signatures', signatures, '--author', 'alice'], {
+    encoding: 'utf8',
+  });
+  assert.equal(allowed.status, 0);
+  assert.match(String(allowed.stdout), /is recorded/);
 });
 
 test('--print emits the entry a maintainer adds', () => {

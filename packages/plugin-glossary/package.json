@@ -1,6 +1,6 @@
 {
   "name": "@heopress/plugin-glossary",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "private": true,
   "description": "The official HeoPress glossary plugin (heopress-glossary): a term collection with term and index pages, term links in article bodies, a citation gate check, and a term tooltip component. Built only on @heopress/extension-sdk.",
   "license": "Apache-2.0",

@@ -1,3 +1,10 @@
+---
+version: 2
+lastUpdated: 2026-11-12T08:22:28.816Z
+sourceLang: zh-CN
+contentHash: 28911a77a9555a2d
+---
+
 # 静态前台部署
 
 使用 Astro 引擎的站点（见《Astro 静态引擎》）可以把静态产物部署到自有服务器（VPS）、Cloudflare Pages、Vercel 或 Netlify。
@@ -54,13 +61,15 @@ Vercel 的 Git 触发改为重新部署最近一次生产部署（`deploymentId`
 | Markdown 副本 canonical（`Link`） | 支持 | 受限：`_headers` 最多 100 条规则，超出时副本仍为 noindex 但不带 `Link` | 支持 | 支持 |
 | 301 重定向 | 支持 | 支持（最多 2000 条，超出拒绝部署） | 支持（最多 2048 条路由） | 支持 |
 | 撤回内容 410 | 支持 | 受限：`_redirects` 不能返回 410，按 404 回答 | 支持 | 支持 |
-| 同一地址 Markdown 协商 | 受限：Caddy 只按 `Accept` 头文本匹配 | 支持：随产物上传 `_worker.js`（Pages Function） | 受限：`vercel.json` 只按 `accept` 头文本匹配 | 支持：随产物上传 Edge Function（`netlify/edge-functions/negotiate.ts`）与声明它的 `netlify.toml` |
+| 同一地址 Markdown 协商 | 受限：Caddy 只按 `Accept` 头文本匹配 | 支持：随产物上传 `_worker.js`（Pages Function） | 受限：`vercel.json` 只按 `accept` 头文本匹配 | 受限：产物含 Edge Function（`netlify/edge-functions/negotiate.ts`）与声明它的 `netlify.toml`，但**本部署路径只上传文件、不发送 Deploy API 的 `edge_functions`**，经它部署的站点不会注册该函数 |
 | RSS / Atom | 支持 | 支持 | 支持 | 支持 |
 | 站内搜索、草稿预览、访问分析 | 不可用 | 不可用 | 不可用 | 不可用 |
 
 VPS 生成 `<root>/<siteId>/Caddyfile.static`，在服务 `current` 目录的站点块中 `import` 即可。受限项会写入部署记录的警告；无法表达的契约（规则数超限）拒绝部署。
 
 ## 同一地址的 Markdown 协商（v1.2 P11 任务 4.5）
+
+> **Netlify 的前提**：Edge Function 要真正生效，必须由**会打包它的部署方式**发布——Netlify 的 Git 连续部署，或 Netlify CLI **12.2.8 及以上**的手动部署（更早的 CLI 会报部署错误）。本仓库的 Netlify 适配器走 Deploy API 的文件摘要上传，只上传普通文件、不发送 `edge_functions`，因此经它部署的站点不会注册该函数，协商不生效；矩阵里 Netlify 的该项标为 `degraded`（受限）就是这个原因，不是配置写法的问题。
 
 站点开启 `discovery.markdownNegotiation`（默认关闭）后，Classic 引擎在页面**自己的地址**上按 `Accept` 返回该页的 Markdown
 （见《Classic 渲染服务》的「Markdown 内容协商」）。静态目标不运行这段代码，所以部署时把同一承诺写进各平台自己的配置：
@@ -71,7 +80,7 @@ VPS 生成 `<root>/<siteId>/Caddyfile.static`，在服务 `current` 目录的站
 | Cloudflare Pages | 随产物上传 `_worker.js`（Pages Function，advanced mode）：内置可协商路径表（查表判定，不在请求时扫描）、与运行时相同的 RFC 9110 规则；命中则改写为该页 `.md` 副本并补类型、`noindex` 与 canonical `Link`，两个变体都带 `Vary: Accept`；其他请求原样交给静态资源 | 支持（受 Pages Functions 计划限制：请求数、CPU、bundle 大小） |
 | Vercel | `vercel.json` 的 `routes`：一条 `Vary: Accept` 头路由，加每页一条带 `has`/`missing` 条件的改写路由（`accept` 含 `text/markdown`、不含 `text/html`/`text/*`/`*/*`、不以 `q=0` 拒绝） | 受限：只按请求头**文本**匹配，不比较 `q` |
 | VPS（Caddy） | `Caddyfile.static` 中每页一个 `@negotiate_md_N`（CEL 表达式：`path(...)` 与 `Accept` 正则）与 `rewrite` 到 `.md`；页面地址带 `header Vary "Accept"` | 受限：同上 |
-| Netlify | 随产物上传 `netlify/edge-functions/negotiate.ts`（Edge Function，Deno 运行时）：同样的可协商路径表与同一份 RFC 9110 规则；非协商路径与 GET/HEAD 以外的方法原样交给下一环，命中则 `context.rewrite` 到该页 `.md` 副本并补表示头，两个变体都带 `Vary: Accept`；同时生成 `netlify.toml`，用 `[[edge_functions]]`（`path = "/*"`、`function = "negotiate"`）声明路由 | 支持（前提：部署打包 Edge Functions 且读取生成的 `netlify.toml`；受 Edge Functions 计划限制：调用次数、每请求 50 ms CPU、bundle 20 MB） |
+| Netlify | 随产物上传 `netlify/edge-functions/negotiate.ts`（Edge Function，Deno 运行时）：同样的可协商路径表与同一份 RFC 9110 规则；非协商路径与 GET/HEAD 以外的方法原样交给下一环，命中则 `context.rewrite` 到该页 `.md` 副本并补表示头，两个变体都带 `Vary: Accept`；同时生成 `netlify.toml`，用 `[[edge_functions]]`（`path = "/*"`、`function = "negotiate"`）声明路由 | 受限（**本部署路径只上传文件，不发送 Deploy API 的 `edge_functions`，因此这里部署的站点不会注册该函数、也不会协商**；只有在 Netlify 自己从仓库构建（Git 构建）且产物含这两个文件时才生效。受 Edge Functions 计划限制：调用次数、每请求 50 ms CPU、bundle 20 MB） |
 
 **受限意味着什么**（Vercel 与 VPS）：配置只能读请求头文本。Cloudflare Pages 与 Netlify 是代码（Pages Function / Edge Function），
 按运行时同一套规则比较 `q` 值，不受下表限制。
@@ -94,7 +103,7 @@ VPS 生成 `<root>/<siteId>/Caddyfile.static`，在服务 `current` 目录的站
 - Cloudflare Pages：`_headers` 的 100 条规则不受影响（协商不进 `_headers`）；`_worker.js` 超过 256 KiB 时部署记录提醒核对 Pages Functions 的 bundle 上限。
   路径表是显式列表，不随请求增长，也不在请求时扫描页面数据。
 - Netlify：Edge Function 里同样是显式路径表（查表判定），`_headers` / `_redirects` 不因协商改变；平台限制是每请求 50 ms CPU、
-  每月调用次数按套餐、bundle 20 MB 压缩后。部署路径必须打包 Edge Functions 且读取生成的 `netlify.toml`——CI 不证明这一步，
+  每月调用次数按套餐、bundle 20 MB 压缩后。部署路径必须真的注册 Edge Functions 并读取生成的 `netlify.toml`：本仓库的 Netlify 部署器目前只上传文件、不发送 `edge_functions`，所以矩阵是 `degraded` 而不是 `yes`；CI 不证明这一步，
   由下面的体检确认。
 - VPS：每个可协商页一行 matcher 加一段 header 块；站点关闭 `.md` 副本时静态目标不协商（没有可改写到的文件），部署记录会说明。
   非 ASCII 的页面路径在快照里是百分号编码形式，而 Caddy 的 `path` matcher 会先解码请求路径，两者对不上时该页在 VPS 上不协商（保守失败，体检能发现）；

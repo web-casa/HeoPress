@@ -98,8 +98,9 @@ test('the real manifest keeps the development process, review records and secret
   for (const must of ['apps/cms/src/index.ts', 'package.json', 'pnpm-lock.yaml', '.github/workflows/ci.yml', 'openspec/config.yaml', '.env.example', 'docker/.env.example', 'release/public-manifest.yaml', 'release/RELEASES.md', ...LICENSE_FILES]) {
     assert.ok(exported.includes(must), `missing: ${must}`);
   }
-  // The v1 audience guides in both languages, the developer docs of the public tooling and the release notes (P13 4.1–4.3).
-  for (const must of ['docs/zh-CN/guides/index.md', 'docs/en/guides/index.md', 'docs/dev/release.md', 'docs/dev/security-scanning.md', 'release/notes/v1.0.0.md']) {
+  // The v1 audience guides in both languages, the developer docs of the public tooling, the release notes (P13 4.1–4.3)
+  // and the docs-parity baseline the public mirror's `pnpm check:all` reads (v12-docs-parity-gate).
+  for (const must of ['docs/zh-CN/guides/index.md', 'docs/en/guides/index.md', 'docs/dev/release.md', 'docs/dev/security-scanning.md', 'release/notes/v1.0.0.md', 'docs/i18n-parity-baseline.json']) {
     assert.ok(exported.includes(must), `missing: ${must}`);
   }
 });

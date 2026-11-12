@@ -1,3 +1,10 @@
+---
+version: 1
+lastUpdated: 2026-11-12T07:39:54.260Z
+sourceLang: zh-CN
+contentHash: c610c08ef0e1b6e3
+---
+
 # Git 快照格式
 
 已发布内容以 Markdown 持续导出到运营者的 Git 内容仓库，作为版本历史与灾难恢复的补充。

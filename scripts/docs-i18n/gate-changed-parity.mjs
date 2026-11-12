@@ -9,6 +9,20 @@
 // other people's debt. Report-only, though, means nothing stops the backlog
 // from growing.
 //
+// NOT THE ENFORCING GATE (since v12-docs-parity-gate)
+// ---------------------------------------------------
+// `parity-gate.mjs` is authoritative: it compares the whole tree against
+// `docs/i18n-parity-baseline.json`, needs no git history, and runs in
+// `pnpm check:all` (so on every CI `checks` job). THIS script is kept because it
+// is the only check that can see a PR deleting or renaming one side of a pair
+// from the PR's own diff, and because its unit test pins that behaviour. It is
+// still not wired into CI, and cannot be: the public mirror checks out a commit
+// with no shared history with `main` (ADR-0018), so there is no `git diff` base
+// and the changed-file list is empty — which this gate reads as "nothing to
+// enforce". Run it by hand (`node scripts/docs-i18n/gate-changed-parity.mjs
+// <changed-files.txt>`) when you do have a base; treat a green result as
+// "no pair this diff touched drifted", never as "the repo is in parity".
+//
 // This narrows the same check to the pairs the PR actually touched. A
 // contributor is answerable for what they edited, and nothing new lands broken,
 // while the inherited backlog is retired on its own schedule. When that backlog
