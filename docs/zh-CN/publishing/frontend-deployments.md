@@ -8,7 +8,8 @@
 - `apps/cms/src/services/deployment/providers/cloudflare-pages.ts`：Cloudflare Pages 适配器（Direct Upload）；
 - `apps/cms/src/services/deployment/providers/vercel.ts`、`apps/cms/src/services/deployment/providers/netlify.ts`：Vercel、Netlify 适配器（含静态上传）；
 - `apps/cms/src/services/deployment/static/contract.ts`：静态目标响应契约与运行时功能支持矩阵；
-- `apps/cms/src/services/deployment/static/edge-negotiation.ts`：同一地址 Markdown 协商的每平台配置与回放判定；
+- `apps/cms/src/services/deployment/static/edge-negotiation.ts`：同一地址 Markdown 协商的每平台生成物（Cloudflare 的 `_worker.js`、
+  Netlify 的 Edge Function 与 `netlify.toml`、Vercel 路由、Caddy matcher）与回放判定；
 - `apps/cms/src/services/deployment/static/scan.ts`：上传前的产物扫描；
 - `apps/cms/src/services/deployment/static/static-deployer.ts`：部署、确认丢失后的核对、回滚与部署后体检；
 - `apps/cms/src/services/deployment/static/static-site.ts`：后台开关（启用引擎、主题、部署目标）与视图；
@@ -53,7 +54,7 @@ Vercel 的 Git 触发改为重新部署最近一次生产部署（`deploymentId`
 | Markdown 副本 canonical（`Link`） | 支持 | 受限：`_headers` 最多 100 条规则，超出时副本仍为 noindex 但不带 `Link` | 支持 | 支持 |
 | 301 重定向 | 支持 | 支持（最多 2000 条，超出拒绝部署） | 支持（最多 2048 条路由） | 支持 |
 | 撤回内容 410 | 支持 | 受限：`_redirects` 不能返回 410，按 404 回答 | 支持 | 支持 |
-| 同一地址 Markdown 协商 | 受限：Caddy 只按 `Accept` 头文本匹配 | 支持：随产物上传 `_worker.js`（Pages Function） | 受限：`vercel.json` 只按 `accept` 头文本匹配 | 不可用：`_headers`/`_redirects` 不能按 `accept` 变化 |
+| 同一地址 Markdown 协商 | 受限：Caddy 只按 `Accept` 头文本匹配 | 支持：随产物上传 `_worker.js`（Pages Function） | 受限：`vercel.json` 只按 `accept` 头文本匹配 | 支持：随产物上传 Edge Function（`netlify/edge-functions/negotiate.ts`）与声明它的 `netlify.toml` |
 | RSS / Atom | 支持 | 支持 | 支持 | 支持 |
 | 站内搜索、草稿预览、访问分析 | 不可用 | 不可用 | 不可用 | 不可用 |
 
@@ -70,9 +71,10 @@ VPS 生成 `<root>/<siteId>/Caddyfile.static`，在服务 `current` 目录的站
 | Cloudflare Pages | 随产物上传 `_worker.js`（Pages Function，advanced mode）：内置可协商路径表（查表判定，不在请求时扫描）、与运行时相同的 RFC 9110 规则；命中则改写为该页 `.md` 副本并补类型、`noindex` 与 canonical `Link`，两个变体都带 `Vary: Accept`；其他请求原样交给静态资源 | 支持（受 Pages Functions 计划限制：请求数、CPU、bundle 大小） |
 | Vercel | `vercel.json` 的 `routes`：一条 `Vary: Accept` 头路由，加每页一条带 `has`/`missing` 条件的改写路由（`accept` 含 `text/markdown`、不含 `text/html`/`text/*`/`*/*`、不以 `q=0` 拒绝） | 受限：只按请求头**文本**匹配，不比较 `q` |
 | VPS（Caddy） | `Caddyfile.static` 中每页一个 `@negotiate_md_N`（CEL 表达式：`path(...)` 与 `Accept` 正则）与 `rewrite` 到 `.md`；页面地址带 `header Vary "Accept"` | 受限：同上 |
-| Netlify | 不生成任何东西：`_headers` / `_redirects` 不能按 `accept` 变化，本部署路径也不打包 edge function；部署记录写明原因 | 不可用 |
+| Netlify | 随产物上传 `netlify/edge-functions/negotiate.ts`（Edge Function，Deno 运行时）：同样的可协商路径表与同一份 RFC 9110 规则；非协商路径与 GET/HEAD 以外的方法原样交给下一环，命中则 `context.rewrite` 到该页 `.md` 副本并补表示头，两个变体都带 `Vary: Accept`；同时生成 `netlify.toml`，用 `[[edge_functions]]`（`path = "/*"`、`function = "negotiate"`）声明路由 | 支持（前提：部署打包 Edge Functions 且读取生成的 `netlify.toml`；受 Edge Functions 计划限制：调用次数、每请求 50 ms CPU、bundle 20 MB） |
 
-**受限意味着什么**（Vercel 与 VPS）：配置只能读请求头文本。
+**受限意味着什么**（Vercel 与 VPS）：配置只能读请求头文本。Cloudflare Pages 与 Netlify 是代码（Pages Function / Edge Function），
+按运行时同一套规则比较 `q` 值，不受下表限制。
 
 | 请求 | 静态目标 | Classic 引擎 |
 |---|---|---|
@@ -91,12 +93,16 @@ VPS 生成 `<root>/<siteId>/Caddyfile.static`，在服务 `current` 目录的站
 - Vercel 2048 条路由：协商占 1 条 `Vary` 路由 + 每页 1 条改写路由；放不下的页面保留 HTML（`.md` 副本仍可访问），部署记录给出数量警告。
 - Cloudflare Pages：`_headers` 的 100 条规则不受影响（协商不进 `_headers`）；`_worker.js` 超过 256 KiB 时部署记录提醒核对 Pages Functions 的 bundle 上限。
   路径表是显式列表，不随请求增长，也不在请求时扫描页面数据。
+- Netlify：Edge Function 里同样是显式路径表（查表判定），`_headers` / `_redirects` 不因协商改变；平台限制是每请求 50 ms CPU、
+  每月调用次数按套餐、bundle 20 MB 压缩后。部署路径必须打包 Edge Functions 且读取生成的 `netlify.toml`——CI 不证明这一步，
+  由下面的体检确认。
 - VPS：每个可协商页一行 matcher 加一段 header 块；站点关闭 `.md` 副本时静态目标不协商（没有可改写到的文件），部署记录会说明。
   非 ASCII 的页面路径在快照里是百分号编码形式，而 Caddy 的 `path` matcher 会先解码请求路径，两者对不上时该页在 VPS 上不协商（保守失败，体检能发现）；
   页面 slug 通常是 ASCII，本变更不为它发明解码规则。
 - 关闭协商（默认）时这一节的所有规则都不生成，产物与加入该能力之前逐字节相同。
 
-**部署后体检**：CI 只能证明生成的规则（下面「回放」）。真实平台行为要在每次部署后对一个可协商页面抽查四条，全部符合才算该目标成立：
+**部署后体检**：CI 只能证明生成的规则（下面「回放」）。真实平台行为要在每次部署后对一个可协商页面抽查四条，全部符合才算该目标成立
+（Netlify 还先确认部署里确实带上了 `netlify/edge-functions/negotiate.ts` 与 `netlify.toml`，且函数已被平台识别——这是 `yes` 的前提）：
 
 ```bash
 curl -sI -H 'Accept: text/markdown' https://www.example.com/hello/
@@ -112,9 +118,12 @@ curl -sI https://www.example.com/hello.md
 VPS 在重载前先校验配置：`caddy validate --config /etc/caddy/Caddyfile`（已 `import` 本片段），失败时重载不会替换正在运行的配置。
 
 **CI 能证明的部分**：`apps/cms/src/services/deployment/static/edge-negotiation.ts` 的 `replayEdgeNegotiation` 读回生成的配置
-（`vercel.json` 路由、`Caddyfile.static` 的 matcher 与 `rewrite`），并把 `_worker.js` 按其生成内容在隔离上下文里执行，
-给出 `(平台, 地址, Accept)` 会送哪个文件与哪些表示头；用例见 `apps/cms/src/services/deployment/static/__tests__/edge-replay.test.ts`。
-它证明规则本身，不证明平台真的这样执行——后者只能靠上面的体检。
+（`vercel.json` 路由、`Caddyfile.static` 的 matcher 与 `rewrite`），并把 `_worker.js` 与 Netlify 的
+`netlify/edge-functions/negotiate.ts` 按生成内容在隔离的 `node:vm` 上下文里执行（Netlify 的桩 `context`：
+`next()` 返回该地址的资源响应、`rewrite(url)` 返回该 URL 的响应；`netlify.toml` 没有声明该函数时按「无规则」处理），
+给出 `(平台, 地址, Accept, 方法)` 会送哪个文件、哪些表示头与什么响应体；用例见
+`apps/cms/src/services/deployment/static/__tests__/edge-replay.test.ts`。属性测试还证明两个代码型目标（Cloudflare Pages、Netlify）
+与运行时的判定逐例一致。它证明规则本身，不证明平台真的这样执行——后者只能靠上面的体检。
 
 ## 回滚
 
@@ -125,7 +134,9 @@ VPS 在重载前先校验配置：`caddy validate --config /etc/caddy/Caddyfile`
 
 上传前读取产物中的每个文件，发现以下任一项即拒绝部署（线上版本不变，记录列出文件与规则，摘录已脱敏）：私钥、各平台令牌、JWT、带密码的连接串、
 `JWT_SECRET` 等赋值、本机 `JWT_SECRET` / `ENCRYPTION_KEY` 的值；CMS 自己的地址（`HEOPRESS_PUBLIC_URL`、`HEOPRESS_STUDIO_URL`、`HEOPRESS_PREVIEW_ORIGIN`）及 `/admin`、`/studio`、`/api/v1` 链接；
-回环与内网地址、页面数据接口、数据库表名；`.env*`、`.git`、`package.json`、source map、密钥证书、平台配置文件（由部署器生成，产物不得自带）。
+回环与内网地址、页面数据接口、数据库表名；`.env*`、`.git`、`package.json`、source map、密钥证书、平台配置文件
+（`_headers`、`_redirects`、`_worker.js`、`vercel.json`、`.vercel`、`netlify.toml`、`netlify/` 目录、`Caddyfile.static`——
+这些由部署器生成，产物不得自带；自己的 `netlify/edge-functions/` 会被当成冲突而拒绝部署）。
 
 ## 部署后可达性体检
 

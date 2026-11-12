@@ -26,6 +26,8 @@
 规模：M ≈ 1–2 周，L ≈ 2–4 周，XL ≈ 4–6 周，XL+ ≈ 6–8 周（单人 + AI 辅助的粗略量级，P01 完成后按实测重估）。
 合计约 **42–66 周**（2026-10-15 按规格量重估：P05、P07、P08 调为 XL，P09 为 XL+；写入规格的正确性要求与拆分到 v1.1 / v1.2 的能力大致相抵）；P08、P11 用独立 worktree 并行可以缩短。建议 M1（P07）后先发布预览版收集反馈，不等 v1。
 
+WordPress 插件多轮调研产生的 [主线候选 W1–W29](backlog/wordpress-feature-proposals.md) 与 [官方插件候选](backlog/official-plugins.md) 尚未纳入本路线图范围或上述工期；[整合建议](research/2026-10-15-wordpress-plugins-feature-review.md) 中的 Phase 只表示建议落点。正式采纳须同步 OpenSpec 与工期评估，产品实施顺序仍从 P01 开始。
+
 > P08 只依赖 P05，可以在 P06 / P07 进行时由另一个 Agent 在独立 worktree 并行开发。
 > P07a 是 P07 之后插入的界面 phase（维护者 2026-10-23 决定），只依赖 P07，可与 P08 并行；建议在发布 M1 预览版之前完成，使预览版使用新界面。
 > P07a 状态（2026-10-24）：已合并（PR #26）并归档（`openspec/changes/archive/2026-10-24-p07a-studio-carbon-ui`）。

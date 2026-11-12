@@ -281,7 +281,7 @@ describe.skipIf(!hasDbIntegrationUrl)('Static deployments — DB integration (P1
     expect(md.advice).toContain('_headers');
   });
 
-  it('task 4.5: with negotiation on, Cloudflare Pages ships the Pages Function and Netlify says it cannot', async () => {
+  it('task 4.5: with negotiation on, Cloudflare Pages ships a Pages Function and Netlify an Edge Function', async () => {
     // This suite's sites keep their target between tests: start from Cloudflare Pages.
     await configureStaticSite(db, A.id, { enabled: true, deployTargetId: targets[`${A.id}:cloudflare-pages`] });
     await deployer().runPending();
@@ -300,11 +300,16 @@ describe.skipIf(!hasDbIntegrationUrl)('Static deployments — DB integration (P1
     expect(worker).toContain('function prefersMarkdown(accept)');
     expect(worker).toContain('env.ASSETS.fetch(request)');
 
-    // Netlify cannot express it: no artifact, and the deploy record says so instead of faking support.
+    // Netlify ships the Edge Function and the netlify.toml that routes it; the deploy record no longer says it cannot.
     await configureStaticSite(db, A.id, { enabled: true, deployTargetId: targets[`${A.id}:netlify`] });
     const moved = (await deployer().runPending()).filter((d) => d.provider === 'netlify').at(-1)!;
     expect(moved.status, moved.error ?? '').toBe('succeeded');
-    expect(moved.warnings?.join(' ')).toMatch(/Netlify cannot answer Markdown at a page's own address/);
+    expect(moved.warnings?.join(' ') ?? '').not.toMatch(/cannot answer Markdown/);
+    const edge = providers.netlify.fileOf('/netlify/edge-functions/negotiate.ts') ?? '';
+    expect(edge).toContain('const NEGOTIABLE = new Map([["/first/"');
+    expect(edge).toContain('function prefersMarkdown(accept)');
+    expect(edge).toContain('await context.rewrite(copy)');
+    expect(providers.netlify.fileOf('/netlify.toml') ?? '').toContain('[[edge_functions]]');
     expect(providers.netlify.last().files.some((f) => f.path === '/_worker.js')).toBe(false);
   });
 

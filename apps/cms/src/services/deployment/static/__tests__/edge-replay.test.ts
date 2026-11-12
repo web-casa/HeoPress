@@ -14,10 +14,11 @@ import { snapshot } from './negotiation-fixture';
 const contract = staticContractOf(snapshot());
 const rendered = Object.fromEntries(STATIC_PLATFORMS.map((p) => [p, renderContract(p, contract)])) as Record<StaticPlatform, RenderedContract>;
 
-const replay = (platform: StaticPlatform, path: string, accept?: string): Promise<EdgeReplay> => replayEdgeNegotiation({ platform, rendered: rendered[platform], path, accept });
+const replay = (platform: StaticPlatform, path: string, accept?: string, method?: 'GET' | 'HEAD'): Promise<EdgeReplay> =>
+  replayEdgeNegotiation({ platform, rendered: rendered[platform], path, accept, method });
 
-/** The three targets that express a rule; Netlify has none. */
-const CONFIGURED = ['cloudflare-pages', 'vercel', 'vps'] as const;
+/** Every target now expresses a rule: two in code (Cloudflare Pages, Netlify), two in configuration (Vercel, VPS). */
+const CONFIGURED = ['cloudflare-pages', 'netlify', 'vercel', 'vps'] as const;
 
 describe('the replay harness decides the same way on every target that has a rule', () => {
   it('answers the Markdown copy when the request prefers Markdown', async () => {
@@ -29,11 +30,12 @@ describe('the replay harness decides the same way on every target that has a rul
         'X-Robots-Tag': 'noindex',
         Link: '<https://www.example.com/moon/>; rel="canonical"',
         // The asset server's own Vary (Accept-Encoding) is kept and Accept appended, never replaced.
-        Vary: platform === 'cloudflare-pages' ? 'Accept-Encoding, Accept' : 'Accept',
+        Vary: platform === 'cloudflare-pages' || platform === 'netlify' ? 'Accept-Encoding, Accept' : 'Accept',
       });
+      expect(answer.by, platform).toBe(platform === 'cloudflare-pages' ? 'worker' : platform === 'netlify' ? 'netlify-function' : platform === 'vercel' ? 'vercel-routes' : 'caddy');
+      // The code targets run the generated module, so the body comes from the stub asset server.
+      expect(answer.body).toBe(platform === 'cloudflare-pages' || platform === 'netlify' ? 'asset' : null);
     }
-    const netlify = await replay('netlify', '/moon/', 'text/markdown');
-    expect(netlify).toEqual({ served: '/moon/index.html', markdown: false, by: 'none', headers: {} });
   });
 
   it('answers the page itself for a browser, a wildcard, an absent header and a text wildcard — and still says Vary', async () => {
@@ -56,8 +58,18 @@ describe('the replay harness decides the same way on every target that has a rul
   });
 
   it('leaves a direct request for the copy alone', async () => {
-    for (const platform of [...CONFIGURED, 'netlify'] as const) {
+    for (const platform of CONFIGURED) {
       expect(await replay(platform, '/moon.md', 'text/markdown')).toMatchObject({ served: '/moon.md', markdown: false });
+    }
+  });
+
+  it('answers a HEAD request with the same file and headers, and no body', async () => {
+    for (const platform of ['cloudflare-pages', 'netlify'] as const) {
+      const get = await replay(platform, '/moon/', 'text/markdown', 'GET');
+      const head = await replay(platform, '/moon/', 'text/markdown', 'HEAD');
+      expect(head, platform).toMatchObject({ served: '/moon.md', markdown: true, headers: get.headers });
+      expect(head.body, platform).toBe('');
+      expect(get.body, platform).toBe('asset');
     }
   });
 
@@ -74,7 +86,9 @@ describe('where the targets differ, by design', () => {
     // The runtime: q(markdown)=0.9 > q(html)=0.5, so Markdown. vercel.json and Caddy can only match the text.
     const accept = 'text/markdown;q=0.9, text/html;q=0.5';
     expect(prefersMarkdown(accept)).toBe(true);
-    expect(await replay('cloudflare-pages', '/moon/', accept)).toMatchObject({ served: '/moon.md', markdown: true });
+    for (const platform of ['cloudflare-pages', 'netlify'] as const) {
+      expect(await replay(platform, '/moon/', accept), platform).toMatchObject({ served: '/moon.md', markdown: true });
+    }
     for (const platform of ['vercel', 'vps'] as const) {
       expect(await replay(platform, '/moon/', accept), platform).toMatchObject({ served: '/moon/index.html', markdown: false });
     }
@@ -86,11 +100,13 @@ describe('where the targets differ, by design', () => {
     for (const platform of CONFIGURED) expect(await replay(platform, '/moon/', accept), platform).toMatchObject({ served: '/moon/index.html', markdown: false });
   });
 
-  it('the worker is the runtime rule: same answer for every generated Accept', async () => {
+  it('the generated code is the runtime rule: same answer for every generated Accept', async () => {
     await fc.assert(
       fc.asyncProperty(acceptHeader(), async (accept) => {
-        const answer = await replay('cloudflare-pages', '/moon/', accept);
-        expect(answer.markdown, accept).toBe(prefersMarkdown(accept));
+        for (const platform of ['cloudflare-pages', 'netlify'] as const) {
+          const answer = await replay(platform, '/moon/', accept);
+          expect(answer.markdown, `${platform}: ${accept}`).toBe(prefersMarkdown(accept));
+        }
       }),
       { numRuns: 150 },
     );
@@ -106,6 +122,31 @@ describe('where the targets differ, by design', () => {
       }),
       { numRuns: 100 },
     );
+  });
+});
+
+describe('Netlify: the declaration is part of the rule', () => {
+  const clone = (): RenderedContract => ({ ...rendered.netlify, files: rendered.netlify.files.map((f) => ({ ...f })) });
+  const none = { served: '/moon/index.html', markdown: false, by: 'none', headers: {}, body: null };
+
+  it('reports no rule when the generated netlify.toml is missing', async () => {
+    const without = clone();
+    without.files = without.files.filter((f) => f.path !== 'netlify.toml');
+    expect(await replayEdgeNegotiation({ platform: 'netlify', rendered: without, path: '/moon/', accept: 'text/markdown' })).toEqual(none);
+  });
+
+  it('reports no rule when netlify.toml does not route this function on /*', async () => {
+    const wrong = clone();
+    wrong.files = wrong.files.map((f) => (f.path === 'netlify.toml' ? { ...f, body: f.body.replace('path = "/*"', 'path = "/blog/*"') } : f));
+    expect(await replayEdgeNegotiation({ platform: 'netlify', rendered: wrong, path: '/moon/', accept: 'text/markdown' })).toEqual(none);
+    const renamed = clone();
+    renamed.files = renamed.files.map((f) => (f.path === 'netlify.toml' ? { ...f, body: f.body.replace('function = "negotiate"', 'function = "other"') } : f));
+    expect(await replayEdgeNegotiation({ platform: 'netlify', rendered: renamed, path: '/moon/', accept: 'text/markdown' })).toEqual(none);
+  });
+
+  it('reports no rule when the site has nothing to negotiate', async () => {
+    const off = renderContract('netlify', staticContractOf(snapshot({ markdownCopies: true, markdownNegotiation: false })));
+    expect(await replayEdgeNegotiation({ platform: 'netlify', rendered: off, path: '/moon/', accept: 'text/markdown' })).toEqual(none);
   });
 });
 

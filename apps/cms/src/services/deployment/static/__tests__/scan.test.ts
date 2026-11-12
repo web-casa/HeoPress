@@ -61,6 +61,8 @@ describe('static output scan', () => {
     ['certs/server.key', 'key-material'],
     ['_headers', 'platform-config'],
     ['vercel.json', 'platform-config'],
+    ['netlify.toml', 'platform-config'],
+    ['netlify/edge-functions/negotiate.ts', 'platform-config'],
   ])('refuses a bundled %s', async (file, rule) => {
     const issues = await scanStaticOutput(await fixture({ ...CLEAN, [file]: '{}' }));
     expect(issues.map((i) => i.rule)).toContain(rule);

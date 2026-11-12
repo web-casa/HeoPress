@@ -48,8 +48,10 @@ describe('RenderPool', () => {
   });
 
   it('a worker slower to load than the render timeout still serves its first job', async () => {
-    // A long admission wait and test timeout: only the render timeout is under test (a busy runner loads slowly).
-    pool = new RenderPool({ workers: 1, timeoutMs: 300, queueTimeoutMs: 20_000, workerUrl: new URL('./fixtures/slow-start-worker.ts', import.meta.url) });
+    // Only the render timeout is under test. The fixture needs 2 s to load and the timeout is 1 s, so the test still
+    // proves start-up is excluded (if it were counted, the job would time out), while leaving the render itself a full
+    // second of headroom — 300 ms was not enough on a loaded runner, where the render, not the load, overran.
+    pool = new RenderPool({ workers: 1, timeoutMs: 1000, queueTimeoutMs: 20_000, workerUrl: new URL('./fixtures/slow-start-worker.ts', import.meta.url) });
     await expect(pool.render(job('a'))).resolves.toContain('<title>Sample</title>');
   }, 30_000);
 

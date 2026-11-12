@@ -234,8 +234,10 @@ DATABASE_URL=<渲染角色> pnpm --filter @heopress/site-classic start
   条目不随 `Accept` 的具体写法增长（见 `docs/zh-CN/rendering/page-cache.md`）。
 - 关闭（默认）时与加入该能力之前逐字节相同：不带 `Accept`、`Accept: text/html`、`Accept: */*` 或并列优先级的请求都得到原来的 HTML，
   响应也没有 `Vary`。
-- **静态目标**：静态部署不运行本节代码，而在部署时把同一承诺写进各平台配置（Cloudflare Pages 的 `_worker.js`、
-  Vercel 的 `has`/`missing` 路由、Caddy 的 matcher），无法表达的 Netlify 在支持矩阵与部署记录中写明不可用；
-  配置只能按请求头文本匹配时以保守方向降级（`q` 值不比较）。静态契约里的 `markdown-canonical` 仍只描述 `.md` 副本的类型与
-  `Link` 头，与本节的协商分开。详见《静态前台部署》的「同一地址的 Markdown 协商」。
+- **静态目标**：静态部署不运行本节代码，而在部署时把同一承诺写进各平台的配置或边缘代码：Cloudflare Pages 的 `_worker.js`、
+  Netlify 的 Edge Function（`netlify/edge-functions/negotiate.ts`，由生成的 `netlify.toml` 声明）按本节同一套规则判定；
+  Vercel 的 `has`/`missing` 路由与 Caddy 的 matcher 只能按请求头文本匹配，以保守方向降级（`q` 值不比较）。
+  Netlify 的 Edge Function 需要部署时打包 Edge Functions 且读取生成的 `netlify.toml`，CI 只证明生成的规则、不证明平台执行。
+  静态契约里的 `markdown-canonical` 仍只描述 `.md` 副本的类型与 `Link` 头，与本节的协商分开。
+  详见《静态前台部署》的「同一地址的 Markdown 协商」。
 

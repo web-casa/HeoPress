@@ -2,6 +2,25 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.3.0] - 2026-11-12
+
+### Added
+
+- 静态目标：Netlify 的 Markdown 内容协商。部署带协商规则时生成 `netlify/edge-functions/negotiate.ts`
+  与声明它的 `netlify.toml`；该函数复用运行时的 RFC 9110 规则，两个表示都带 `Vary: Accept`，
+  Markdown 表示另带 `text/markdown`、`noindex` 与 canonical `Link`。能力矩阵中 Netlify 的
+  `markdown-negotiation` 由 `no` 改为 `yes`，并写明前提（打包 Edge Functions、`netlify.toml` 生效）与配额限制。
+- 回放器覆盖 Netlify：在 `node:vm` 中执行生成的函数，并按生成的 `netlify.toml` 是否声明该函数判定是否生效。
+
+### Changed
+
+- 工作区版本 `1.2.1` → `1.3.0`。
+
+### Fixed
+
+- `theme-pool.test.ts` 的慢启动用例余量不足（800 ms 加载 / 300 ms 超时），在繁忙的 runner 上会因**渲染**超时而失败；
+  改为 2 s 加载 / 1 s 超时，断言性质不变而余量更足。
+
 ## [1.2.1] - 2026-11-11
 
 ### Added
