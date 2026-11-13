@@ -372,6 +372,29 @@ export class LlmGateway {
   // ── the call ────────────────────────────────────────────────────────
 
   async chat(input: ChatCallInput): Promise<ChatCallResult> {
+    return this.chatOn(input);
+  }
+
+  /**
+   * A chat on one explicit provider binding (HeoPress v1.4, spec ai/dual-model-translation): the drafting or reviewing
+   * model of the built-in `heopress:dual-model` service. The binding is frozen as the only candidate — no route
+   * resolution, no failover — but it goes through the same ledger path (reservation, lease, deadline, daily budget,
+   * `callKey` replay). Throws when the provider is not the site's, deleted or disabled.
+   */
+  async chatWithProvider(providerId: string, input: ChatCallInput): Promise<ChatCallResult> {
+    const candidates = await runSiteTransaction(this.deps.db, input.siteId, async (tx) => {
+      const [row] = await tx
+        .select()
+        .from(llmProviders)
+        .where(and(eq(llmProviders.siteId, input.siteId), eq(llmProviders.id, providerId), isNull(llmProviders.deletedAt)));
+      if (!row) throw new LlmGatewayError('NOT_FOUND', 'Model provider not found.');
+      if (row.disabledAt) throw new LlmGatewayError('PROVIDER_DISABLED', 'This model provider is disabled.');
+      return [siteCandidate(row)];
+    });
+    return this.chatOn(input, candidates);
+  }
+
+  private async chatOn(input: ChatCallInput, candidates?: Candidate[]): Promise<ChatCallResult> {
     const needsTools = input.tools !== false;
     const systemPrompt = input.systemPrompt ?? copilotSystemPrompt();
     const maxOutputTokens = input.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
@@ -389,6 +412,7 @@ export class LlmGateway {
       input,
       callDigest,
       req,
+      candidates,
       send: (c, key, signal, timeoutMs) => this.send(c, key, input.messages, req, timeoutMs, signal),
       toResult: (o, c) => {
         const response: LLMResponse = {

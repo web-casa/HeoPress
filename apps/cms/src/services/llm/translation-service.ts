@@ -1,4 +1,4 @@
-import type { AiCapability } from '@heopress/contracts/schemas';
+import type { AiCapability, TranslationGlossaryTerm } from '@heopress/contracts/schemas';
 import type { LlmGateway } from './gateway';
 
 /**
@@ -13,7 +13,7 @@ import type { LlmGateway } from './gateway';
  * same set of segment ids.
  */
 
-interface TranslationSegment {
+export interface TranslationSegment {
   id: string;
   text: string;
 }
@@ -23,8 +23,11 @@ export interface TranslationRequest {
   sourceLocale: string;
   targetLocale: string;
   segments: TranslationSegment[];
-  /** Terms that must be rendered this way. */
-  glossary?: Array<{ source: string; target: string }>;
+  /**
+   * The site's terminology. `rule` is optional so the original `{ source, target }` shape keeps working; an entry
+   * without one binds as `prefer` (HeoPress v1.4, spec `ai/site-glossary`).
+   */
+  glossary?: TranslationGlossaryTerm[];
   /** Fuzzy translation-memory matches, as references only (the exact ones never reach the model). */
   memory?: Array<{ source: string; target: string }>;
   /** A persistent identity: a retried step replays the recorded answer instead of paying again. */
@@ -37,12 +40,38 @@ export interface TranslationRequest {
 
 export interface TranslationResult {
   segments: TranslationSegment[];
-  /** Which implementation answered (`llm` in v1). */
+  /** Which implementation answered (`llm` in v1, `heopress:dual-model` for the built-in two-model service). */
   engine: string;
   provider: string;
   model: string;
-  /** The ledger call. */
+  /** The ledger call (for `heopress:dual-model`: the drafting call; the review's is in `verification`). */
   callId: string;
+  /** HeoPress v1.4: how a two-model translation was verified; absent for the single-model and plugin paths. */
+  verification?: TranslationVerification;
+}
+
+/** A segment's final state in a two-model translation (HeoPress v1.4, spec ai/dual-model-translation). */
+type TranslationSegmentState = 'verified' | 'revised' | 'rejected_verification' | 'unverified';
+
+export interface TranslationSegmentProvenance {
+  id: string;
+  state: TranslationSegmentState;
+  /** Mechanical gate codes raised for the draft (and, for a rejected revision, for the revision too). */
+  findings: string[];
+  /** The reviewer's short reason, when it gave one. */
+  reason?: string;
+}
+
+/** What a two-model translation records: which model drafted, which reviewed, and what happened to each segment. */
+interface TranslationVerification {
+  draft: { provider: string; model: string; callId: string };
+  /** The reviewing model; `ran` is false when the review produced no usable verdicts (the draft is kept, unverified). */
+  review: { provider: string | null; model: string | null; callId: string | null; ran: boolean; failure?: string };
+  /** Segments whose revision was accepted. */
+  revisedSegments: number;
+  /** Segments whose revision was rejected by the mechanical gates (the draft is kept). */
+  rejectedSegments: number;
+  segments: TranslationSegmentProvenance[];
 }
 
 export interface TranslationService {

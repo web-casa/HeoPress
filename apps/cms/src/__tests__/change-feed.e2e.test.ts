@@ -14,6 +14,7 @@ import {
 } from '../modules/cdc/change-feed/dispatcher';
 import { DrizzleCdcEventStore } from '../modules/cdc/change-feed/feed-reader';
 import { connectDbFixtures, connectDbIntegration, hasDbIntegrationUrl } from './helpers/db-harness';
+import { missingE2EEnv } from './helpers/e2e-env';
 import {
   SIGNATURE_HEADER,
   verifyCdcWebhookSignature,
@@ -59,7 +60,7 @@ let bearer = '';
 const request = (path: string, init?: RequestInit) => app.request(path, init, ENV);
 const headers = () => ({ 'content-type': 'application/json', 'x-heopress-site': SITE, authorization: bearer });
 
-describe.skipIf(!hasDbIntegrationUrl)('Change Feed end to end (PostgreSQL)', () => {
+describe.skipIf(!hasDbIntegrationUrl || missingE2EEnv().length > 0)('Change Feed end to end (PostgreSQL)', () => {
   let db: Database;
   let fixtures: Database;
   let server: Server;

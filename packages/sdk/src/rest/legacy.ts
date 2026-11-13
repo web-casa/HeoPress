@@ -56,6 +56,8 @@ import {
   TmEntry,
   TmSuggestion,
   TmSource,
+  GlossaryEntry,
+  GlossaryRule,
   SettingResource,
   SiteResource,
   SiteConfigUpdate,
@@ -696,6 +698,48 @@ export function legacyRest() {
         ),
     };
 
+    const glossary = {
+      /** List the site's glossary entries. Filters: the `from`/`to` language pair; returns the full response for `meta`. */
+      list: (params?: { from?: string; to?: string; limit?: number; offset?: number }) => {
+        const qs = new URLSearchParams();
+        if (params?.from) qs.set("from", params.from);
+        if (params?.to) qs.set("to", params.to);
+        if (params?.limit != null) qs.set("limit", String(params.limit));
+        if (params?.offset != null) qs.set("offset", String(params.offset));
+        const s = qs.toString();
+        return client.rawRequest<GlossaryEntry[]>(`/api/v1/glossary${s ? `?${s}` : ""}`);
+      },
+      create: (input: {
+        sourceLang: string;
+        targetLang: string;
+        term: string;
+        translation: string;
+        rule?: GlossaryRule;
+        note?: string | null;
+      }) =>
+        client.rawRequest<GlossaryEntry>("/api/v1/glossary", {
+          method: "POST",
+          body: JSON.stringify(input),
+        }),
+      update: (
+        id: string,
+        patch: {
+          sourceLang?: string;
+          targetLang?: string;
+          term?: string;
+          translation?: string;
+          rule?: GlossaryRule;
+          note?: string | null;
+        },
+      ) =>
+        client.rawRequest<GlossaryEntry>(`/api/v1/glossary/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify(patch),
+        }),
+      delete: (id: string) =>
+        client.rawRequest<{ id: string }>(`/api/v1/glossary/${id}`, { method: "DELETE" }),
+    };
+
     const settings = {
       list: (scope?: string) =>
         client.rawRequest<SettingResource[]>(`/api/v1/settings${scope ? `?scope=${scope}` : ""}`),
@@ -1256,6 +1300,7 @@ export function legacyRest() {
       presets,
       translations,
       tm,
+      glossary,
       settings,
       uploads,
       site,

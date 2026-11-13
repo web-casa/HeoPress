@@ -140,6 +140,14 @@ export const LlmSettingsSchema = z.object({
    * silently falling back to the model.
    */
   translationService: TranslationServiceRefSchema.nullable().optional(),
+  /**
+   * HeoPress v1.4 (spec ai/dual-model-translation): the two model provider bindings of the built-in
+   * `heopress:dual-model` service — the drafting model and the reviewing model. Both are provider ids of this site;
+   * omitted leaves the setting unchanged, `null` clears it. Saving them together with `translationService =
+   * "heopress:dual-model"` refuses the same provider (or the same protocol, base URL and model) twice.
+   */
+  translationDraftProviderId: z.string().min(1).max(64).nullable().optional(),
+  translationReviewProviderId: z.string().min(1).max(64).nullable().optional(),
 });
 
 /**

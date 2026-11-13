@@ -94,7 +94,9 @@ import { previewLinksRouter } from './routes/preview-links';
 import { internalPreviewRouter } from './routes/internal-preview';
 import { redirectsRouter } from './routes/redirects';
 import { editorialProfileRouter } from './routes/editorial-profile';
+import { glossaryRouter } from './routes/glossary';
 import { translationGroupsRouter } from './routes/translation-groups';
+import { translationJobsRouter } from './routes/translation-jobs';
 import { reviewQueueRouter } from './routes/review-queue';
 // Registers the public projection flush that every site transaction runs before committing (P06).
 import './services/site-network/public-projection';
@@ -342,7 +344,11 @@ api.route('/themes', themesRouter);
 api.route('/preview-links', previewLinksRouter);
 api.route('/redirects', redirectsRouter);
 api.route('/editorial-profile', editorialProfileRouter);
+// The site's translation glossary (v1.4; spec ai/site-glossary): one entry per (pair, term), three rules.
+api.route('/glossary', glossaryRouter);
 api.route('/translation-groups', translationGroupsRouter);
+// Durable translation jobs (v1.4; spec ai/translation-jobs): create, list, inspect, retry and cancel.
+api.route('/translation/jobs', translationJobsRouter);
 // The items that need a human (v1.1; spec content/stale-content-queue): manual marks, automatic marks and items
 // awaiting review, one page, site-scoped.
 api.route('/review-queue', reviewQueueRouter);

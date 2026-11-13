@@ -1,6 +1,6 @@
 {
   "name": "@heopress/mcp-server",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "HeoPress MCP server — lets AI assistants manage the full HeoPress Content OS: collections, fields, items, relations, RBAC (roles/policies/permissions/API keys), users & teams, intents, flows, webhooks, translations & translation memory, search, media & transform presets, read-only insights, presets, editorial workflow, content releases, share links, read-only deployments, extensions, and site administration.",
   "license": "Apache-2.0",
   "type": "module",

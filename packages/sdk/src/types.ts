@@ -1082,6 +1082,28 @@ export interface TmEntry {
   updatedAt: string;
 }
 
+/** How a glossary entry binds (HeoPress v1.4, spec `ai/site-glossary`). */
+export type GlossaryRule = "prefer" | "do-not-translate" | "forbidden";
+
+/**
+ * One entry of a site's translation glossary for a language pair.
+ *
+ *   - `prefer`           the term must be rendered with `translation`;
+ *   - `do-not-translate` the term stays verbatim in the target (`translation === term`);
+ *   - `forbidden`        the `translation` must not appear in the target.
+ */
+export interface GlossaryEntry {
+  id: string;
+  siteId: string;
+  sourceLang: string;
+  targetLang: string;
+  term: string;
+  translation: string;
+  rule: GlossaryRule;
+  note: string | null;
+  createdAt: string;
+}
+
 /** A fuzzy-match suggestion surfaced from the TM store (score normalized to `similarity`). */
 export interface TmSuggestion {
   targetText: string;

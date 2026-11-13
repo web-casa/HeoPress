@@ -238,6 +238,7 @@ async function main() {
   let goalDispatchTask: ScheduledTask | undefined;
   let notificationDeliveryTask: ScheduledTask | undefined;
   let pluginJobTask: ScheduledTask | undefined;
+  let translationJobSweepTask: ScheduledTask | undefined;
   const backupTasks: ScheduledTask[] = [];
   let loadGuardTimer: ReturnType<typeof setInterval> | undefined;
   let auditBatcher: { flush(): Promise<void> } | undefined;
@@ -269,10 +270,17 @@ async function main() {
   const { PipelinePluginHost } = await import('./extensions/pipeline/host');
   const { setPluginGateChecks } = await import('./services/pipeline/extension-points');
   const { LlmGateway } = await import('./services/llm/gateway');
+  // One gateway for the worker's background model calls (P12 pipeline hooks, v1.4 translation jobs): the ledger, the
+  // shared governor and the site providers are the same, whichever background path asks.
+  const backgroundGateway = new LlmGateway({
+    db: rotatorDb,
+    keys: runtime.keys,
+    env: process.env as Record<string, string | undefined>,
+  });
   const pipelineHost = new PipelinePluginHost({
     db: rotatorDb,
     env: process.env as Record<string, unknown>,
-    gateway: new LlmGateway({ db: rotatorDb, keys: runtime.keys, env: process.env as Record<string, string | undefined> }),
+    gateway: backgroundGateway,
   });
   setPluginGateChecks((siteId) => pipelineHost.gateChecks(siteId));
   // One system event per scheduled run (HeoPress P07a task 11.1): succeeded, failed with its reason, incomplete, skipped.
@@ -507,6 +515,32 @@ async function main() {
     keys: runtime.keys,
     env: process.env as Record<string, string | undefined>,
   });
+
+  // ── Durable translation jobs (HeoPress v1.4; spec ai/translation-jobs) ──
+  //
+  // Primary path: `POST /api/v1/translation/jobs` (and each retry/deferral) enqueues one run message. Safety net: the
+  // receiver is at least once, but a lost message, a subscription nobody restarted or a worker killed mid-run leaves a
+  // row behind — the minute sweep re-enqueues due jobs and running jobs whose lease expired, and ends a job that was
+  // claimed too many times. Both paths converge on the worker's lease, so a duplicate message does nothing.
+  const { registerTranslationJobWorker, sweepDueTranslationJobs } = await import('./services/translation-job-worker');
+  const translationJobDeps = {
+    db: rotatorDb,
+    queue: runtime.queue,
+    gateway: backgroundGateway,
+    keys: runtime.keys,
+    env: process.env as Record<string, unknown>,
+  };
+  registerTranslationJobWorker(translationJobDeps);
+  translationJobSweepTask = cron.schedule(
+    '* * * * *',
+    scheduledJob(
+      'translation-job-sweep',
+      async () => {
+        await sweepDueTranslationJobs(translationJobDeps);
+      },
+      jobOpts,
+    ),
+  );
 
   // ── Veto-window commits (content-os task 14; Req 13.3/13.5) ─────────────
   //
@@ -1333,6 +1367,7 @@ async function main() {
         goalDispatchTask,
         notificationDeliveryTask,
         pluginJobTask,
+        translationJobSweepTask,
         ...backupTasks,
       ].map((task) => task?.stop()),
     );

@@ -130,6 +130,23 @@ describe('translation service routing', () => {
     expect(service.calls[0]).toMatchObject({ siteId: 'site_a', sourceLocale: 'en', targetLocale: 'zh-CN' });
   });
 
+  it('passes the glossary to the plugin untouched: a rule travels, a missing one stays missing', async () => {
+    const g = gateway();
+    const service = pluginService();
+    const router = new TranslationServiceRouter({
+      db: settingsDb('heopress-deepl:deepl'),
+      gateway: g as unknown as TranslationGateway,
+      plugins: { resolve: async () => service },
+    });
+    const glossary = [
+      { source: 'Hello,', target: '你好，', rule: 'forbidden' as const },
+      { source: 'world', target: '世界' },
+    ];
+    await router.translate(request({ glossary }));
+    // No host-side coercion or injection: an old plugin sees exactly the shape the caller sent (HeoPress v1.4).
+    expect(service.calls[0]!.glossary).toEqual(glossary);
+  });
+
   it('selected but not offered: fails with SERVICE_UNAVAILABLE instead of falling back to the model', async () => {
     const g = gateway();
     const router = new TranslationServiceRouter({
@@ -192,6 +209,40 @@ describe('the plugin translation candidate', () => {
   it('prices a service that declares nothing at zero', () => {
     const candidate = pluginTranslationCandidate(pluginService({ charsMicros: 0 }), 'USD');
     expect(candidate.pricing).toEqual({ kind: 'per_1m_chars', charsMicros: 0 });
+  });
+
+  it('built-in selection: answered by the two-model service, never resolved as a plugin', async () => {
+    const g = gateway();
+    const resolve = vi.fn(async () => pluginService());
+    const dualModel = {
+      translate: vi.fn(async () => ({
+        segments: request().segments,
+        engine: 'heopress:dual-model',
+        provider: 'provider-p_draft',
+        model: 'model-p_draft',
+        callId: 'call-p_draft',
+      })),
+    };
+    const router = new TranslationServiceRouter({
+      db: settingsDb('heopress:dual-model'),
+      gateway: g as unknown as TranslationGateway,
+      plugins: { resolve },
+      dualModel,
+    });
+    const out = await router.translate(request());
+    expect(out).toMatchObject({ engine: 'heopress:dual-model', provider: 'provider-p_draft', model: 'model-p_draft' });
+    expect(dualModel.translate).toHaveBeenCalledTimes(1);
+    expect(resolve).not.toHaveBeenCalled();
+    expect(g.chat).not.toHaveBeenCalled();
+    expect(g.external).not.toHaveBeenCalled();
+  });
+
+  it('built-in selection without a gateway that can call one binding fails clearly instead of falling back', async () => {
+    const router = new TranslationServiceRouter({
+      db: settingsDb('heopress:dual-model'),
+      gateway: { chat: vi.fn() } as unknown as TranslationGateway,
+    });
+    await expect(router.translate(request())).rejects.toMatchObject({ name: 'TranslationError', code: 'SERVICE_UNAVAILABLE' });
   });
 });
 

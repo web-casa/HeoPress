@@ -932,6 +932,27 @@
       "when": 1794348222570,
       "tag": "0132_v12_plugin_secrets_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1794481784543,
+      "tag": "0133_wooden_network",
+      "breakpoints": true
+    },
+    {
+      "idx": 134,
+      "version": "7",
+      "when": 1794500444884,
+      "tag": "0134_acoustic_madelyne_pryor",
+      "breakpoints": true
+    },
+    {
+      "idx": 135,
+      "version": "7",
+      "when": 1794506390228,
+      "tag": "0135_sudden_wolf_cub",
+      "breakpoints": true
     }
   ]
 }

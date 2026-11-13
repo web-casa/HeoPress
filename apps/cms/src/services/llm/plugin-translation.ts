@@ -17,8 +17,11 @@ import { TranslationError, type TranslationRequest, type TranslationResult } fro
 import type { LlmGateway } from './gateway';
 import { runTranslationService, translationFailureCode, type LoadedTranslationService } from '../../extensions/runtime/translation-services';
 
-/** A gateway a translation needs: the model path (`chat`) and, for a plugin service, the ledger (`external`, `currency`). */
-export type TranslationGateway = Pick<LlmGateway, 'chat'> & Partial<Pick<LlmGateway, 'external' | 'currency'>>;
+/**
+ * A gateway a translation needs: the model path (`chat`), the built-in two-model path (`chatWithProvider`) and, for a
+ * plugin service, the ledger (`external`, `currency`).
+ */
+export type TranslationGateway = Pick<LlmGateway, 'chat'> & Partial<Pick<LlmGateway, 'chatWithProvider' | 'external' | 'currency'>>;
 
 /** The gateway methods the plugin path needs, once they are known to be present. */
 type LedgerGateway = Pick<LlmGateway, 'external' | 'currency'>;

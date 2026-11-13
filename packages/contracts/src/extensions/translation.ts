@@ -24,6 +24,7 @@
  * Pure functions and Zod schemas: shared by the CMS (install, load, routing, billing), the SDK and the documentation.
  */
 import { z } from 'zod';
+import type { TranslationGlossaryTerm } from '../schemas/glossary';
 import { declaresExtensionPoint } from './capabilities';
 import { RUNTIME_NAME, TRANSLATION_LIMITS } from './runtime';
 
@@ -109,8 +110,11 @@ export interface PluginTranslationRequest {
   sourceLocale: string;
   targetLocale: string;
   segments: PluginTranslationSegmentInput[];
-  /** Terms that must be rendered this way. */
-  glossary: Array<{ source: string; target: string }>;
+  /**
+   * The site's terminology. `rule` is optional (HeoPress v1.4, spec `ai/site-glossary`): an entry without one binds as
+   * `prefer`, exactly as before this field existed, so an older plugin keeps seeing the shape it always saw.
+   */
+  glossary: TranslationGlossaryTerm[];
   /** Fuzzy translation-memory matches, as references only. */
   memory: Array<{ source: string; target: string }>;
   /** Aborted when the call runs out of time or the plugin is stopped. */
@@ -139,6 +143,21 @@ export function translationAnswerSegments(
 /** A declaration's decimal price per million characters as integer micro-units per million (0 when omitted). */
 export function charsMicrosOf(pricePerMillionChars: number | undefined): number {
   return Math.round((pricePerMillionChars ?? 0) * 1_000_000);
+}
+
+/**
+ * The built-in translation services the host ships. Their `heopress` namespace is reserved: a selection equal to one of
+ * these ids is answered by the host implementation, never resolved as a plugin (HeoPress v1.4, spec
+ * ai/dual-model-translation "内置服务与站点选择").
+ */
+export const BUILTIN_TRANSLATION_SERVICE_IDS = ['heopress:dual-model'] as const;
+export type BuiltinTranslationServiceId = (typeof BUILTIN_TRANSLATION_SERVICE_IDS)[number];
+/** The two-model translation service: one model drafts, a different one verifies and revises. */
+export const DUAL_MODEL_TRANSLATION_SERVICE: BuiltinTranslationServiceId = 'heopress:dual-model';
+
+/** Whether a selection names a built-in service (and must not be resolved as a plugin). */
+export function isBuiltinTranslationService(ref: string): ref is BuiltinTranslationServiceId {
+  return (BUILTIN_TRANSLATION_SERVICE_IDS as readonly string[]).includes(ref);
 }
 
 /** A site's selection: `"<plugin name>:<service id>"` (the plugin name may contain `/`, the service id may not contain `:`). */

@@ -172,6 +172,21 @@ export {
 export { TM_DEFAULT_THRESHOLD } from './translation';
 
 export {
+  GLOSSARY_RULES,
+  DEFAULT_GLOSSARY_RULE,
+  GLOSSARY_LIMITS,
+  glossaryRuleOf,
+  GlossaryEntryInputSchema,
+  GlossaryEntryUpdateSchema,
+  GlossaryListQuerySchema,
+  type GlossaryRule,
+  type GlossaryEntryInput,
+  type GlossaryEntryUpdate,
+  type GlossaryListQuery,
+  type TranslationGlossaryTerm,
+} from './glossary';
+
+export {
   GIT_PROVIDERS,
   GIT_AUTH_METHODS,
   GitProviderSchema,

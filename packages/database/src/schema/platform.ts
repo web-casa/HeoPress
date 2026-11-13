@@ -443,6 +443,11 @@ export const glossary = pgTable(
   (t) => ({
     sitePairIdx: index('glossary_site_pair_idx').on(t.siteId, t.sourceLang, t.targetLang),
     termIdx: index('glossary_term_idx').on(t.siteId, t.term),
+    /**
+     * One entry per term and language pair (HeoPress v1.4, spec ai/site-glossary "站点术语表"): an operator edits the
+     * existing entry instead of adding a second, contradictory rule for the same word.
+     */
+    entryUnique: uniqueIndex('glossary_entry_unique').on(t.siteId, t.sourceLang, t.targetLang, t.term),
   }),
 );
 

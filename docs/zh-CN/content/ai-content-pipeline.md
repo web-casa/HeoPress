@@ -78,6 +78,74 @@
 重译修订不自动发布，一律进入审核队列，由人工提升（promote）为线上内容。提升后，原样上线且其源区块未再变化的区块，其映射恢复为最新
 （记录译时的源哈希与上线后的目标哈希，清除过期与人工编辑标记，`pipeline/retranslation-promotion.ts`）；人工在修订中改过的区块保留人工编辑标记。
 
+## 翻译任务（`translation-jobs`）
+
+流水线的翻译是「把来源变成草稿」；**翻译任务**是另一条面向运营者的持久路径：提交一段或一组明确的段落，
+由站点当前选择的翻译服务（单模型、插件或内置 `heopress:dual-model`）翻译，结果与逐段状态留在任务里。
+模型被限流、每日预算用尽、worker 重启或部署滚动都不会让工作消失；同步接口 `POST /api/v1/tm/translate` 保持不变，
+任务只是它的持久版本。实现：`apps/cms/src/services/translation-job-service.ts`（接口用的服务）、
+`apps/cms/src/services/translation-job-worker.ts`（队列消费与租约）、
+`apps/cms/src/services/translation-job-policy.ts`（重试策略）。
+
+| 方法 | 路径 | 谁可以调用 |
+|---|---|---|
+| `POST` | `/api/v1/translation/jobs` | 站点管理员：创建并入队（`sourceLocale`、`targetLocale`、`segments`） |
+| `GET` | `/api/v1/translation/jobs` | 站点成员：`?status=&locale=&limit=&offset=`，返回总数与分页 |
+| `GET` | `/api/v1/translation/jobs/:id` | 站点成员：任务字段与逐段状态 |
+| `POST` | `/api/v1/translation/jobs/:id/retry` | 站点管理员：仅 `failed` / `cancelled` |
+| `POST` | `/api/v1/translation/jobs/:id/cancel` | 站点管理员：`queued` / `running`；已结束的任务返回 `409` |
+
+任务状态只有 `queued`、`running`、`succeeded`、`failed`、`cancelled`。`attempts` 是**业务重试**次数，
+`executions` 是认领次数（只用于给反复崩溃的任务设界），`nextAttemptAt` 是下一次可运行时间，
+`lastErrorCode` 是最近一次失败、延后或取消的原因——原因是一列，不是日志行。创建、重试与取消都写站点审计
+（`translation_job.created` / `.retried` / `.cancelled`），审计里没有译文正文。
+
+示例（站点 `example.com` 的管理员）：
+
+```bash
+curl -X POST https://cms.example.com/api/v1/translation/jobs \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"sourceLocale":"en","targetLocale":"zh-CN","segments":[{"id":"s1","text":"Hello ⟦P0⟧"}]}'
+```
+
+### 重试语义
+
+| 失败 | 例子 | 业务重试 | 任务去向 |
+|---|---|---|---|
+| 延后 | 限流、熔断、每日预算（网关的 `LlmDeferredError`） | **不变** | `queued`，`nextAttemptAt` = 网关给出的时间 |
+| 瞬时 | 提供方网络错误、超时、5xx/429、链路耗尽 | +1 | 有预算：`queued`，退避 1 分钟起、每次翻倍、上限 30 分钟；用尽：`failed` |
+| 永久 | `BAD_TRANSLATION`、`SERVICE_UNAVAILABLE`、双模型未配置/同模型、预算耗尽、能力不支持、请求校验 | 不变 | 立即 `failed` |
+
+「限流、熔断与每日预算造成的延后不消耗业务重试」是 [AI 成本控制](ai-cost-control.md) 的硬规则；
+任务的实现与内容流水线的 `afterTaskFailure` 一致。用尽预算时任务为 `failed`，错误码是最后一次的码，
+不会继续入队；被认领到上限（默认 5 次）仍未完成的任务以 `EXECUTION_LIMIT` 结束。
+
+### 崩溃恢复与「不重复付费」
+
+每次执行都带租约（5 分钟，运行期间每 30 秒续租）。worker 在运行中死亡或部署重启后，租约过期的任务由每分钟一次的
+清扫重新入队；运行中的任务的结算只在仍持有租约、且任务仍为 `running` 时生效，所以被取消的执行不能把结果写回。
+
+同一次业务尝试的所有执行使用**同一个账本调用标识**（`translation-job:<id>:a<attempts>:e<epoch>`）：
+崩溃恢复与延后重排都沿用该标识，网关因此重放已完成的草稿/复核调用，而不是再次付费；双模型服务的两个阶段
+（`:draft`、`:review`）各自重放自己的答案。只有两种事件会得到新的标识：**业务重试**（`attempts` 增加，
+必须真的再打一次提供方）与**操作者显式重试**（`e` 增加，操作者要求重新翻译；上一次的答案已记在账本里，沿用只会重放）。
+
+### 逐段状态与 `unverified`
+
+成功任务写入每段的最终文本与状态：
+
+| 状态 | 含义 |
+|---|---|
+| `verified` | 复核通过，且草稿通过机械门禁 |
+| `revised` | 复核的修订通过门禁并被采用 |
+| `rejected_verification` | 复核给了修订但修订没通过门禁，**保留草稿** |
+| `unverified` | 复核失败/未运行，或复核判 `ok` 但草稿仍有门禁缺陷；**草稿保留**，但不是「已复核」 |
+| `translated` | 单模型或插件路径没有复核阶段 |
+
+`unverified` 的段落**有译文**，任务也仍是 `succeeded`（翻译完成了），但译文没有经过复核——运营者应把它当作
+需要人工确认的草稿，而不是已核验的译文。任务同时记录实际服务 id 与双模型的两个模型 id，计数器给出
+已翻译/已修订/未复核/复核被拒的段数。
+
 ## 简报式改写
 
 `pipeline:brief` 是「先生成结构化简报，再成文」的改写模式（v1.1 backlog P09）：

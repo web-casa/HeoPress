@@ -1835,6 +1835,48 @@
       "images": [
         "postgres"
       ]
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-16742",
+      "package": "libsystemd-shared",
+      "versions": [
+        "257.13-1~deb13u1"
+      ],
+      "images": [
+        "postgres"
+      ],
+      "owner": "maintainer",
+      "reason": "systemd of the Debian 13 postgres:18 base image (libsystemd-shared and systemd pull each other in; PostgreSQL links libsystemd). Debian publishes no fix for trixie: security-tracker lists systemd 257.13-1~deb13u1 as vulnerable and marked <no-dsa> (Minor issue); the fix landed upstream in 261.2 and Debian ships it only in forky/sid (262-1). The flaw is a local privilege escalation in systemd-homed (adding a local user to an arbitrary group); the postgres image runs no systemd manager and no homed, so the unit that carries it is never started. Re-check when Debian backports the fix to trixie or the base image moves past it.",
+      "reviewBy": "2027-01-13"
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-16742",
+      "package": "systemd",
+      "versions": [
+        "257.13-1~deb13u1"
+      ],
+      "images": [
+        "postgres"
+      ],
+      "owner": "maintainer",
+      "reason": "systemd of the Debian 13 postgres:18 base image (libsystemd-shared and systemd pull each other in; PostgreSQL links libsystemd). Debian publishes no fix for trixie: security-tracker lists systemd 257.13-1~deb13u1 as vulnerable and marked <no-dsa> (Minor issue); the fix landed upstream in 261.2 and Debian ships it only in forky/sid (262-1). The flaw is a local privilege escalation in systemd-homed (adding a local user to an arbitrary group); the postgres image runs no systemd manager and no homed, so the unit that carries it is never started. Re-check when Debian backports the fix to trixie or the base image moves past it.",
+      "reviewBy": "2027-01-13"
+    },
+    {
+      "scanner": "trivy",
+      "id": "CVE-2026-103484",
+      "package": "postgresql-18-pgvector",
+      "versions": [
+        "0.8.7-1.pgdg13+2"
+      ],
+      "images": [
+        "postgres"
+      ],
+      "owner": "maintainer",
+      "reason": "postgresql-18-pgvector 0.8.7-1.pgdg13+2 from apt.postgresql.org ships upstream 0.8.7 — the release that fixes this (the advisory reads 'IVFFlat index build in pgvector before 0.8.7'). Trivy reports it because its Debian trixie row has no fixed version: Debian's trixie branch ships pgvector 0.8.0-1 (vulnerable) and the fix exists only in forky/sid (0.8.7-1), so the OS-release status is 'vulnerable' regardless of the pgdg build actually installed. PGDG publishes nothing newer than 0.8.7. Verify with `SELECT extversion FROM pg_extension WHERE extname = 'vector'` on the image when this is next reviewed.",
+      "reviewBy": "2027-01-13"
     }
   ]
 }

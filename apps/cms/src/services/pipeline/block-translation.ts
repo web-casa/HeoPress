@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { glossary as glossaryTable, translationMemory, type Database } from '@heopress/database';
-import type { AiCapability } from '@heopress/contracts/schemas';
+import { glossaryRuleOf, type AiCapability, type GlossaryRule } from '@heopress/contracts/schemas';
 import { runSiteTransaction } from '../rls-transaction';
 import { bestMatch } from '../translation-memory';
 import { TranslationError, type TranslationResult, type TranslationService } from '../llm/translation-service';
@@ -39,7 +39,7 @@ interface TranslatedBlock {
 export interface GlossaryTerm {
   term: string;
   translation: string;
-  rule: 'prefer' | 'do-not-translate' | 'forbidden';
+  rule: GlossaryRule;
 }
 
 /** Memory lookups for one site and language pair. */
@@ -127,11 +127,15 @@ export async function loadGlossary(
       .from(glossaryTable)
       .where(and(eq(glossaryTable.siteId, siteId), eq(glossaryTable.sourceLang, from), eq(glossaryTable.targetLang, to))),
   );
-  const out: GlossaryTerm[] = rows.map((r) => ({
-    term: r.term,
-    translation: r.rule === 'do-not-translate' ? r.term : r.translation,
-    rule: (['prefer', 'do-not-translate', 'forbidden'].includes(r.rule) ? r.rule : 'prefer') as GlossaryTerm['rule'],
-  }));
+  const out: GlossaryTerm[] = rows.map((r) => {
+    const rule = glossaryRuleOf(r.rule);
+    return {
+      term: r.term,
+      // A do-not-translate term is kept verbatim: its rendering is its own spelling, whoever wrote the row.
+      translation: rule === 'do-not-translate' ? r.term : r.translation,
+      rule,
+    };
+  });
   for (const g of profileGlossary) {
     if (g.preferred && !out.some((o) => o.term === g.term)) out.push({ term: g.term, translation: g.preferred, rule: 'prefer' });
   }

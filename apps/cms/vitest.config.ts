@@ -51,6 +51,10 @@ export default defineConfig({
     // Hundreds of concurrent imports can otherwise exhaust memory/worker startup.
     maxWorkers: 4,
     testTimeout: 15_000,
+    // Hooks do database work (delete, insert, presets, settings). The default 10 s is enough on an idle machine and
+    // not on a full-suite run, where a hook competing with every other worker's queries timed out and read as a
+    // product failure (site-classic.db.integration.test.ts, beforeEach).
+    hookTimeout: 30_000,
     include: ['src/**/*.{test,spec}.ts', 'src/**/*.property.test.ts'],
     // One file at a time only when a real DB is shared across suites.
     fileParallelism: !hasDatabase,

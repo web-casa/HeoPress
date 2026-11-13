@@ -33,6 +33,7 @@ export * from './ingest';
 export * from './ingest-providers';
 export * from './ingest-lifecycle';
 export * from './ai-pipeline';
+export * from './translation-jobs';
 export * from './notification-channels';
 export * from './agent-access';
 export * from './batch-plans';

@@ -14,6 +14,7 @@ import {
 import app from '../index';
 import { STANDARD_LOCKOUT_POLICY } from '../modules/setup/policy-codec';
 import { connectDbFixtures, connectDbIntegration } from './helpers/db-harness';
+import { missingE2EEnv } from './helpers/e2e-env';
 
 /**
  * Golden-path E2E gate (v1 release criteria §3).
@@ -48,6 +49,9 @@ import { connectDbFixtures, connectDbIntegration } from './helpers/db-harness';
  */
 
 const TEST_DATABASE_URL = process.env.DATABASE_URL;
+
+/** Everything this suite needs, from the one place that defines an E2E suite's environment (see `helpers/e2e-env.ts`). */
+const MISSING_ENV = missingE2EEnv({ runtime: true });
 
 // Setup seeds this fixed site id; additional tenants are inserted directly.
 const DEFAULT_SITE = '__default__';
@@ -87,8 +91,8 @@ describe('Golden path (setup → collection → item → publish → read) + ten
   let canConnect = false;
 
   beforeAll(async () => {
-    if (!TEST_DATABASE_URL) {
-      console.warn('Skipping golden-path E2E: DATABASE_URL not set.');
+    if (MISSING_ENV.length) {
+      console.warn(`Skipping golden-path E2E: set ${MISSING_ENV.join(', ')}.`);
       return;
     }
     try {
@@ -123,7 +127,11 @@ describe('Golden path (setup → collection → item → publish → read) + ten
 
   it('runs the full lifecycle and isolates tenants', async () => {
     if (!canConnect) {
-      console.warn('Skipping golden-path E2E: no database connection.');
+      console.warn(
+        MISSING_ENV.length
+          ? `Skipping golden-path E2E: set ${MISSING_ENV.join(', ')}.`
+          : 'Skipping golden-path E2E: no database connection.',
+      );
       return;
     }
 

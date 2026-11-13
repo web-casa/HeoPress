@@ -16,6 +16,7 @@ import { installIngestRunner } from '../services/ingest/url-runner';
 import { registerStatusPoller } from '../services/deployment/status-poller';
 import { registerEnvelopeMigrationWorker } from '../services/envelope-migration-worker';
 import { registerMaterializeRefreshWorker } from '../services/materialize-worker';
+import { registerTranslationJobWorker } from '../services/translation-job-worker';
 
 /**
  * Every queued job has a consumer (HeoPress P14 task 5.2, design D5; spec platform/infrastructure-adapters
@@ -161,6 +162,7 @@ const REGISTRATIONS: Record<string, (queue: QueueProvider) => unknown> = {
   registerStatusPoller: (queue) => registerStatusPoller({ db, queue } as never),
   registerEnvelopeMigrationWorker: (queue) => registerEnvelopeMigrationWorker({ db, queue } as never),
   registerMaterializeRefreshWorker: (queue) => registerMaterializeRefreshWorker({ db, queue }),
+  registerTranslationJobWorker: (queue) => registerTranslationJobWorker({ db, queue, gateway: {} as never }),
 };
 
 describe('queue consumers (P14 task 5.2)', () => {

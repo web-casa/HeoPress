@@ -107,6 +107,7 @@ const crons: DbAccessEntry[] = ([
   ['notification-deliveries', 'per-site-iteration', 'delivers notifications per site'],
   ['deployment-poll', 'per-site-iteration', 'polls deployments per site'],
   ['flow-schedule', 'per-site-iteration', 'schedules flows per site'],
+  ['translation-job-sweep', 'per-site-iteration', 're-enqueues due translation jobs per site'],
 ] as const).map(([name, scope, note]) => entry(`cron:${name}`, 'cron', scope as ScopeSource, note));
 
 /** Worker registrations in `serve.ts`; each consumer takes the site from its job. */
@@ -125,6 +126,7 @@ const workers: DbAccessEntry[] = ([
   ['registerStatusPoller', 'task-site', 'deployment status takes the site from the job'],
   ['registerEnvelopeMigrationWorker', 'task-site', 'envelope migrations take the site from the job'],
   ['registerMaterializeRefreshWorker', 'task-site', 'materialize refreshes take the site from the job'],
+  ['registerTranslationJobWorker', 'task-site', 'translation jobs take the site from the job'],
 ] as const).map(([name, scope, note]) => entry(`worker:${name}`, 'worker', scope as ScopeSource, note));
 
 /** `app.route('<path>', <router>)` mounts in `index.ts`. */

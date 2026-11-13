@@ -54,16 +54,22 @@ Google、Azure 等其它提供方是后续 change，不在本规格内。
 
 ### Requirement: 站点选择与宿主接线
 
-站点 SHALL 在模型设置中有一个 `translationService` 选择项（`PUT /api/v1/llm/settings`），取值形如
-`"<插件名>:<服务 id>"`，`null` 表示不使用插件（今天的 LLM 路径）。该设置在每次翻译时读取：
-选中且服务可用时，`translate` SHALL 由插件服务回答；未选中时 MUST 仍由 `LlmTranslationService` 回答，
-其行为与计价 MUST NOT 改变。选中但服务不可用（插件未安装、停用、权限未批准、id 未声明或契约版本不兼容）时，
-翻译 MUST 失败并给出可识别的错误，MUST NOT 静默回退到 LLM。
+站点 SHALL 在模型设置中有一个 `translationService` 选择项（`PUT /api/v1/llm/settings`），取值为
+`"<插件名>:<服务 id>"`、宿主内置服务 id（`"heopress:dual-model"`）或 `null`（今天的 LLM 路径）。
+`heopress` 前缀 SHALL 保留给宿主内置服务；取值等于一个内置服务 id 时 MUST 由内置实现回答，MUST NOT 按插件服务解析。
+该设置在每次翻译时读取：选中且服务可用时 SHALL 由插件服务或内置服务回答；未选中时 MUST 仍由
+`LlmTranslationService` 回答，其行为与计价 MUST NOT 改变；选中但服务不可用时 MUST 以 `SERVICE_UNAVAILABLE` 失败，
+MUST NOT 静默回退到 LLM，也 MUST NOT 改用其它服务。
 
 #### Scenario: 选中插件服务
 
 - **WHEN** 站点设置 `translationService = "heopress-deepl:deepl"`，且该插件已启用、权限已批准并注册了 `deepl`
 - **THEN** 一次翻译由插件的服务回答，结果带插件给出的译文
+
+#### Scenario: 选中内置服务
+
+- **WHEN** 站点设置 `translationService = "heopress:dual-model"`，并配置了不同的起草与复核模型绑定
+- **THEN** 一次翻译由内置双模型服务回答，MUST NOT 尝试把 `heopress` 当作插件名解析
 
 #### Scenario: 未选中
 
@@ -72,17 +78,17 @@ Google、Azure 等其它提供方是后续 change，不在本规格内。
 
 #### Scenario: 选中的服务不在了
 
-- **WHEN** 站点选中的插件被停用（或服务从新版本清单里移除）
+- **WHEN** 站点选中的插件被停用、权限等待重新确认、服务从新版本清单里移除或契约版本不兼容，或内置服务的模型绑定缺失/被停用
 - **THEN** 翻译失败并报 `SERVICE_UNAVAILABLE`，不会改用 LLM 翻译，也不会写一条模型调用账本行
 
 ### Requirement: 结果契约与调用边界
 
 插件服务的 `translate` SHALL 收到 `{ siteId, sourceLocale, targetLocale, segments: [{ id, text }], glossary, memory, signal }`，
-并 SHALL 返回 `{ segments: [{ id, text }] }`：与请求完全相同的 id、每个 id 一次、文本为字符串。
-宿主 SHALL 按请求的 id 与顺序组装结果，并补齐插件不可能知道的字段：`engine` 与 `provider` 为 `plugin:<插件名>`，
-`model` 为清单声明的 `engine`，`callId` 为这次调用的账本 call id。
-每次调用 SHALL 在宿主给定的时限（默认 20 000 ms，最多 60 000 ms）与出站请求预算（默认 20，最多 100）内运行；
-一次调用抛错、超时或返回不符合契约时，该次翻译 MUST 失败，站点与其它插件 MUST NOT 受影响。
+其中 `glossary` 的每一项为 `{ source, target, rule? }`（`rule` 可选，省略即 `prefer`，宿主不注入），
+并 SHALL 返回 `{ segments: [{ id, text }] }`：与请求相同的 id、每个一次、文本为字符串。
+宿主 SHALL 按请求的 id 与顺序组装结果，补齐 `engine`/`provider`（`plugin:<插件名>`）、`model`（清单 `engine`）
+与 `callId`（账本 call id）。每次调用 SHALL 在时限（默认 20 000 ms，最多 60 000 ms）与出站请求预算
+（默认 20，最多 100）内运行；抛错、超时或不符合契约时该次翻译 MUST 失败，其它插件 MUST NOT 受影响。
 
 #### Scenario: 补齐宿主字段
 
@@ -99,6 +105,10 @@ Google、Azure 等其它提供方是后续 change，不在本规格内。
 
 - **WHEN** 服务在它的时限内没有返回
 - **THEN** 这次调用被终止，翻译失败，错误码指出超时；站点可以继续发出下一次翻译
+
+#### Scenario: 术语表的规则原样透传
+- **WHEN** 调用方在 `glossary` 里给出带 `rule` 的条目与不带 `rule` 的条目
+- **THEN** 插件收到的正是这两种条目，宿主不补写、不改写 `rule`
 
 ### Requirement: 按字符计费
 

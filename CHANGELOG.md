@@ -2,6 +2,35 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.4.0] - 2026-11-13
+
+### Added
+
+- **双模型翻译**（内置服务 `heopress:dual-model`）：模型 A 起草，确定性机械门禁检查，模型 B 复核并修正；修正文本必须再次
+  通过同一套门禁才被采纳，复核失明时保留草稿并标 `unverified`。两次调用各自记账，同一模型两次在保存时即被拒绝。
+- **翻译任务队列**：`lumibase_translation_jobs` 持久化任务，`translation-jobs` 队列 + 消费者；按状态/语言对查询、逐段状态、
+  重试与取消；租约到期自动恢复，反复失败以 `EXECUTION_LIMIT` 终止。
+- **站点术语表管理**：`/api/v1/glossary` 增删改查（`do-not-translate` / `prefer` / `forbidden`），Studio `/content/glossary`
+  页面（中英），(站点, 语言对, 词条) 唯一约束与 `409` 冲突提示。
+
+### Changed
+
+- 翻译延后（限流、熔断、日预算）**不消耗**业务重试次数，按网关给出的时间重排；瞬时失败指数退避；永久失败立即终止并把
+  错误码写入任务行。
+- 崩溃恢复使用稳定的调用键（`translation-job:<id>:a<attempts>:e<epoch>`），网关重放已记录的调用，不重复计费；只有操作者
+  显式重试才重新计费。
+
+### Fixed
+
+- `forbidden` 词条此前完全不检查（`rule` 在翻译边界被丢弃），禁用译法可以通过「验证」；`do-not-translate` 也不再要求
+  译文出现目标词，而是要求**源词原样保留**。
+- 全量 CMS 套件在只给 `DATABASE_URL` 时出现 2 个文件失败与偶发 hook 超时：E2E 套件改为按自身前提跳过，
+  `hookTimeout` 提到 30 s。
+
+### Changed (version)
+
+- 工作区版本 `1.3.1` → `1.4.0`。
+
 ## [1.3.1] - 2026-11-12
 
 ### Fixed

@@ -108,7 +108,7 @@ const ADMIN_WRITE_PREFIXES = [
   'plugins', 'domains', 'storage-profiles', 'notification-channels', 'webhooks', 'llm', 'studio', 'integrations/git',
   'cdc', 'retention', 'deployments', 'config', 'flows', 'email', 'utils/cache', 'utils/revalidate', 'themes',
   'collections', 'relations', 'redirects', 'transform-presets', 'ingest/providers', 'materialize', 'site',
-  'schema-permissions', 'typegen',
+  'schema-permissions', 'typegen', 'glossary', 'translation/jobs',
 ].map((p) => new RegExp(`^/api/v1/${p.replace('/', '\\/')}(/|$)`));
 
 /**

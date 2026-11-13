@@ -122,8 +122,26 @@ export const llmSiteSettings = pgTable('lumibase_llm_site_settings', {
    * (`"<plugin name>:<service id>"`); null (the default) keeps the LLM path.
    */
   translationService: text('translation_service'),
+  /**
+   * HeoPress v1.4 (spec ai/dual-model-translation): the drafting and reviewing model bindings of the built-in
+   * `heopress:dual-model` translation service. Both reference providers of this site; null means not configured.
+   */
+  translationDraftProviderId: text('translation_draft_provider_id'),
+  translationReviewProviderId: text('translation_review_provider_id'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => ({
+  // Composite: a site can only point at its own providers, and the ledger keeps the provider rows alive (soft delete).
+  draftProviderFk: foreignKey({
+    columns: [t.siteId, t.translationDraftProviderId],
+    foreignColumns: [llmProviders.siteId, llmProviders.id],
+    name: 'llm_site_settings_draft_provider_fk',
+  }),
+  reviewProviderFk: foreignKey({
+    columns: [t.siteId, t.translationReviewProviderId],
+    foreignColumns: [llmProviders.siteId, llmProviders.id],
+    name: 'llm_site_settings_review_provider_fk',
+  }),
+}));
 
 /**
  * A logical call: what the caller asked for once (`call_key`), its frozen

@@ -12,7 +12,7 @@
  */
 
 import { glossary, translationMemory } from '@heopress/database';
-import { TM_DEFAULT_THRESHOLD } from '@heopress/contracts';
+import { glossaryRuleOf, TM_DEFAULT_THRESHOLD } from '@heopress/contracts';
 import { and, count, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -272,7 +272,8 @@ tmRouter.post('/translate', async (c) => {
     glossary: glossaryRows.map((g) => ({
       term: g.term,
       translation: g.translation,
-      rule: g.rule as 'do-not-translate' | 'prefer' | 'forbidden',
+      // The one coercion: an unknown or absent stored rule means `prefer` (HeoPress v1.4, spec `ai/site-glossary`).
+      rule: glossaryRuleOf(g.rule),
     })),
   });
 

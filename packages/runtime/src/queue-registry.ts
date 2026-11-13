@@ -48,6 +48,8 @@ export const QUEUE_REGISTRY = {
   'plugin-jobs': { singleton: true },
   /** ISR revalidation dispatch (`services/content-invalidation.ts`). */
   'revalidation-dispatch': { singleton: false },
+  /** Durable translation jobs (`apps/cms/src/services/translation-job-worker.ts`). */
+  'translation-jobs': { singleton: false },
 } as const satisfies Record<string, QueueDefinition>;
 
 export type RegisteredQueueName = keyof typeof QUEUE_REGISTRY;

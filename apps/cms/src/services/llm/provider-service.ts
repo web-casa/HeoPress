@@ -10,6 +10,7 @@ import {
   type LlmSettingsInput,
   type LlmTaskType,
 } from '@heopress/contracts/schemas';
+import { DUAL_MODEL_TRANSLATION_SERVICE } from '@heopress/contracts/extensions';
 import { llmAttempts, llmProviders, llmRoutes, llmSiteSettings, type Database } from '@heopress/database';
 import type { KeyProvider } from '@heopress/runtime';
 import { nanoid } from 'nanoid';
@@ -63,6 +64,10 @@ export interface LlmSiteSettings {
   dailyProcessingLimit: number | null;
   /** HeoPress v1.2: the plugin-provided translation service used for translations (`"<plugin>:<service>"`), or null. */
   translationService: string | null;
+  /** HeoPress v1.4: the drafting model binding of the built-in `heopress:dual-model` service, or null. */
+  translationDraftProviderId: string | null;
+  /** HeoPress v1.4: the reviewing model binding of the built-in `heopress:dual-model` service, or null. */
+  translationReviewProviderId: string | null;
 }
 
 type ProviderRow = typeof llmProviders.$inferSelect;
@@ -105,6 +110,11 @@ function pricingOf(row: ProviderRow): LlmPricing {
   }
   if (row.inputPriceMicros === null || row.outputPriceMicros === null) throw new Error(`Model provider ${row.id} has no token prices.`);
   return { kind: 'per_1m_tokens', inputMicros: row.inputPriceMicros, outputMicros: row.outputPriceMicros };
+}
+
+/** Whether two provider rows are the same model binding (HeoPress v1.4: verification must not be a no-op). */
+function sameModelBinding(a: ProviderRow, b: ProviderRow): boolean {
+  return a.id === b.id || (a.kind === b.kind && a.baseUrl === b.baseUrl && a.model === b.model);
 }
 
 function pricingColumns(p: LlmPricing) {
@@ -152,6 +162,8 @@ export class LlmProviderService {
             dailyBudgetMicros: row.dailyBudgetMicros ?? null,
             dailyProcessingLimit: row.dailyProcessingLimit ?? null,
             translationService: row.translationService ?? null,
+            translationDraftProviderId: row.translationDraftProviderId ?? null,
+            translationReviewProviderId: row.translationReviewProviderId ?? null,
           }
         : {
             currency: this.deps.instanceCurrency,
@@ -160,6 +172,8 @@ export class LlmProviderService {
             dailyBudgetMicros: null,
             dailyProcessingLimit: null,
             translationService: null,
+            translationDraftProviderId: null,
+            translationReviewProviderId: null,
           };
     };
     return tx ? run(tx) : this.tx(run);
@@ -196,8 +210,38 @@ export class LlmProviderService {
         dailyProcessingLimit: input.dailyProcessingLimit === undefined ? current.dailyProcessingLimit : input.dailyProcessingLimit,
         // Omitted: unchanged; null: back to the LLM path.
         translationService: input.translationService === undefined ? current.translationService : input.translationService,
+        translationDraftProviderId:
+          input.translationDraftProviderId === undefined ? current.translationDraftProviderId : input.translationDraftProviderId,
+        translationReviewProviderId:
+          input.translationReviewProviderId === undefined ? current.translationReviewProviderId : input.translationReviewProviderId,
         updatedAt: dbNow(),
       };
+      // HeoPress v1.4 (spec ai/dual-model-translation): the two bindings of the built-in service must exist, be usable,
+      // and be different bindings or different models — otherwise the second call verifies nothing.
+      if (values.translationDraftProviderId && values.translationReviewProviderId) {
+        const draft = await this.row(tx, values.translationDraftProviderId);
+        const review = await this.row(tx, values.translationReviewProviderId);
+        for (const row of [draft, review]) {
+          if (row.disabledAt) throw new LlmConfigError('PROVIDER_DISABLED', `${row.name} is disabled.`, 409);
+          if (row.currency !== input.currency) {
+            throw new LlmConfigError('PRICE_CURRENCY_MISMATCH', `${row.name} is priced in ${row.currency}, the site in ${input.currency}.`, 422);
+          }
+        }
+        if (sameModelBinding(draft, review)) {
+          throw new LlmConfigError(
+            'DUAL_MODEL_SAME_MODEL',
+            'The drafting and reviewing models must be different bindings or different models: the verification would be a no-op.',
+            422,
+          );
+        }
+      }
+      if (values.translationService === DUAL_MODEL_TRANSLATION_SERVICE && (!values.translationDraftProviderId || !values.translationReviewProviderId)) {
+        throw new LlmConfigError(
+          'DUAL_MODEL_NOT_CONFIGURED',
+          'Choose a drafting model and a reviewing model for the heopress:dual-model translation service.',
+          422,
+        );
+      }
       await tx.insert(llmSiteSettings).values(values).onConflictDoUpdate({ target: llmSiteSettings.siteId, set: values });
       return {
         currency: values.currency,
@@ -206,6 +250,8 @@ export class LlmProviderService {
         dailyBudgetMicros: values.dailyBudgetMicros,
         dailyProcessingLimit: values.dailyProcessingLimit,
         translationService: values.translationService,
+        translationDraftProviderId: values.translationDraftProviderId,
+        translationReviewProviderId: values.translationReviewProviderId,
       };
     });
   }

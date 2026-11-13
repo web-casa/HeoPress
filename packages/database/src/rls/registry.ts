@@ -195,6 +195,8 @@ export const RLS_REGISTRY: readonly RlsEntry[] = [
   // P09 (content pipeline): productions and their run records.
   site('lumibase_ai_productions'),
   site('lumibase_ai_production_steps'),
+  // v1.4 (translation jobs): durable translation requests, their per-segment results and their retry/lease state.
+  site('lumibase_translation_jobs'),
   // P09 (quality gate): results bound to versions, human review decisions, per-site check levels.
   site('lumibase_quality_gate_results'),
   site('lumibase_quality_gate_reviews'),
