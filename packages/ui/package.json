@@ -1,6 +1,6 @@
 {
   "name": "@heopress/ui",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Shared shadcn/ui components + CVA design tokens for HeoPress Studio.",
   "type": "module",

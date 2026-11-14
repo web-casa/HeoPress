@@ -953,6 +953,13 @@
       "when": 1794506390228,
       "tag": "0135_sudden_wolf_cub",
       "breakpoints": true
+    },
+    {
+      "idx": 136,
+      "version": "7",
+      "when": 1794593463951,
+      "tag": "0136_curved_calypso",
+      "breakpoints": true
     }
   ]
 }

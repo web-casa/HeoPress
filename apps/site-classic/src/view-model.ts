@@ -38,6 +38,8 @@ export interface SiteInfo {
   contributed?: MaterializedNode[];
   /** The routes, templates and components of the site's enabled plugins (P12 tasks 2.3–2.5). */
   extensions?: PublicExtensions;
+  /** The site's static directory mount as saved (v1.5); null or absent: not mounted. */
+  staticDirectory?: string | null;
 }
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : '');

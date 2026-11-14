@@ -1,6 +1,6 @@
 {
   "name": "@heopress/extensions",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Extension discovery + loading for HeoPress. Scans source folders, validates manifests, and resolves entrypoints (Directus-style). No bundling — works on source.",
   "type": "module",

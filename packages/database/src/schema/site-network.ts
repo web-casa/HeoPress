@@ -91,6 +91,22 @@ export const siteSeoSettings = pgTable('lumibase_site_seo_settings', {
 });
 
 /**
+ * A site's static directory mount (v1.5, spec `rendering/static-directory-mount`): an absolute directory whose files the
+ * Classic engine serves for paths no HeoPress route matches. The operator's `HEOPRESS_STATIC_ROOT` bounds it; the CMS
+ * validates on save that the resolved directory stays inside that root. The rendering service never reads this table:
+ * the projection copies the resolved directory into `lumibase_public_static_mounts`.
+ */
+export const siteStaticMounts = pgTable('lumibase_site_static_mounts', {
+  siteId: text('site_id')
+    .primaryKey()
+    .references(() => sites.id, { onDelete: 'cascade' }),
+  /** The resolved absolute directory; `''` (or no row): not mounted. */
+  directory: text('directory').default('').notNull(),
+  version: integer('version').default(1).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+/**
  * Whom a site speaks for (HeoPress P07 task 2.12): the document `SiteIdentitySchema` validates (`@heopress/contracts`),
  * versioned for conditional updates. The rendering service never reads it: the public projection copies it into
  * `lumibase_public_sites.identity`.

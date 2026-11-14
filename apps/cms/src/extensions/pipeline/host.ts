@@ -30,6 +30,7 @@ import { AuditLogger } from '../../modules/audit/logger';
 import type { LlmGateway } from '../../services/llm/gateway';
 import { runSiteTransaction } from '../../services/rls-transaction';
 import type { GateCheckFn } from '../../services/pipeline/extension-points';
+import { siteActorDataAccess } from '../runtime/plugin-host';
 import { participatingRows, type ExtensionRow } from './declarations';
 
 // ─── Plugin-facing shapes ────────────────────────────────────────────────────
@@ -126,8 +127,15 @@ interface LoadedRegistrations {
 export class PipelinePluginHost {
   constructor(private readonly deps: PipelineHostDeps) {}
 
-  private sandbox(siteId: string): ExtensionSandbox {
+  /**
+   * The sandbox a site's plugins load in for one point. A gate check judges a draft against the site's other content
+   * (HeoPress v1.5: a correction block must point at a published notice), so it gets the same site-scoped item access a
+   * job or a subscription has — its own declared `items:<access>:<collection>` capabilities, the site boundary, Hold
+   * and the gates apply. Source adapters and build steps get no item access: they never had it and do not need it.
+   */
+  private sandbox(siteId: string, point: ExtensionPoint): ExtensionSandbox {
     const deps: ExtensionSandboxDeps = {
+      ...(point === 'gate-checks' ? { actorDataAccess: siteActorDataAccess(this.deps.db, siteId) } : {}),
       ...(this.deps.gateway ? { ai: pluginAiAccess(this.deps.gateway, siteId) } : {}),
       // A refused capability use is recorded (spec extensions/permissions).
       onDenied: async (event) => {
@@ -148,7 +156,7 @@ export class PipelinePluginHost {
   async registrations(siteId: string, point: ExtensionPoint): Promise<LoadedRegistrations[]> {
     const rows = await runSiteTransaction(this.deps.db, siteId, (tx) => participatingRows(tx, siteId, point));
     if (rows.length === 0) return [];
-    const sandbox = this.sandbox(siteId);
+    const sandbox = this.sandbox(siteId, point);
     const out: LoadedRegistrations[] = [];
     for (const row of rows) {
       const mod = await sandbox.load({

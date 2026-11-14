@@ -54,6 +54,19 @@ export const publicSites = pgTable('lumibase_public_sites', {
   builtAt: timestamp('built_at', { withTimezone: true }),
 });
 
+/**
+ * A site's static directory mount as the rendering service may read it (v1.5, spec `rendering/static-directory-mount`):
+ * the resolved directory only — the settings row's version and audit stay in `lumibase_site_static_mounts`. No row: not
+ * mounted. A server path is not public data; this table is separate from `lumibase_public_sites.settings` so that
+ * exports of a site's public settings never carry it.
+ */
+export const publicStaticMounts = pgTable('lumibase_public_static_mounts', {
+  siteId: text('site_id')
+    .primaryKey()
+    .references(() => sites.id, { onDelete: 'cascade' }),
+  directory: text('directory').default('').notNull(),
+});
+
 /** A public item with a path. No foreign key to the item: a deletion must leave its tombstone first. */
 export const publicItems = pgTable(
   'lumibase_public_items',

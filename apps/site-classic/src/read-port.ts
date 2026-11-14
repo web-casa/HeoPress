@@ -8,6 +8,7 @@ import {
   publicHosts,
   publicItems,
   publicSites,
+  publicStaticMounts,
   renderCache,
   renderRedirects,
   renderRootFiles,
@@ -51,6 +52,8 @@ export interface SiteReads extends SiteReader {
     contributed: MaterializedNode[];
     /** The routes, templates and components of the site's enabled plugins (P12 tasks 2.3–2.5). */
     extensions: PublicExtensions;
+    /** The site's static directory mount (v1.5), resolved at save time; null: not mounted. */
+    staticDirectory: string | null;
   } | null>;
   /** A plugin list route's items of a language (P12 task 2.3): by title, then id. */
   collectionItems(locale: string, collection: string, opts: { offset: number; limit: number }): Promise<PublicItemRow[]>;
@@ -223,7 +226,12 @@ function reads(tx: Tx, siteId: string, now: () => number = Date.now): SiteReads 
       return !!row;
     },
     site: async () => {
-      const [row] = await tx.select().from(publicSites).where(eq(publicSites.siteId, siteId));
+      // The mount rides on the site's own statement (v1.5): a request that never needs it pays no extra round trip.
+      const [row] = await tx
+        .select({ ...getTableColumns(publicSites), staticDirectory: publicStaticMounts.directory })
+        .from(publicSites)
+        .leftJoin(publicStaticMounts, eq(publicStaticMounts.siteId, publicSites.siteId))
+        .where(eq(publicSites.siteId, siteId));
       return row
         ? {
             name: row.name,
@@ -233,6 +241,7 @@ function reads(tx: Tx, siteId: string, now: () => number = Date.now): SiteReads 
             identity: effectiveSiteIdentity(row.identity),
             contributed: materializedNodes((row.structured as { nodes?: unknown } | null)?.nodes),
             extensions: publicExtensionsOf(row.extensions),
+            staticDirectory: row.staticDirectory ?? null,
           }
         : null;
     },
@@ -444,6 +453,11 @@ function reads(tx: Tx, siteId: string, now: () => number = Date.now): SiteReads 
 /** A page-cache lookup (P13 task 3.2): the site's state, the shared row under the key, and an item's current render version. */
 export interface Lookup {
   state: RenderState;
+  /**
+   * Whether the site has a static directory mount (v1.5): a cached 404 is then not an answer — the file may exist now and
+   * the mount's content is not part of any render version.
+   */
+  mount: boolean;
   /** The level-2 row (not expired by this clock), the versions it was made under and — an article's page — its item's current render version. */
   stored: { page: CachedPage; deps: CacheDeps; itemVersion: number | null } | null;
   /** The current render version of the item asked for (null: not public, or none asked for). */
@@ -476,7 +490,8 @@ function lookupStatement(siteId: string, key: string | null, opts: { shared: boo
         c.site_version AS c_site_version, c.structure_version AS c_structure_version, c.theme_version AS c_theme_version,
         c.item_id AS c_item_id, c.item_version AS c_item_version,
         (SELECT i.render_version FROM ${publicItems} i WHERE i.site_id = s.site_id AND i.item_id = c.item_id) AS c_item_current,
-        (SELECT i.render_version FROM ${publicItems} i WHERE i.site_id = s.site_id AND i.item_id = ${opts.itemId}::text) AS item_current
+        (SELECT i.render_version FROM ${publicItems} i WHERE i.site_id = s.site_id AND i.item_id = ${opts.itemId}::text) AS item_current,
+        EXISTS (SELECT 1 FROM ${publicStaticMounts} m WHERE m.site_id = s.site_id AND m.directory <> '') AS mount
       FROM (SELECT 1) AS one
       LEFT JOIN ${siteRenderVersions} v ON v.site_id = s.site_id
       LEFT JOIN ${renderCache} c ON ${opts.shared && key !== null}::boolean AND c.key = ${key ?? ''}::text AND c.site_id = s.site_id
@@ -526,7 +541,7 @@ function lookupResult(rows: unknown, builtin: string): Lookup {
       };
     }
   }
-  return { state, stored, itemVersion: num(row.item_current) };
+  return { state, stored, itemVersion: num(row.item_current), mount: row.mount === true };
 }
 
 async function hostRow(db: Database | Tx, hostname: string) {

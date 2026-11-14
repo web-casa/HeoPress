@@ -60,6 +60,7 @@ export const WORKSPACES = {
   '@heopress/extension-sdk': ['typecheck', 'build'],
   '@heopress/extensions': ['typecheck'],
   '@heopress/mcp-server': ['typecheck', 'test', 'build'],
+  '@heopress/plugin-corrections': ['typecheck', 'test', 'build'],
   '@heopress/plugin-glossary': ['typecheck', 'test', 'build'],
   '@heopress/public-site': ['typecheck', 'test'],
   '@heopress/runtime': ['typecheck', 'test'],

@@ -20,7 +20,7 @@
 set -Eeuo pipefail
 umask 077
 
-DEFAULT_VERSION='1.4.0'
+DEFAULT_VERSION='1.5.0'
 DEFAULT_REPOSITORY='web-casa/HeoPress'
 DEFAULT_REGISTRY='ghcr.io/web-casa'
 MIN_COMPOSE='2.24.4'

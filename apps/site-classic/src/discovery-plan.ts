@@ -1,5 +1,5 @@
 import { decideIndexing, feedEntry, llmsEntry, pageTypeOfCollection, robotsTxt, sitemapEntry, type SitemapEntry } from '@heopress/seo-geo';
-import { htmlToMarkdown, publicUrlOf, textToMarkdown, withSponsoredRel } from '@heopress/public-site';
+import { htmlToMarkdown, publicUrlOf, staticUrlsOn, textToMarkdown, withSponsoredRel } from '@heopress/public-site';
 import {
   absoluteLinks,
   atomXml,
@@ -128,6 +128,11 @@ export interface DiscoveryContext {
   memo?: { get(): Promise<SitemapEntry[]> | undefined; set(entries: Promise<SitemapEntry[]>): void };
   /** The site's public item count for this version (`app.ts` keeps it per version; else read). */
   itemCount?: () => Promise<number>;
+  /**
+   * The site's static directory mount and its `static-urls.txt` as read for this answer (v1.5): the declared URLs are
+   * merged into the sitemap (index, shards and `sitemap.txt`) after the HeoPress entries, de-duplicated by address.
+   */
+  staticMount?: { directory: string; urls: string } | null;
 }
 
 const hostOf = (url: string): string | null => {
@@ -182,6 +187,19 @@ async function buildSitemapEntries(ctx: DiscoveryContext): Promise<SitemapEntry[
     if (unlisted.has(row.collection)) continue;
     const entry = sitemapEntry(discoveryPageOf(ctx.site, row, alternates.get(row.itemId) ?? []));
     if (entry && hostOf(entry.loc) === host) out.push(entry);
+  }
+  // The mount's declared URLs (v1.5): the operator's list, normalised and de-duplicated against the pages above. A line
+  // that cannot be a path is reported (its number and why, never its bytes) and skipped — a bad line never breaks the
+  // sitemap.
+  if (ctx.staticMount) {
+    const { urls, invalid } = staticUrlsOn(host, ctx.staticMount.urls);
+    for (const bad of invalid) console.warn('[site-classic] static-urls.txt: line skipped', { host: ctx.host, line: bad.line, reason: bad.reason });
+    const known = new Set(out.map((e) => e.loc));
+    for (const url of urls) {
+      if (known.has(url)) continue;
+      known.add(url);
+      out.push({ loc: url, lastmod: null, alternates: [] });
+    }
   }
   return fittingEntries(out);
 }

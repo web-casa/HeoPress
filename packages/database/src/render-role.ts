@@ -22,6 +22,8 @@ import { scramVerifier } from './scram';
 export const RENDER_READABLE = [
   'lumibase_public_hosts',
   'lumibase_public_sites',
+  // v1.5: the site's static directory mount (a server path the renderer needs; not part of the public site row).
+  'lumibase_public_static_mounts',
   'lumibase_public_items',
   'lumibase_public_alternates',
   'lumibase_route_tombstones',

@@ -252,6 +252,13 @@ jobs:
       - name: Build the CMS bundle
         run: pnpm --filter @heopress/cms build
       - run: node scripts/verify-plugin-package.mjs
+      # Every official plugin, packed with the SDK alone (no database, no server): the glossary job above proves the
+      # whole lifecycle for the reference plugin, this one keeps a new plugin from shipping only hand-verified.
+      - name: Pack every plugin and load it with the SDK alone
+        run: |
+          pnpm --filter @heopress/extension-sdk build
+          pnpm -r --filter './packages/plugin-*' build
+          node scripts/verify-plugin-packages.mjs
 
   openspec:
     name: OpenSpec strict validation

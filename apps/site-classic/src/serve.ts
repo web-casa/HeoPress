@@ -22,6 +22,9 @@ import { countSetting, defaultRenderWorkers } from './settings';
  *   HEOPRESS_RENDER_WORKERS    render threads (default: the CPUs this process may use, minus one, between 2 and 8)
  *   HEOPRESS_RENDER_CACHE_MB   this process's page cache (default 64)
  *   HEOPRESS_RENDER_HOST_MEMO_MS  how long a domain's row is remembered, ms (default 1000, 0–2000; 0: read every time)
+ *   HEOPRESS_STATIC_ROOT   the root every site's static directory mount must stay under (v1.5); without it no mount is
+ *                          served. The CMS validates a mount against the same root when it is saved, and this service
+ *                          re-checks it on every request (a symbolic link that moves after the save cannot escape).
  *
  * DATABASE_URL and HEOPRESS_INTERNAL_SECRET may come from files instead (`DATABASE_URL_FILE`, …).
  */
@@ -66,6 +69,7 @@ const { app, close } = createSiteClassic({
   cacheBytes,
   trafficDb,
   trustedProxies: process.env.HEOPRESS_TRUSTED_PROXIES,
+  staticRoot: process.env.HEOPRESS_STATIC_ROOT?.trim() || null,
   preview: previewOrigin
     ? {
         origin: previewOrigin,

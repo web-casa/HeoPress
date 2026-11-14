@@ -74,6 +74,9 @@ export function startAstroWorker(
     operatorThemesDir: env.HEOPRESS_ASTRO_OPERATOR_THEMES?.trim() || undefined,
     approvedIntegrations: (env.HEOPRESS_ASTRO_INTEGRATIONS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
     registry: env.HEOPRESS_ASTRO_REGISTRY?.trim() || undefined,
+    // v1.5: the static directory mount any site may name must stay under this root (the CMS validates a save against it;
+    // the engine re-checks before copying the directory into a build).
+    staticRoot: env.HEOPRESS_STATIC_ROOT?.trim() || null,
   });
   const reconciliation = astroReconciliation(engine);
   const gated = (pass: () => Promise<unknown>): void => {

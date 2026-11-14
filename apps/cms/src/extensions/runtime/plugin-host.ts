@@ -446,6 +446,28 @@ export function rowSupportsPoint(row: Pick<ExtensionRow, 'manifest'>, point: Ext
   return extensionPointCompatible(row.manifest, point);
 }
 
+/**
+ * The site's item access for a plugin acting without a requesting user (HeoPress v1.5): its own
+ * `items:<access>:<collection>` capabilities, the site boundary, Hold, the publish guard and the quality gates all apply.
+ * Shared by the runtime host (jobs, subscriptions, endpoints) and by the pipeline host's gate checks, which judge a
+ * draft against the site's other content.
+ */
+export function siteActorDataAccess(db: Database, siteId: string): ExtensionActorDataAccess {
+  const svc = () =>
+    itemServiceForSystem(
+      // The plugin's data access is this site's data, in this site's scope (HeoPress P14, ADR-0023).
+      { db: inSiteScope(db, siteId), siteId, suppressExtensionHooks: true, provenance: { authorType: 'integration', sources: [{ type: 'plugin' }] } },
+      'plugin-runtime',
+    );
+  return {
+    list: (c, p) => svc().list(c, p as never),
+    detail: (c, id, f) => svc().detail(c, id, f),
+    create: (c, payload) => svc().create(c, payload),
+    patch: (c, id, patch) => svc().patch(c, id, patch as never),
+    delete: (c, id, opts) => svc().softDelete(c, id, { expectedVersion: opts?.expectedVersion }),
+  };
+}
+
 /** The points (and `context`) a row declares at a range this instance no longer provides (needs an upgrade). */
 export function upgradePointsOf(row: Pick<ExtensionRow, 'manifest'>): ExtensionPointVersionKey[] {
   return incompatibleExtensionPointKeys(row.manifest);
@@ -525,19 +547,7 @@ export class PluginHost {
   }
 
   private actor(siteId: string): ExtensionActorDataAccess {
-    const svc = () =>
-      itemServiceForSystem(
-        // The plugin's data access is this site's data, in this site's scope (HeoPress P14, ADR-0023).
-        { db: inSiteScope(this.deps.db, siteId), siteId, suppressExtensionHooks: true, provenance: { authorType: 'integration', sources: [{ type: 'plugin' }] } },
-        'plugin-runtime',
-      );
-    return {
-      list: (c, p) => svc().list(c, p as never),
-      detail: (c, id, f) => svc().detail(c, id, f),
-      create: (c, payload) => svc().create(c, payload),
-      patch: (c, id, patch) => svc().patch(c, id, patch as never),
-      delete: (c, id, opts) => svc().softDelete(c, id, { expectedVersion: opts?.expectedVersion }),
-    };
+    return siteActorDataAccess(this.deps.db, siteId);
   }
 
   private async doLoad(row: ExtensionRow, siteId: string, capabilities: string[]): Promise<LoadedPlugin | null> {

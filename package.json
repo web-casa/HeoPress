@@ -1,6 +1,6 @@
 {
   "name": "heopress",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "HeoPress - Edge-native Headless CMS (Turborepo monorepo)",
   "license": "AGPL-3.0-only",
@@ -69,7 +69,8 @@
     "scripts:test": "node --test \"scripts/__tests__/*.test.mjs\"",
     "db:migrate:preflight": "pnpm --filter @heopress/database migrate:preflight",
     "db:migrate:dry-run": "pnpm --filter @heopress/database migrate:dry-run",
-    "db:migrate:version": "pnpm --filter @heopress/database migrate:version"
+    "db:migrate:version": "pnpm --filter @heopress/database migrate:version",
+    "plugins:pack:check": "node scripts/verify-plugin-packages.mjs"
   },
   "devDependencies": {
     "dependency-cruiser": "^18.7.2",

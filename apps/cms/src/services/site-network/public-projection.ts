@@ -12,12 +12,14 @@ import {
   publicItems,
   publicPathMemory,
   publicSites,
+  publicStaticMounts,
   routeTombstones,
   siteContentSettings,
   siteSeoSettings,
   siteIdentity,
   siteDomains,
   siteRenderVersions,
+  siteStaticMounts,
   sites,
   translationGroupMembers,
   translationGroups,
@@ -938,6 +940,10 @@ async function refreshSite(tx: Tx, siteId: string): Promise<Set<string>> {
       ...(contributions.site.length ? { nodes: contributions.site } : {}),
       ...(contributions.diagnostics.length ? { diagnostics: distinctDiagnostics(contributions.diagnostics) } : {}),
     };
+    // The static directory mount (v1.5): a server path, projected on its own table rather than into the public settings.
+    const [mount] = await tx.select({ directory: siteStaticMounts.directory }).from(siteStaticMounts).where(eq(siteStaticMounts.siteId, siteId));
+    await tx.delete(publicStaticMounts).where(eq(publicStaticMounts.siteId, siteId));
+    if (mount?.directory) await tx.insert(publicStaticMounts).values({ siteId, directory: mount.directory });
     // The routes, default templates and theme components of its enabled plugins (P12 tasks 2.3–2.5).
     const ext = await publicExtensionsOfSite(tx, siteId);
     const extensionsJson = (ext.hash ? ext : {}) as Record<string, unknown>;
@@ -988,6 +994,8 @@ interface DirtyRow {
 
 const SITE_WIDE = new Set([
   'lumibase_site_content_settings',
+  // v1.5: the static directory mount (the renderer's fallback and the sitemap's declared URLs).
+  'lumibase_site_static_mounts',
   'lumibase_site_seo_settings',
   'lumibase_site_identity',
   'lumibase_sites',

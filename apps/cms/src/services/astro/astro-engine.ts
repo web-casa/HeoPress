@@ -1,5 +1,6 @@
 import { and, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
-import { astroBuilds, astroSites, siteRenderVersions, type AstroBuildStepRecord, type Database } from '@heopress/database';
+import { astroBuilds, astroSites, siteRenderVersions, siteStaticMounts, type AstroBuildStepRecord, type Database } from '@heopress/database';
+import { resolveMountDirectory } from '@heopress/public-site';
 import { DEFAULT_BUILD_STEP_MS } from '@heopress/contracts/extensions';
 import { pluginBuildSteps, type PluginBuildStepPlan } from '../../extensions/pipeline/declarations';
 import type { PageDataSnapshot } from '@heopress/contracts/page-data';
@@ -59,6 +60,12 @@ export interface AstroEngineOptions {
   user?: { uid: number; gid: number };
   registry?: string;
   now?: () => Date;
+  /**
+   * The operator's `HEOPRESS_STATIC_ROOT` (v1.5): a site's static directory mount is copied into its build only while it
+   * still resolves inside this root. Absent: no mount is copied (and a site that has one fails its build, rather than
+   * silently shipping without its archive).
+   */
+  staticRoot?: string | null;
   /** Tests: the build and the export. */
   build?: (opts: SiteBuildOptions) => Promise<SiteBuildOutcome>;
   exportSnapshot?: (siteId: string) => Promise<PageDataSnapshot>;
@@ -101,7 +108,7 @@ export interface AstroReconcileReport {
 }
 
 /** Resources whose changes can alter a site's public output (as for the Classic page cache). */
-const RESOURCES = new Set(['item', 'content_route', 'redirect', 'site_content_settings', 'translation_group', 'theme', 'collection', 'field', 'site_seo_settings', 'site_domain']);
+const RESOURCES = new Set(['item', 'content_route', 'redirect', 'site_content_settings', 'translation_group', 'theme', 'collection', 'field', 'site_seo_settings', 'site_static_mount', 'site_domain']);
 
 export class AstroEngine {
   private readonly running = new Set<string>();
@@ -215,7 +222,16 @@ export class AstroEngine {
       return this.failed(siteId, await finish('failed', null, `export failed: ${(err as Error).message}`.slice(0, 500)));
     }
     await db.update(astroBuilds).set({ revision: snapshot.revision }).where(eq(astroBuilds.id, row!.id));
+    // The static directory mount (v1.5): the directory as saved, re-checked against the root, copied into the artifact.
+    // A stored mount that no longer resolves fails the build — an archive silently left out of a deployment is worse
+    // than a build that waits for the operator.
+    const [mount] = await db.select({ directory: siteStaticMounts.directory }).from(siteStaticMounts).where(eq(siteStaticMounts.siteId, siteId));
+    const staticMountDir = await resolveMountDirectory(this.opts.staticRoot, mount?.directory);
+    if (mount?.directory && !staticMountDir) {
+      return this.failed(siteId, await finish('failed', snapshot.revision, 'static directory mount is not under HEOPRESS_STATIC_ROOT or no longer exists'));
+    }
     const outcome = await (this.opts.build ?? buildSiteGeneration)({
+      staticMountDir: staticMountDir ?? undefined,
       root: this.opts.root,
       generation,
       theme,

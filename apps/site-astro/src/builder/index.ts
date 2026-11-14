@@ -6,6 +6,7 @@ import { buildDir } from './publish';
 import { checkAstroTheme, parseThemeRef, stageTheme, themeBuildSteps, type ThemeIssue } from './themes';
 import { runBuildSteps, type BuildStep, type BuildStepResult } from './steps';
 import { checkExtensionSources, stageExtensions } from './extensions';
+import { copyStaticMount } from './mount';
 
 /**
  * The Astro engine's build of one site generation (HeoPress P11 tasks 3.1–3.6): check the theme, serve the pinned
@@ -18,6 +19,7 @@ export { runAstroBuild, buildEnv, templateDir, type BuildLimits, type BuildReque
 export { verifyBuild, checkSponsorSlots, pageFile, type VerifyIssue } from './verify';
 export { activate, buildDir, discard, liveGeneration, prune, siteDir, StaleGenerationError } from './publish';
 export { checkExtensionSources, stageExtensions, type ExtensionIssue } from './extensions';
+export { copyStaticMount, type StaticMountCopyOptions, type StaticMountCopyReport } from './mount';
 export { checkAstroTheme, officialThemeDir, parseThemeRef, stageTheme, themeBuildSteps, type ThemeIssue, type ThemeRef } from './themes';
 export { runBuildStep, runBuildSteps, stepAllowedHosts, stepEnv, stepGuardFile, type BuildStep, type BuildStepResult, type BuildStepRun } from './steps';
 
@@ -38,13 +40,18 @@ export interface SiteBuildOptions {
    * run after the theme's own steps, under the same constraints.
    */
   pluginSteps?: BuildStep[];
+  /**
+   * The site's static directory mount (v1.5): copied into the artifact after the build and its output checks pass, without
+   * overwriting anything the build produced (HeoPress's pages and system files win). Absent: nothing to copy.
+   */
+  staticMountDir?: string;
 }
 
 export type SiteBuildOutcome =
   | { ok: true; outDir: string; result: BuildResult; steps?: BuildStepResult[] }
   | {
       ok: false;
-      stage: 'theme' | 'build' | 'steps' | 'verify';
+      stage: 'theme' | 'build' | 'steps' | 'verify' | 'mount';
       error: string;
       themeIssues?: ThemeIssue[];
       verifyIssues?: VerifyIssue[];
@@ -107,6 +114,16 @@ export async function buildSiteGeneration(opts: SiteBuildOptions): Promise<SiteB
   if (verifyIssues.length) {
     await rm(outDir, { recursive: true, force: true });
     return { ok: false, stage: 'verify', error: `output check failed: ${verifyIssues.slice(0, 5).map((i) => `${i.path}: ${i.message}`).join('; ')}`, verifyIssues, result, steps: steps.results };
+  }
+  // The static directory mount (v1.5) joins the artifact after its output passed the checks: those describe the engine's
+  // pages and files, and the copy never replaces one of them.
+  if (opts.staticMountDir) {
+    try {
+      await copyStaticMount(outDir, opts.staticMountDir);
+    } catch (err) {
+      await rm(outDir, { recursive: true, force: true });
+      return { ok: false, stage: 'mount', error: `static directory mount not copied: ${(err as Error).message}`, result, steps: steps.results };
+    }
   }
   return { ok: true, outDir, result, steps: steps.results };
 }

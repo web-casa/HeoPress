@@ -120,6 +120,8 @@ export const RLS_REGISTRY: readonly RlsEntry[] = [
   site('lumibase_site_presets'),
   site('lumibase_site_content_settings'),
   site('lumibase_site_seo_settings'),
+  // v1.5: the static directory mount (a site setting) and its render-only projection.
+  site('lumibase_site_static_mounts'),
   site('lumibase_site_identity'),
   site('lumibase_site_root_files'),
   site('lumibase_indexnow_state'),
@@ -148,6 +150,7 @@ export const RLS_REGISTRY: readonly RlsEntry[] = [
   site('lumibase_public_items'),
   site('lumibase_public_alternates'),
   site('lumibase_public_path_memory'),
+  site('lumibase_public_static_mounts'),
   site('lumibase_route_tombstones'),
   site('lumibase_site_render_versions'),
   // P06: themes (versions, assets, the site's active version).

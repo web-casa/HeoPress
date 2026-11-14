@@ -1,6 +1,6 @@
 {
   "name": "@heopress/cms",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "HeoPress CMS API \u2014 Hono.js on Cloudflare Workers.",
   "type": "module",
@@ -53,6 +53,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@heopress/plugin-corrections": "workspace:*",
     "@heopress/plugin-glossary": "workspace:*",
     "@heopress/site-classic": "workspace:*",
     "@types/node": "^26.6.6",

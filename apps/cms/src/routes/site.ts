@@ -13,6 +13,7 @@ import { requireSiteAdmin } from '../middleware/site-admin';
 import { ContentSettingsError, ContentSettingsService } from '../services/site-network/content-settings-service';
 import { listPublishedSponsored } from '../services/site-network/sponsored-items';
 import { SeoSettingsError, SeoSettingsService } from '../services/site-network/seo-settings-service';
+import { StaticMountError, StaticMountService } from '../services/site-network/static-mount-service';
 import { SiteIdentityError, SiteIdentityService } from '../services/site-network/site-identity-service';
 import { sitePresetOf } from '../services/site-network/preset-installer';
 import { structuredDataReportOf } from '../services/site-network/structured-data-report';
@@ -187,6 +188,32 @@ siteRouter.put('/content-settings', requireSiteAdmin(), async (c) => {
  */
 const seoSettingsFor = (c: Context<AppEnv>) =>
   new SeoSettingsService({ db: c.get('db'), siteId: c.get('siteId'), actor: { userId: c.get('auth')?.userId ?? null, apiKeyId: c.get('auth')?.apiKeyId ?? null } });
+
+/**
+ * The site's static directory mount (v1.5, spec `rendering/static-directory-mount`): read with its version; set by its
+ * administrators against the version read (409 when stale). The directory is validated against `HEOPRESS_STATIC_ROOT`
+ * before it is saved; an empty value unmounts it. Recursion into symbolic links is not followed.
+ */
+const staticMountFor = (c: Context<AppEnv>) =>
+  new StaticMountService({
+    db: c.get('db'),
+    siteId: c.get('siteId'),
+    root: process.env.HEOPRESS_STATIC_ROOT,
+    actor: { userId: c.get('auth')?.userId ?? null, apiKeyId: c.get('auth')?.apiKeyId ?? null },
+  });
+
+siteRouter.get('/static-mount', async (c) => c.json({ data: await staticMountFor(c).get() }));
+
+siteRouter.put('/static-mount', requireSiteAdmin(), async (c) => {
+  try {
+    return c.json({ data: await staticMountFor(c).update(await c.req.json().catch(() => ({}))) });
+  } catch (err) {
+    if (err instanceof StaticMountError) {
+      return c.json({ errors: [{ code: err.code, message: err.message }] }, err.status);
+    }
+    throw err;
+  }
+});
 
 siteRouter.get('/seo-settings', async (c) => c.json({ data: await seoSettingsFor(c).get() }));
 

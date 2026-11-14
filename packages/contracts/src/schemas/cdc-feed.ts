@@ -40,6 +40,8 @@ export const CdcResourceSchema = z.enum([
   'site_seo_settings',
   // Whom a site speaks for changed (HeoPress P07 task 2.12): its structured data follows.
   'site_identity',
+  // The site's static directory mount changed (v1.5): its fallback files and sitemap URLs follow.
+  'site_static_mount',
   // A source document was registered (HeoPress P08 task 2.7): ingestion's follow-up processing starts from it.
   'source_document',
 ]);
@@ -158,6 +160,7 @@ export const CDC_RESOURCE_TYPE_PREFIX = {
   theme: 'themes',
   site_seo_settings: 'site_seo_settings',
   site_identity: 'site_identity',
+  site_static_mount: 'site_static_mount',
   source_document: 'source_document',
 } as const satisfies Record<z.infer<typeof CdcResourceSchema>, string>;
 

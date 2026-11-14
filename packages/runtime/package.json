@@ -1,6 +1,6 @@
 {
   "name": "@heopress/runtime",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "HeoPress runtime abstraction layer — adapters for Cloudflare Workers and Docker/Node.js environments.",
   "type": "module",

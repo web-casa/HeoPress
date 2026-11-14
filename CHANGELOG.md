@@ -2,6 +2,29 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.5.0] - 2026-11-14
+
+### Added
+
+- **站点静态目录挂载**：站点可挂载一个目录，HeoPress 路由不到的路径由它提供——网页存档与脚本生成的静态站因此能与新文章同源
+  共存。目录必须在 `HEOPRESS_STATIC_ROOT` 之下且 `realpath` 仍在根内；符号链接不跟随；路径先切段再解码两次并拒绝穿越、
+  反斜杠、NUL、控制字符与隐藏条目。**系统路径与条目永不遮蔽**（条目、插件路由、`robots.txt`、`sitemap*`、`.well-known`、
+  `health`、`admin`、feed、`llms.txt` 优先）；`static-urls.txt` 的 URL 合并进 sitemap；Astro 构建把目录并入产物。
+- **官方纠错插件 `heopress-corrections`**：公开纠错表单（来源校验、8 KiB、每地址 5 次/分、蜜罐与中性回答、不解析目标页面）→
+  审核队列 → 接受后生成一条更正记录并（按站点设置）在文章正文追加带 `data-heopress-correction` 的更正块；更正页输出
+  `CorrectionComment` 结构化数据。举报者的姓名与邮箱属个人数据：不出现在任何公开路由、响应、sitemap 或日志里。
+- **插件打包矩阵**：`scripts/verify-plugin-packages.mjs` 对每个 `packages/plugin-*` 打包、离线装进干净项目并加载，
+  校验「注册的扩展点都在 manifest 声明内」，无需数据库与服务器。
+
+### Fixed
+
+- 镜像运行时验收报告「服务在数据库中断期间重启」时只有一行结论：现在会打印前后 `StartedAt`/`RestartCount`、退出码、
+  是否 OOM 以及该服务最后 40 行日志，下一次可诊断而不是靠猜。
+
+### Changed
+
+- 工作区版本 `1.4.0` → `1.5.0`。
+
 ## [1.4.0] - 2026-11-13
 
 ### Added

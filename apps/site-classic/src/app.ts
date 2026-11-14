@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { Readable } from 'node:stream';
 import { Hono, type Context } from 'hono';
 import type { HttpBindings } from '@hono/node-server';
 import type { Database } from '@heopress/database';
@@ -16,6 +19,15 @@ import {
   RenderError,
   RenderPool,
   resolvePublicPathWith,
+  resolveMountDirectory,
+  resolveStaticFile,
+  staticCacheControl,
+  staticContentType,
+  staticNotModified,
+  staticValidators,
+  readStaticMountUrls,
+  mountReservedReason,
+  staticUrlsOn,
   type PreviewPolicy,
   type PublicPathResult,
   type RenderPoolOptions,
@@ -92,6 +104,12 @@ export interface SiteClassicOptions {
   preview?: PreviewOptions;
   /** The clock (ms; tests set it): the news sitemap's window and the expiry of answers that depend on the time. */
   now?: () => number;
+  /**
+   * The directory every site's mount must stay under (v1.5; `HEOPRESS_STATIC_ROOT`). Without it no mount is served:
+   * a stored directory is still validated against it on every request, so a link that moves after it was saved cannot
+   * escape.
+   */
+  staticRoot?: string | null;
   /** AI traffic (P07 task 6.1): recorded unless `false`; tests pass their own recorder. */
   traffic?: TrafficRecorder | false;
   /** The connection AI traffic is written on (its own small pool, never one a page needs); the default: `db`. */
@@ -131,6 +149,11 @@ function pageOf(params: URLSearchParams): number | null {
   return /^[1-9]\d{0,5}$/.test(raw) ? Number(raw) : null;
 }
 
+/** The sitemap files whose entries follow a site's static directory mount (v1.5): they are never cached then. */
+function mountMatters(path: string): boolean {
+  return /^\/(?:sitemap(?:-[1-9]\d{0,5})?\.xml|sitemap\.txt)$/.test(path);
+}
+
 /** The same path with `page` (none on page 1) beside the other parameters. */
 function pageUrl(path: string, page: number, params: Record<string, string> = {}): string {
   const q = new URLSearchParams(params);
@@ -149,17 +172,25 @@ type Plan =
   | { kind: 'redirect'; base: string }
   /** A system path that names nothing (or a discovery file the site turned off): not found (P07 task 1.5). */
   | { kind: 'system' }
-  /** A discovery file (P07 tasks 3.1, 3.3, 3.7), freshly made. */
-  | { kind: 'discovery'; answer: DiscoveryAnswer }
+  /**
+   * A discovery file (P07 tasks 3.1, 3.3, 3.7), freshly made; `mount`: the site has a static directory (a sitemap then
+   * carries the mount's declared URLs, which no render version tracks — it is not cached).
+   */
+  | { kind: 'discovery'; answer: DiscoveryAnswer; mount?: boolean }
   /**
    * A page; `markdown`: answer it as Markdown (HeoPress v1.2 P07) instead of rendering the theme's HTML; `vary`: its
    * HTML answer varies by `Accept` (the site has negotiation on and the page is negotiable).
    */
   | { kind: 'page'; site: SiteInfo; page: PageInput; markdown?: DiscoveryAnswer; vary?: boolean }
-  | { kind: 'status'; status: number; site: SiteInfo | null; locale: string; homeUrl: string };
+  /** A path no HeoPress route matched and the site has a mount: served from the directory after the read transaction. */
+  | { kind: 'mount'; site: SiteInfo; locale: string; homeUrl: string; directory: string; path: string }
+  /** `mount`: the site has a static directory (a 404 is then not cached: a file may appear there at any time). */
+  | { kind: 'status'; status: number; site: SiteInfo | null; locale: string; homeUrl: string; mount?: boolean };
 
 export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
   const now = opts.now ?? Date.now;
+  /** The operator's static root (v1.5): a stored mount is only served while it still resolves inside it. */
+  const root = opts.staticRoot ?? null;
   const port = renderPort(opts.db, now);
   const lookupPort = opts.lookupDb ? renderPort(opts.lookupDb, now) : port;
   const hostOf = hostMemo(lookupPort, Math.min(Math.max(opts.hostMemoMs ?? 0, 0), 2000));
@@ -575,15 +606,24 @@ export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
       for (let round = 0; round < 2; round++) {
         const look = await lookupPort.lookup(siteId, key, { builtin: BUILTIN_THEME_ID, shared: !own, itemId: own?.deps.item?.id ?? null });
         if (look.state.rebuilding) break;
+        // A mounted site's sitemap carries the mount's declared URLs, which no render version tracks (v1.5): it is made
+        // anew on every request, never answered from either cache level.
+        if (look.mount && mountMatters(target.path)) break;
+        // A mounted site's cached 404 is not an answer (v1.5): the file may exist now, and the mount's content is in no
+        // render version. The full path below decides (and tries the mount); nothing older is worth keeping.
+        const blocked = look.mount;
         if (own) {
-          if (isCurrent(own.deps, look.state, look.itemVersion)) return answer(c, own.page, target.query, 'hit');
+          const current = isCurrent(own.deps, look.state, look.itemVersion);
+          if (current && !(blocked && own.page.status === 404)) return answer(c, own.page, target.query, 'hit');
           // Superseded: the shared level may hold a newer one (another process made it).
           cache.forget(key);
           own = null;
+          if (current) break;
           continue;
         }
         const stored = look.stored;
         if (stored && isCurrent(stored.deps, look.state, stored.itemVersion)) {
+          if (blocked && stored.page.status === 404) break;
           // Kept in this process too, no longer than its row.
           cache.remember(key, stored.page, stored.deps, stored.page.expiresAt ?? null);
           return answer(c, stored.page, target.query, 'hit-shared');
@@ -600,7 +640,7 @@ export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
       state = await reads.state(BUILTIN_THEME_ID);
       const info = await reads.site();
       theme = await themeOf(reads, state.themeVersion);
-      if (!info || state.rebuilding) return { kind: 'status', status: 503, site: info, locale: info?.defaultLanguage ?? 'en', homeUrl: '/' };
+      if (!info || state.rebuilding) return { kind: 'status', status: 503, site: info, locale: info?.defaultLanguage ?? 'en', homeUrl: '/', mount: !!info?.staticDirectory };
       // System paths (HeoPress P07 task 1.5): discovery files and site root files are the system's, decided
       // after the rebuild check (503) and before any cached answer or content path, by the rule the CMS
       // validates content paths with (content never takes one; the upgrade check reports old ones). A plain
@@ -611,19 +651,27 @@ export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
         const file = discoveryFileOf(target.path);
         if (!file) return { kind: 'system' };
         // A discovery file is cached as a page is (P07 task 3.5), under the site's render version, which every
-        // publication raises — the next request makes it anew.
+        // publication raises — the next request makes it anew. A mounted site's sitemap also follows its
+        // `static-urls.txt`: the mount's directory and the file's stamp are part of the key, so an edit is seen at once.
         const siteVersion = state.version;
         const space = await reads.space(hostInfo.primaryHostname ?? host);
+        const mount = await resolveMountDirectory(root, info.staticDirectory);
+        const declared = mount ? await readStaticMountUrls(mount) : null;
         const answer = await discoveryAnswer(file, {
           reads,
           site: { ...info, origin: siteOrigin(space, info.defaultLanguage) },
           host,
           space,
           now: now(),
-          memo: memoFor(`${siteId}\u0000${host}\u0000${siteVersion}`),
+          memo: memoFor(`${siteId}\u0000${host}\u0000${siteVersion}\u0000${mount ?? ''}\u0000${declared?.stamp ?? ''}`),
           itemCount: () => countFor(`${siteId}\u0000${siteVersion}`, () => reads.publicItemCount()),
+          staticMount: mount && declared ? { directory: mount, urls: declared.text } : null,
         });
-        return answer ? { kind: 'discovery', answer } : { kind: 'system' };
+        if (answer) return { kind: 'discovery', answer, mount: !!info.staticDirectory };
+        // A one-segment root-file name the site does not have is not the system's when the site has a mount: an archive's
+        // `/about.html` is a page of the mount (v1.5). The named system files above never fall through, and a site without
+        // a mount keeps the plain 404 it answered before.
+        if (file.kind !== 'root-file' || !info.staticDirectory) return { kind: 'system' };
       }
       const result = await resolvePublicPathWith(scoped, { host, path: target.path, query: target.query });
       // A page's Markdown copy (P07 task 4.2): a path ending in `.md` that is nothing itself — a real route wins, also when
@@ -631,6 +679,29 @@ export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
       if (result.kind === 'not_found' && target.path.endsWith('.md')) {
         const copy = await markdownCopyAnswer(scoped, reads, { ...info, origin: null }, host, target.path);
         if (copy) return { kind: 'discovery', answer: copy };
+      }
+      // The static directory mount (v1.5, spec rendering/static-directory-mount): only a path no HeoPress route names —
+      // no item, no redirect, no tombstone and not the home, the search page or a plugin list route — may be a file of
+      // the mount. The directory is resolved here; the file itself is read after this transaction ends.
+      if (result.kind === 'not_found') {
+        const at = result.at;
+        const own = !!at && (at.contentPath === '/' || at.contentPath === '/search' || !!listRouteAt(info.extensions ?? EMPTY_PUBLIC_EXTENSIONS, at.contentPath));
+        if (!own) {
+          const first = target.path.split('/')[1] ?? '';
+          const mount = mountReservedReason(first) ? null : await resolveMountDirectory(root, info.staticDirectory);
+          if (mount) {
+            const space = await reads.space(hostInfo.primaryHostname ?? host);
+            const locale = info.defaultLanguage;
+            return {
+              kind: 'mount',
+              site: { ...info, origin: siteOrigin(space, info.defaultLanguage) },
+              locale,
+              homeUrl: publicUrlOf(space, locale, '/') ?? '/',
+              directory: mount,
+              path: target.path,
+            };
+          }
+        }
       }
       if (result.kind === 'redirect') {
         const suffix = target.query ? `?${target.query}` : '';
@@ -692,11 +763,43 @@ export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
       return answer(c, page, target.query, 'miss');
     };
     if (decided.kind === 'system') return c.text('Not found', 404);
+    // A file of the site's static directory (v1.5): read after the read transaction ended, sent as it is. Nothing is
+    // cached here — the operating system caches the bytes, and an operator's edit must be visible at once.
+    if (decided.kind === 'mount') {
+      const file = await resolveStaticFile(decided.directory, decided.path);
+      if (file.kind === 'redirect') {
+        const location = target.query ? `${file.location}?${target.query}` : file.location;
+        return c.body(null, 301, { location, 'cache-control': staticCacheControl('index.html') });
+      }
+      if (file.kind === 'missing') {
+        // The mount may change without any publication: this answer is made now, never stored.
+        const html = await errorPage(siteId, 404, decided.site, decided.locale, decided.homeUrl, theme);
+        return c.body(html, 404, { ...HTML, 'cache-control': 'no-store' });
+      }
+      const validators = staticValidators(file);
+      const headers: Record<string, string> = {
+        'content-type': staticContentType(file.file),
+        'cache-control': staticCacheControl(file.file),
+        'x-content-type-options': 'nosniff',
+        etag: validators.etag,
+        'last-modified': validators.lastModified,
+      };
+      if (staticNotModified({ ifNoneMatch: c.req.header('if-none-match'), ifModifiedSince: c.req.header('if-modified-since') }, file)) {
+        return c.body(null, 304, headers);
+      }
+      c.header('content-length', String(file.size));
+      if (c.req.method === 'HEAD') return c.body(null, 200, headers);
+      // A small file in one read; a large one streamed, so an archive's video never sits in this process's memory.
+      if (file.size <= 8 * 1024 * 1024) return c.body(new Uint8Array(await readFile(file.file)), 200, headers);
+      return c.body(Readable.toWeb(createReadStream(file.file)) as ReadableStream, 200, headers);
+    }
     if (decided.kind === 'discovery') {
       const page = cachedPage(200, decided.answer.body, null, { contentType: decided.answer.contentType, headers: decided.answer.headers ?? {} });
       // Shared when its key is bounded by the site's content: a system file's key holds no query; a Markdown copy's does
       // when the request carries one (`?page=…`) — then it stays in this process (Codex review of batch 9).
-      if (deps && useCache) void cache.store(key, siteId, deps, page, { shared: system || !keyedByQuery, expiresAt: decided.answer.expiresAt ?? null });
+      if (deps && useCache && !(decided.mount && mountMatters(target.path))) {
+        void cache.store(key, siteId, deps, page, { shared: system || !keyedByQuery, expiresAt: decided.answer.expiresAt ?? null });
+      }
       return answer(c, page, '', 'miss');
     }
     // A target that cannot be a `location` (a malformed escape the request carried to an alias redirect) is not
@@ -709,6 +812,8 @@ export function createSiteClassic(opts: SiteClassicOptions): SiteClassic {
         c.header('cache-control', 'no-store');
         return c.body(html, 503, HTML);
       }
+      // A mounted site's 404 is not cached: the mount's files are in no render version (v1.5).
+      if (decided.mount && decided.status === 404) return c.body(html, 404, { ...HTML, 'cache-control': 'no-store' });
       return fresh(decided.status, html, null);
     }
     // The negotiated Markdown answer (HeoPress v1.2 P07): the page's own body, under the same cache entry rules as its
@@ -758,7 +863,8 @@ async function plan(
   locale: string,
   homeUrl: string,
 ): Promise<Plan> {
-  const status = (s: number): Plan => ({ kind: 'status', status: s, site, locale, homeUrl });
+  // A 404 on a mounted site is answered now and never cached (v1.5): a file may appear in the mount at any time.
+  const status = (s: number): Plan => ({ kind: 'status', status: s, site, locale, homeUrl, mount: s === 404 && !!site.staticDirectory });
   const pagination = (pageNo: number, more: boolean, q: Record<string, string> = {}) => ({
     page: pageNo,
     prevUrl: pageNo > 1 ? pageUrl(path, pageNo - 1, q) : null,

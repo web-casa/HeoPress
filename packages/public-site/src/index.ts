@@ -10,6 +10,28 @@ export * from './permalink-path';
 export * from './space';
 export * from './resolve-path';
 export { isSystemPathSegment } from './system-paths';
+export {
+  isInsideDirectory,
+  MAX_STATIC_PATH,
+  MAX_STATIC_SEGMENTS,
+  MAX_STATIC_SEGMENT,
+  mountReservedReason,
+  parseStaticRequestPath,
+  parseStaticUrls,
+  readStaticMountUrls,
+  resolveMountDirectory,
+  resolveStaticFile,
+  staticCacheControl,
+  staticContentType,
+  staticExtension,
+  staticNotModified,
+  staticUrlsOn,
+  staticValidators,
+  type StaticFileResult,
+  type StaticPathIssue,
+  type StaticPathParse,
+  type StaticUrlIssue,
+} from './static-mount';
 export { BUILTIN_THEME, BUILTIN_THEME_ID } from './theme/builtin.ts';
 export { checkExtensionTemplates, checkTheme, extensionStubs, type ThemeIssue } from './theme/check.ts';
 export { STARTER_THEMES, type StarterName } from './theme/starters.ts';

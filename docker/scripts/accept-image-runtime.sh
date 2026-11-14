@@ -258,7 +258,16 @@ for svc in cms cms-worker site-classic; do
   [ "$(state "$svc" '{{.State.Running}}')" = true ] || fail "$svc stopped during the outage"
 done
 for svc in cms cms-worker site-classic; do
-  [ "$(state "$svc" '{{.State.StartedAt}}/{{.RestartCount}}')" = "${started_before[$svc]}" ] || fail "$svc restarted during the outage"
+  if [ "$(state "$svc" '{{.State.StartedAt}}/{{.RestartCount}}')" != "${started_before[$svc]}" ]; then
+    # "restarted" alone is not diagnosable: say why the process went away (OOM, exit code, restart count) and keep the
+    # tail of its log, so a flake here can be read instead of guessed at (v1.4.0 saw this once, passed on a rerun, and
+    # left nothing to look at).
+    echo "  $svc before: ${started_before[$svc]}"
+    echo "  $svc after:  $(state "$svc" '{{.State.StartedAt}}/{{.RestartCount}}')"
+    echo "  $svc exit:   $(state "$svc" '{{.State.ExitCode}}') oom=$(state "$svc" '{{.State.OOMKilled}}')"
+    "${compose[@]}" logs --no-color --tail=40 "$svc" 2>&1 | sed 's/^/  | /'
+    fail "$svc restarted during the outage"
+  fi
 done
 # The worker stopped during the outage: its graceful shutdown cannot flush to the database, gives up after 10 s
 # (logged, exit 1) — bounded, never the 30 s kill. Started again, it waits for the database.
@@ -281,7 +290,11 @@ wait_for 120 "worker readiness after PostgreSQL is back" worker_ready
 recovered=$(( $(date +%s) - back ))
 # The API and the rendering service rode out the outage in the same process (the worker was restarted on purpose above).
 for svc in cms site-classic; do
-  [ "$(state "$svc" '{{.State.StartedAt}}/{{.RestartCount}}')" = "${started_before[$svc]}" ] || fail "$svc restarted during the outage"
+  if [ "$(state "$svc" '{{.State.StartedAt}}/{{.RestartCount}}')" != "${started_before[$svc]}" ]; then
+    echo "  $svc exit:   $(state "$svc" '{{.State.ExitCode}}') oom=$(state "$svc" '{{.State.OOMKilled}}')"
+    "${compose[@]}" logs --no-color --tail=40 "$svc" 2>&1 | sed 's/^/  | /'
+    fail "$svc restarted during the outage"
+  fi
 done
 id=$(create_article accept-a "$token" 'Outagerecovered' outage-recovered)
 [ -n "$id" ] || fail "no write after the outage"

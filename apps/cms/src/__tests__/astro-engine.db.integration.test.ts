@@ -1,12 +1,12 @@
 import { randomBytes } from 'node:crypto';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { and, eq, inArray } from 'drizzle-orm';
-import { astroBuilds, astroSites, ensureRenderRole, extensions, schema, scopedDatabase, siteContentSettings, siteDomains, sites, type Database } from '@heopress/database';
+import { astroBuilds, astroSites, ensureRenderRole, extensions, schema, scopedDatabase, siteContentSettings, siteDomains, siteStaticMounts, sites, type Database } from '@heopress/database';
 import { createSiteClassic, type SiteClassic } from '@heopress/site-classic';
 import { exportPageData } from '@heopress/site-classic/page-data';
 import { buildSiteGeneration, liveGeneration, pageFile, templateDir, type SiteBuildOptions } from '@heopress/site-astro';
@@ -278,6 +278,37 @@ describe.skipIf(!hasDbIntegrationUrl)('Astro engine — DB integration (P11 task
     expect(late.generation).toBeLessThan(newer.generation);
     expect(late.status).toBe('superseded');
     expect(await liveGeneration(root, SITES.en.id)).toBe(newer.generation);
+  });
+
+  it('copies the site’s static directory mount into the build, and fails when the mount no longer resolves (v1.5)', async () => {
+    const mount = await mkdtemp(join(tmpdir(), 'heopress-engine-mount-'));
+    await writeFile(join(mount, 'legacy-note.html'), '<p>archive</p>');
+    await fixtures.insert(siteStaticMounts).values({ siteId: SITES.en.id, directory: mount, version: 1 });
+    // The write went past the services: clear the projection mark, as a deployment's worker would before a build.
+    await rebuildSiteProjection(db, SITES.en.id);
+    try {
+      const e = engine({ staticRoot: tmpdir() });
+      await e.enable(SITES.en.id, 'official:starter');
+      const report = await e.buildNow(SITES.en.id, 'event');
+      expect(report.status, report.error).toBe('succeeded');
+      const liveDir = join(root, SITES.en.id, 'current');
+      expect(await readFile(join(liveDir, 'legacy-note.html'), 'utf8')).toBe('<p>archive</p>');
+      // The build is the site's, not an empty one: its own pages are in the artifact too.
+      expect(await readFile(join(liveDir, 'moon-watching', 'index.html'), 'utf8')).toContain('Watching the Moon');
+      const revision = report.revision;
+      // A mount that no longer resolves fails the build; the previous version stays live.
+      await fixtures.update(siteStaticMounts).set({ directory: '/etc' }).where(eq(siteStaticMounts.siteId, SITES.en.id));
+      const failed = await e.buildNow(SITES.en.id, 'event');
+      expect(failed.status).toBe('failed');
+      expect(failed.error).toContain('static directory mount');
+      expect(await readFile(join(liveDir, 'legacy-note.html'), 'utf8')).toBe('<p>archive</p>');
+      expect(revision).toBeGreaterThan(0);
+    } finally {
+      await fixtures.delete(siteStaticMounts).where(eq(siteStaticMounts.siteId, SITES.en.id));
+      // The delete went past the services too: rebuild so the site does not stay marked for maintenance after this test.
+      await rebuildSiteProjection(db, SITES.en.id);
+      await rm(mount, { recursive: true, force: true });
+    }
   });
 
   it('a lost event is repaired by the 5-minute reconciliation (task 3.5)', async () => {

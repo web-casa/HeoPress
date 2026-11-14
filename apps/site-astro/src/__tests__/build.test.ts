@@ -79,6 +79,24 @@ describe('Astro engine build', () => {
     await rm(themes, { recursive: true, force: true });
   });
 
+  it('copies a static directory mount into the artifact, keeping the engine output (v1.5)', async () => {
+    const snapshot = sampleSnapshot();
+    const mount = await mkdtemp(join(tmpdir(), 'heopress-build-mount-'));
+    await mkdir(join(mount, 'legacy'), { recursive: true });
+    await mkdir(join(mount, 'garden-tools'), { recursive: true });
+    await writeFile(join(mount, 'legacy', 'about.html'), '<p>archive</p>');
+    // A file at a HeoPress page's own path: the engine's page stays.
+    await writeFile(join(mount, 'garden-tools', 'index.html'), '<p>mount page</p>');
+    await writeFile(join(mount, 'static-urls.txt'), '/legacy/about.html\n');
+    const out = await buildSiteGeneration({ root, generation: 6, theme: 'official:starter', snapshot, serve: servePageData, staticMountDir: mount });
+    expect(out.ok, out.ok ? '' : out.error).toBe(true);
+    if (!out.ok) return;
+    expect(await readFile(join(out.outDir, 'legacy', 'about.html'), 'utf8')).toBe('<p>archive</p>');
+    expect(await readFile(join(out.outDir, 'garden-tools', 'index.html'), 'utf8')).not.toContain('mount page');
+    await expect(readFile(join(out.outDir, 'static-urls.txt'), 'utf8')).rejects.toThrow();
+    await rm(mount, { recursive: true, force: true });
+  });
+
   it('rollback re-checks the old output against the current policy', async () => {
     // Generation 1 was built with disclosure on; with disclosure now off its disclosures are no longer allowed.
     const issues = await verifyBuild(join(root, 'site_astro_fixture', 'builds', '1'), sampleSnapshot({ disclosure: false }));
