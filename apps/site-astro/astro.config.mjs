@@ -21,11 +21,19 @@ for (const name of theme.integrations) {
 export default defineConfig({
   output: 'static',
   outDir: process.env.HEOPRESS_ASTRO_OUT_DIR || './dist',
-  cacheDir: process.env.HEOPRESS_ASTRO_OUT_DIR ? `${process.env.HEOPRESS_ASTRO_OUT_DIR}.cache` : './node_modules/.astro',
+  // A sandboxed build has no writable path beside its output (HeoPress v1.5): `HEOPRESS_ASTRO_CACHE_DIR` names one
+  // explicitly, and falls back to the pre-sandbox layout beside the output.
+  cacheDir:
+    process.env.HEOPRESS_ASTRO_CACHE_DIR ??
+    (process.env.HEOPRESS_ASTRO_OUT_DIR ? `${process.env.HEOPRESS_ASTRO_OUT_DIR}.cache` : './node_modules/.astro'),
   build: { format: 'directory', assets: '_astro' },
   trailingSlash: 'ignore',
   devToolbar: { enabled: false },
-  integrations: [heopressPageData({ url: process.env.HEOPRESS_PAGE_DATA_URL, token: process.env.HEOPRESS_PAGE_DATA_TOKEN }), ...extra],
+  integrations: [heopressPageData({
+      url: process.env.HEOPRESS_PAGE_DATA_URL,
+      token: process.env.HEOPRESS_PAGE_DATA_TOKEN,
+      file: process.env.HEOPRESS_PAGE_DATA_FILE,
+    }), ...extra],
   vite: {
     resolve: { alias: { 'heopress:theme': theme.entry } },
     plugins: [heopressExtensions({ dir: process.env.HEOPRESS_ASTRO_EXT_DIR, theme })],

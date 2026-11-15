@@ -2,6 +2,28 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.6.0] - 2026-11-15
+
+### Added
+
+- **Astro 构建容器沙箱**：`HEOPRESS_ASTRO_BUILD_SANDBOX=required` 时构建在一次性 rootless 容器里执行——只读根文件系统、
+  只挂载输入与输出、**构建期无网络**、丢弃全部能力、cgroup v2 限制 CPU/内存/pids 并受墙钟约束。运行时、套接字、镜像或
+  cgroup 不可用时构建**失败并给出修复说明**，绝不回落到子进程。页面数据改为只读文件输入，因此「断网」与「构建有数据」
+  同时成立。
+- **构建镜像与自包含模板**：`docker/astro-build/`（Node 24，非 root）；`scripts/prepare-astro-template.mjs` 产出部署要挂载的
+  模板（自带依赖存储、已编译的 contracts、本地 tsconfig、`.astro` 指向缓存 tmpfs）并自校验。
+- **健康检查**：`/health` 的 `astroBuild: { required, available, reason }` 让运维在开放第三方主题前看到前置条件。
+
+### Fixed
+
+- **SELinux 主机（AlmaLinux/Rocky/RHEL）**：bind 挂载缺少 `:z` 时写产物被拒（`EACCES`，与 uid 无关）。
+- **rootless 运行时**：构建必须以容器 root 运行（容器 root 即发起构建的宿主用户）；传宿主 uid 会映射到从属 uid，导致输出
+  目录不可写。rootful 运行时仍使用专用构建用户。
+
+### Changed
+
+- 工作区版本 `1.5.0` → `1.6.0`。
+
 ## [1.5.0] - 2026-11-14
 
 ### Added

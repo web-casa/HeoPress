@@ -36,6 +36,12 @@ interface HealthResponse {
   };
   /** What is missing or degraded; only shown to trusted callers. */
   capabilities?: Pick<CapabilityReport, 'missing' | 'notices' | 'chineseSearch'>;
+  /**
+   * Whether a sandboxed Astro build can run here (HeoPress v1.5, spec rendering/astro-build-sandbox). Reported, not
+   * enforced: an installation that builds with a child process is not degraded by a missing container runtime, and one
+   * that requires the sandbox should see why a build fails before an operator enables third-party themes.
+   */
+  astroBuild?: { required: boolean; available: boolean; reason?: string };
 }
 
 /**
@@ -117,6 +123,29 @@ async function probeCache(runtime: RuntimeContext): Promise<CacheServiceStatus> 
   return 'healthy';
 }
 
+
+/**
+ * The build sandbox's availability, read from the same probe a build uses. A build that runs as a child process has
+ * nothing to check, so it reports `required: false` rather than inventing a status for a sandbox it never uses.
+ */
+export async function astroBuildHealth(
+  env: NodeJS.ProcessEnv = process.env,
+  probe?: () => { available: boolean; reason?: string },
+): Promise<{ required: boolean; available: boolean; reason?: string }> {
+  const required = env.HEOPRESS_ASTRO_BUILD_SANDBOX?.trim() === 'required';
+  if (!required) return { required: false, available: true };
+  try {
+    const result = probe
+      ? probe()
+      : await import('@heopress/site-astro').then(({ probeSandbox, sandboxConfigFromEnv }) =>
+          probeSandbox(sandboxConfigFromEnv(env)),
+        );
+    return { required: true, available: result.available, ...(result.reason ? { reason: result.reason } : {}) };
+  } catch {
+    return { required: true, available: false, reason: 'probe_failed' };
+  }
+}
+
 export async function collectHealth(c: Context<AppEnv>): Promise<HealthResponse> {
   const runtime = c.get('runtime');
 
@@ -183,6 +212,7 @@ export async function collectHealth(c: Context<AppEnv>): Promise<HealthResponse>
   const response: HealthResponse = {
     status: cacheBlocksReady || otherUnhealthy ? 'degraded' : 'healthy',
     services: results,
+    astroBuild: await astroBuildHealth(),
     ...(capabilities
       ? {
           capabilities: {

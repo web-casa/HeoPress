@@ -1,6 +1,7 @@
-import { rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import type { PageDataSnapshot } from '@heopress/contracts/page-data';
-import { runAstroBuild, type BuildLimits, type BuildResult } from './runner';
+import { runAstroBuild, templateDir, type BuildLimits, type BuildResult } from './runner';
 import { verifyBuild, type VerifyIssue } from './verify';
 import { buildDir } from './publish';
 import { checkAstroTheme, parseThemeRef, stageTheme, themeBuildSteps, type ThemeIssue } from './themes';
@@ -15,7 +16,8 @@ import { copyStaticMount } from './mount';
  * any step leaves the live version as it is.
  */
 
-export { runAstroBuild, buildEnv, templateDir, type BuildLimits, type BuildRequest, type BuildResult } from './runner';
+export { runAstroBuild, buildEnv, templateDir, sandboxConfigFromEnv, sandboxRequired, type BuildLimits, type BuildRequest, type BuildResult } from './runner';
+export { probeSandbox, type SandboxConfig, type SandboxProbe } from './sandbox';
 export { verifyBuild, checkSponsorSlots, pageFile, type VerifyIssue } from './verify';
 export { activate, buildDir, discard, liveGeneration, prune, siteDir, StaleGenerationError } from './publish';
 export { checkExtensionSources, stageExtensions, type ExtensionIssue } from './extensions';
@@ -59,6 +61,18 @@ export type SiteBuildOutcome =
       steps?: BuildStepResult[];
     };
 
+/**
+ * Write this build's page data snapshot where the sandboxed template reads it: inside the build's read-only input, one
+ * file per generation. Nothing is served over the network, so the sandbox can run with `--network none`.
+ */
+export async function writePageDataFile(template: string, snapshot: PageDataSnapshot, generation: number): Promise<string> {
+  const dir = join(template, '.page-data');
+  await mkdir(dir, { recursive: true, mode: 0o700 });
+  const file = join(dir, `${generation}.json`);
+  await writeFile(file, JSON.stringify(snapshot), { mode: 0o600 });
+  return file;
+}
+
 export async function buildSiteGeneration(opts: SiteBuildOptions): Promise<SiteBuildOutcome> {
   const outDir = buildDir(opts.root, opts.snapshot.siteId, opts.generation);
   let themeDir: string;
@@ -76,12 +90,20 @@ export async function buildSiteGeneration(opts: SiteBuildOptions): Promise<SiteB
   }
   const extensionsDir = await stageExtensions(opts.snapshot);
   await rm(outDir, { recursive: true, force: true });
-  const server = await opts.serve(opts.snapshot);
+  /**
+   * A sandboxed build has no network (spec rendering/astro-build-sandbox): the page data interface it would otherwise
+   * read over loopback cannot be reached, so the snapshot is written into the build's read-only input instead and the
+   * template reads it from there. One file per build, removed when the build ends.
+   */
+  const sandboxed = process.env.HEOPRESS_ASTRO_BUILD_SANDBOX?.trim() === 'required';
+  const pageDataFile = sandboxed ? await writePageDataFile(templateDir(), opts.snapshot, opts.generation) : null;
+  const server = sandboxed ? null : await opts.serve(opts.snapshot);
+  const pageData = pageDataFile ? { url: '', token: '', file: pageDataFile } : { url: server!.url, token: server!.token };
   let result: BuildResult;
   let steps: { ok: boolean; results: BuildStepResult[] } = { ok: true, results: [] };
   try {
     result = await runAstroBuild({
-      pageData: { url: server.url, token: server.token },
+      pageData,
       themeDir,
       extensionsDir,
       outDir,
@@ -94,12 +116,13 @@ export async function buildSiteGeneration(opts: SiteBuildOptions): Promise<SiteB
     const all = [...(await themeBuildSteps(themeDir, opts.theme)), ...(opts.pluginSteps ?? [])];
     if (result.ok && all.length) {
       steps = await runBuildSteps(
-        { outDir, pageData: { url: server.url, token: server.token }, registry: opts.registry, user: opts.user, cpuSeconds: opts.limits?.cpuSeconds, memoryMb: opts.limits?.memoryMb },
+        { outDir, pageData, registry: opts.registry, user: opts.user, cpuSeconds: opts.limits?.cpuSeconds, memoryMb: opts.limits?.memoryMb },
         all,
       );
     }
   } finally {
-    await server.close();
+    await server?.close();
+    if (pageDataFile) await rm(pageDataFile, { force: true });
   }
   if (!result.ok) {
     await rm(outDir, { recursive: true, force: true });

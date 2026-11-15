@@ -97,6 +97,20 @@ function readdirSafe(dir) {
   }
 }
 
+/**
+ * The page data snapshot: from a file when the build is sandboxed (HeoPress v1.5, spec rendering/astro-build-sandbox —
+ * a sandbox has no network, so the hosting side writes the snapshot into the build's read-only input), from the
+ * loopback interface otherwise. Both are validated by the same assertion, so a file cannot smuggle in a snapshot the
+ * interface would have refused.
+ */
+async function loadFromFile(file) {
+  const { readFile } = await import('node:fs/promises');
+  const raw = await readFile(file, 'utf8');
+  const snapshot = JSON.parse(raw);
+  assertPageDataSnapshot(snapshot);
+  return snapshot;
+}
+
 async function load(url, token) {
   if (!url || !token) throw new Error('HEOPRESS_PAGE_DATA_URL and HEOPRESS_PAGE_DATA_TOKEN are required');
   const u = new URL(url);
@@ -109,13 +123,13 @@ async function load(url, token) {
   return snapshot;
 }
 
-export function heopressPageData({ url, token }) {
+export function heopressPageData({ url, token, file }) {
   let snapshot = null;
   return {
     name: 'heopress:page-data',
     hooks: {
       'astro:config:setup': async ({ updateConfig }) => {
-        snapshot = await load(url, token);
+        snapshot = file ? await loadFromFile(file) : await load(url, token);
         const code = `export default ${JSON.stringify(snapshot)};`;
         updateConfig({
           site: snapshot.origin,

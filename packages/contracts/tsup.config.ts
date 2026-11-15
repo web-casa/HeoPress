@@ -11,6 +11,8 @@ export default defineConfig({
     version: 'src/version.ts',
     'utils/logger': 'src/utils/logger.ts',
     'theme/index': 'src/theme/index.ts',
+    // A deployment's template imports this from Node, which cannot load the TypeScript source the package exports.
+    'theme/page-data': 'src/theme/page-data.ts',
   },
   format: ['cjs', 'esm'],
   dts: true,

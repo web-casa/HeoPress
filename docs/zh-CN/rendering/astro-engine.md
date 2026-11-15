@@ -28,7 +28,69 @@ Astro 引擎为需要高度定制设计或希望托管到静态 CDN 的站点按
 - 资源上限：V8 堆（`HEOPRESS_ASTRO_BUILD_MEMORY_MB`）、CPU 秒（`HEOPRESS_ASTRO_BUILD_CPU_SECONDS`，系统有 `prlimit` 时生效）与墙钟时间（`HEOPRESS_ASTRO_BUILD_TIMEOUT_MS`，超时杀死整个进程组）；
   同时进行的构建数受 `HEOPRESS_ASTRO_CONCURRENCY`（默认 1）限制。
 - 只接受官方主题（`official:<name>`）与运营者自有主题（`operator:<name>`，来自 `HEOPRESS_ASTRO_OPERATOR_THEMES`）；主题声明的集成必须在 `HEOPRESS_ASTRO_INTEGRATIONS` 中。
-- 子进程不是安全沙箱：网络访问没有在操作系统层面限制，构建不执行依赖安装（依赖随模板预装）。开放第三方主题前必须先完成容器沙箱（`docs/backlog/astro-build-sandbox.md`）。
+- 子进程不是安全沙箱：网络访问没有在操作系统层面限制，构建不执行依赖安装（依赖随模板预装）。
+
+## 构建容器沙箱（v1.5）
+
+设 `HEOPRESS_ASTRO_BUILD_SANDBOX=required` 后，构建改在**一次性容器**里执行：只读根文件系统、只挂载构建输入与输出
+两个宿主目录、**构建期无网络**、丢弃全部能力、`no-new-privileges`、cgroup v2 限制 CPU/内存/pids，并受墙钟时间约束。
+不设该变量时行为与上一节完全一致（子进程），现有部署不需要改动。
+
+**前置条件**
+
+| 项 | 要求 |
+|---|---|
+| 容器运行时 | 宿主上的 **rootless Podman**（或 Docker），并把它的套接字挂进 CMS 容器；CMS 自身不需要额外能力，也不改 seccomp |
+| 构建镜像 | `docker/astro-build/` 构建出的 `heopress-astro-build:1`（Node 24，非 root 用户） |
+| 模板 | 用 `node scripts/prepare-astro-template.mjs --out <目录>` 产出的**自包含**模板；`HEOPRESS_ASTRO_TEMPLATE_DIR` 指向它 |
+| cgroup | cgroup v2 统一层级，含 `memory`、`pids`、`cpu` 控制器 |
+
+```bash
+# 1. 镜像
+docker build -t heopress-astro-build:1 docker/astro-build
+
+# 2. 模板（自包含：自带依赖存储、已编译的 contracts、本地 tsconfig、.astro 指向缓存 tmpfs）
+node scripts/prepare-astro-template.mjs --out /srv/heopress/astro-template
+
+# 3. rootless Podman 的套接字挂进 CMS 容器（compose）
+#    volumes: ["/run/user/1000/podman/podman.sock:/run/podman/podman.sock"]
+
+# 4. 环境变量
+HEOPRESS_ASTRO_BUILD_SANDBOX=required
+HEOPRESS_ASTRO_BUILD_CLI=podman
+HEOPRESS_ASTRO_BUILD_SOCKET=unix:///run/podman/podman.sock
+HEOPRESS_ASTRO_BUILD_IMAGE=heopress-astro-build:1
+HEOPRESS_ASTRO_TEMPLATE_DIR=/srv/heopress/astro-template
+```
+
+**配置**
+
+| 变量 | 说明 |
+|---|---|
+| `HEOPRESS_ASTRO_BUILD_SANDBOX` | 设为 `required` 启用容器沙箱；其他值（含未设置）沿用子进程 |
+| `HEOPRESS_ASTRO_BUILD_CLI` | 运行时命令，默认 `podman`（支持 `docker`，两者的 `--remote` / `-H` 方言自动区分） |
+| `HEOPRESS_ASTRO_BUILD_SOCKET` | 运行时套接字，例如 `unix:///run/podman/podman.sock` |
+| `HEOPRESS_ASTRO_BUILD_IMAGE` | 构建镜像，默认 `heopress-astro-build:1` |
+| `HEOPRESS_ASTRO_BUILD_CPUS` / `_MEMORY_MB` / `_PIDS` | 容器限额，默认 2 / 1024 / 512；只能收紧 |
+| `HEOPRESS_ASTRO_BUILD_RUNTIME` | 容器的 OCI 运行时，默认由运行时决定；设为 `runsc` 即启用 gVisor |
+
+**失败语义**
+
+运行时、套接字、镜像或 cgroup 不可用时，构建**失败并给出修复说明**（`SANDBOX_UNAVAILABLE`），**不会**回落到子进程——
+否则「沙箱已启用」会变成一句谎话。健康检查（`/health` 的 `astroBuild` 字段）同时报告
+`{ required, available, reason }`，运维在开放第三方主题前即可确认前置条件。
+
+**主题依赖必须预装**：容器没有网络，主题声明的集成与依赖必须出现在模板里；构建期尝试联网会失败，这是设计如此。
+
+**两条实机验证（AlmaLinux 10 + rootless Podman 5.8）**：
+
+- 宿主机启用 SELinux 时，挂载必须带 `:z`（计划已固定加上；无 SELinux 的主机会忽略它），否则写输出目录会被拒绝
+  （`EACCES`，即使 uid 正确）；
+- **rootless 运行时下构建以容器 root 运行**（`--user 0:0`）：容器 root 就是发起构建的宿主用户，写挂载的输出目录没有问题；
+  传宿主的 uid 会映射到从属 uid，输出目录反而不可写。rootful 运行时仍使用专用构建用户。
+
+**能力边界**：该沙箱挡的是构建期逃逸为宿主控制（读密钥、写宿主、外联、耗尽资源），不替代主题包本身的供应链措施
+（来源与签名、`--ignore-scripts`、产物 CSP）。选型与实测见 `docs/research/2026-11-14-astro-build-isolation.md`。
 
 ## 对账
 
