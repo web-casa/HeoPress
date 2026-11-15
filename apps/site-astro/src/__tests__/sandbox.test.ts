@@ -79,6 +79,18 @@ describe('sandbox plan', () => {
     expect(after(argv, '--pids-limit')).toBe('256');
   });
 
+  it('turns SELinux labels off for gVisor, which refuses them', () => {
+    const { argv } = sandboxPlan(config({ runtime: 'runsc' }), paths(), { containerName: 'heopress-astro-abc123' });
+    expect(argv.join(' ')).toContain('--security-opt label=disable');
+    // The hardening flag stays: labels off must not cost no-new-privileges.
+    expect(argv.join(' ')).toContain('--security-opt no-new-privileges');
+    // A relabel would be pointless once labels are off, and gVisor rejects the spec that carries one.
+    expect(argv.filter((_, i) => argv[i - 1] === '-v')).toEqual([
+      `${join(root, 'sites', 'a', 'in')}:/in:ro`,
+      `${join(root, 'sites', 'a', 'out')}:/out:rw`,
+    ]);
+  });
+
   it('passes the user namespace the runtime needs', () => {
     const { argv } = sandboxPlan(config(), paths(), { containerName: 'heopress-astro-abc123' }, { userns: 'keep-id' });
     expect(after(argv, '--userns')).toBe('keep-id');

@@ -240,6 +240,10 @@ export function sandboxPlan(
   }
 
   const tmpfsMb = Math.max(64, paths.tmpfsMb ?? Math.min(512, Math.round(config.limits.memoryMb / 4)));
+  // gVisor refuses a security context that carries a SELinux label ("SELinux is not supported"), and a relabel is
+  // pointless once labels are off, so both follow the runtime.
+  const gvisor = /^runsc/.test(config.runtime ?? '');
+  const labelSuffix = gvisor ? '' : ',z';
   const argv = [
     config.cli,
     ...socketArgs(config),
@@ -257,11 +261,12 @@ export function sandboxPlan(
     'none',
     // The only two host paths the build can see, plus a tmpfs it may write.
     // `:z` relabels the mounts for SELinux: an enforcing host (AlmaLinux/Rocky/RHEL) otherwise refuses the write with
-    // EACCES even though the uid matches. It is a no-op on hosts without SELinux.
+    // EACCES even though the uid matches. It is a no-op on hosts without SELinux, and it is omitted when the runtime
+    // cannot carry a SELinux label at all (gVisor).
     '-v',
-    `${input}:/in:ro,z`,
+    `${input}:/in:ro${labelSuffix}`,
     '-v',
-    `${output}:/out:rw,z`,
+    `${output}:/out:rw${labelSuffix}`,
     '--tmpfs',
     `/tmp:rw,size=${tmpfsMb}m,mode=1777`,
     // Astro writes its content-layer cache to `<root>/.astro`. The prepared template points that at this directory (a
@@ -288,6 +293,9 @@ export function sandboxPlan(
     identity.workdir ?? options.workdir ?? '/in',
     ...(identity.uid !== undefined && identity.gid !== undefined ? ['--user', `${identity.uid}:${identity.gid}`] : []),
     ...(options.userns ? ['--userns', options.userns] : []),
+    // gVisor refuses a security context carrying a SELinux label ("SELinux is not supported"), so a build on it runs with
+    // labels off; every other runtime keeps the label and the relabel above.
+    ...(gvisor ? ['--security-opt', 'label=disable'] : []),
     ...(config.runtime ? ['--runtime', config.runtime] : []),
     config.image,
     ...(options.command ?? ['node', '/in/node_modules/astro/bin/astro.mjs', 'build', '--silent']),

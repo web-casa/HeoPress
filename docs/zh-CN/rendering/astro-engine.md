@@ -89,6 +89,18 @@ HEOPRESS_ASTRO_TEMPLATE_DIR=/srv/heopress/astro-template
 - **rootless 运行时下构建以容器 root 运行**（`--user 0:0`）：容器 root 就是发起构建的宿主用户，写挂载的输出目录没有问题；
   传宿主的 uid 会映射到从属 uid，输出目录反而不可写。rootful 运行时仍使用专用构建用户。
 
+**gVisor（B 档，实测 2026-11-15）**：`HEOPRESS_ASTRO_BUILD_RUNTIME=runsc`。同一台 AlmaLinux 10 + Podman 5.8 上实测，
+用同一套参数，结果与默认运行时（crun）一致：只读输入拒绝写入、`fetch()` 退出 9、缓存 tmpfs 可写、输出归属正确，单条
+命令耗时 225 ms 对 195 ms（+15%）。三点需要注意：
+
+1. **gVisor 不接受 SELinux 标签**（`SELinux is not supported`）——启用 `runsc` 时计划自动改为
+   `--security-opt label=disable` 并去掉挂载上的 `:z`；`no-new-privileges` 仍然保留；
+2. **rootless 下跑不起来**（实测 `systemd error: Interactive authentication required`；改用 `cgroupfs` 则
+   `open /sys/fs/cgroup/cgroup.subtree_control: permission denied`）——要么用 rootful 运行时，要么给用户 slice 做
+   cgroup 委派（本 VM 上 `user@.service` 的 `Delegate=yes` 未生效）；
+3. `runsc` 需要与它同目录的 `gvisor-bin/` 边车（`gvisor_sentry` 等），只拷一个二进制会报
+   `sidecar "gvisor_sentry" not usable`。
+
 **能力边界**：该沙箱挡的是构建期逃逸为宿主控制（读密钥、写宿主、外联、耗尽资源），不替代主题包本身的供应链措施
 （来源与签名、`--ignore-scripts`、产物 CSP）。选型与实测见 `docs/research/2026-11-14-astro-build-isolation.md`。
 

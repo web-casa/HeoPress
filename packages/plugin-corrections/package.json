@@ -1,6 +1,6 @@
 {
   "name": "@heopress/plugin-corrections",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "private": true,
   "description": "The official HeoPress corrections plugin (heopress-corrections): a public correction form, a moderation queue, public correction records with structured data, and a correction block written into the corrected article. Built only on @heopress/extension-sdk.",
   "license": "Apache-2.0",

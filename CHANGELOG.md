@@ -2,6 +2,19 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.6.1] - 2026-11-15
+
+### Fixed
+
+- **构建沙箱在 gVisor 下的启动失败**：gVisor 拒绝携带 SELinux 标签的安全上下文（`SELinux is not supported`）。
+  选择 `HEOPRESS_ASTRO_BUILD_RUNTIME=runsc` 时，计划现在自动使用 `--security-opt label=disable` 并去掉挂载上的 `:z`，
+  同时**保留** `no-new-privileges`。不选 gVisor 时行为不变。
+
+### Added
+
+- 运维文档与研究报告补充 gVisor 实测结论：与默认运行时行为一致、单条命令耗时 225 ms 对 195 ms（+15%），以及三条前提
+  ——不接受 SELinux 标签、**rootless 下无法启动**（需 rootful 或真正的 cgroup 委派）、必须连同 `gvisor-bin/` 边车安装。
+
 ## [1.6.0] - 2026-11-15
 
 ### Added
