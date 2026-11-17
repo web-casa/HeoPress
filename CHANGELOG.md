@@ -2,6 +2,29 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.6.2] - 2026-11-17
+
+### Fixed
+
+- **干净安装卡在拉取镜像**：安装脚本默认从 `ghcr.io/web-casa` 拉应用镜像，但那里**没有发布任何镜像**，于是任何人的安装都会在
+  `docker pull` 处失败。现在拉取失败即改为从同一份源码构建，并在日志中说明；`--build` 语义不变（只构建、不尝试拉取）。
+- **数据库镜像无法在 github.com 不可达时构建**：`docker/postgres/Dockerfile` 原本直接从 GitHub 取 SCWS 与 zhparser。
+  现在两者都可覆盖：`--build-arg SCWS_URL=… ZHPARSER_URL=…` 指向镜像站，或把 tarball 按 SHA-256 命名放进
+  `docker/postgres/vendor/`（零外网）。两种方式都在解包前校验 SHA-256。`docker/install.sh` 新增 `--db-build-arg`。
+- **只在 UTC 午夜后一小时失败的测试**：站点简报的「今天发布」夹具用 `now - 1h`，在 00:00–01:00 UTC 落到前一天，
+  断言因此失败。夹具现在夹在当天的 UTC 区间内。
+
+### Changed
+
+- 依赖更新：`i18next` 27、`react-i18next` 18、`jsdom` 31，以及 36 项 minor/patch（`hono` 4.13.18、`astro` 7.4.11、
+  `graphql-yoga` 6.1.0 等）。`@playwright/test` **保持 1.63.0**：视觉回归作业运行在固定镜像
+  `mcr.microsoft.com/playwright:v1.63.0-noble` 中，单独升版本会导致浏览器二进制缺失。
+
+### Documented
+
+- 安装页补充受限网络下的脚本获取方式（`raw.githubusercontent.com` 不可达时用发布页源码包 + `--source`），
+  以及数据库镜像的镜像站 / vendor / 降级（`--db-image postgres:18`）三条路。
+
 ## [1.6.1] - 2026-11-15
 
 ### Fixed

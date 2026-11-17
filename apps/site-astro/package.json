@@ -17,8 +17,8 @@
   "dependencies": {
     "@heopress/astro-kit": "workspace:*",
     "@heopress/contracts": "workspace:*",
-    "astro": "7.4.7",
-    "parse5": "8.1.0"
+    "astro": "7.4.11",
+    "parse5": "8.1.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

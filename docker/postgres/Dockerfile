@@ -18,6 +18,16 @@ ARG SCWS_COMMIT=a04ef5e655213eb6b07fb57761d0eac72c281ad4
 ARG SCWS_SHA256=c4f83883bf453aa9829a36abea76a11d546016fe639838b72b66bfca9f7f4d0d
 ARG ZHPARSER_COMMIT=2e995c4df672563992b4d7a147b8fa2d0d4cda6c
 ARG ZHPARSER_SHA256=ce5d5e21a1c1f8b3f466998fba0efe51928aad6e12026b5e30ecd2afbfa3285e
+# Where the pinned tarballs come from. Empty means github.com; a mirror or an internal artifact server goes here when
+# the build host cannot reach GitHub (docs/en/deployment/database-image.md, "Restricted networks"). A tarball placed in
+# docker/postgres/vendor/ wins over any download, so the build can run with no outbound access at all. Either way the
+# SHA-256 check below is what decides: an unverified tarball never reaches the image.
+ARG SCWS_URL=
+ARG ZHPARSER_URL=
+
+# The vendored tarballs, if the caller put any there. The directory always exists in the context (it carries a README
+# and a .gitkeep), so this COPY works for a build with no vendor files as well.
+COPY vendor/ /vendor/
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
@@ -26,14 +36,18 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-RUN curl -fsSL -o scws.tar.gz "https://github.com/hightman/scws/archive/${SCWS_COMMIT}.tar.gz" \
- && echo "${SCWS_SHA256}  scws.tar.gz" | sha256sum -c - \
- && tar xzf scws.tar.gz && cd "scws-${SCWS_COMMIT}" \
+RUN tarball=scws.tar.gz \
+ && if [ -s "/vendor/${SCWS_SHA256}.tar.gz" ]; then cp "/vendor/${SCWS_SHA256}.tar.gz" "$tarball"; \
+    else curl -fsSL -o "$tarball" "${SCWS_URL:-https://github.com/hightman/scws/archive/${SCWS_COMMIT}.tar.gz}"; fi \
+ && echo "${SCWS_SHA256}  ${tarball}" | sha256sum -c - \
+ && tar xzf "$tarball" && cd "scws-${SCWS_COMMIT}" \
  && autoreconf -fi && ./configure --prefix=/usr/local && make -j"$(nproc)" && make install
 
-RUN curl -fsSL -o zhparser.tar.gz "https://github.com/amutu/zhparser/archive/${ZHPARSER_COMMIT}.tar.gz" \
- && echo "${ZHPARSER_SHA256}  zhparser.tar.gz" | sha256sum -c - \
- && tar xzf zhparser.tar.gz && cd "zhparser-${ZHPARSER_COMMIT}" \
+RUN tarball=zhparser.tar.gz \
+ && if [ -s "/vendor/${ZHPARSER_SHA256}.tar.gz" ]; then cp "/vendor/${ZHPARSER_SHA256}.tar.gz" "$tarball"; \
+    else curl -fsSL -o "$tarball" "${ZHPARSER_URL:-https://github.com/amutu/zhparser/archive/${ZHPARSER_COMMIT}.tar.gz}"; fi \
+ && echo "${ZHPARSER_SHA256}  ${tarball}" | sha256sum -c - \
+ && tar xzf "$tarball" && cd "zhparser-${ZHPARSER_COMMIT}" \
  && SCWS_HOME=/usr/local make -j"$(nproc)" \
  && SCWS_HOME=/usr/local make install DESTDIR=/out \
  && mkdir -p /out/usr/local/lib /out/licenses \

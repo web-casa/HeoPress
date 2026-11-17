@@ -16,6 +16,18 @@ curl -fsSL https://raw.githubusercontent.com/web-casa/HeoPress/main/docker/insta
 sudo bash install.sh --admin-domain admin.example.com --acme-email ops@example.com
 ```
 
+`raw.githubusercontent.com` 在某些网络里不可达（实测 `000`）。取不到脚本时，用发布页的源码包，脚本就在里面：
+
+```bash
+# 从 github.com/web-casa/HeoPress/releases 下载 v<版本> 的源码包并解压，然后
+sudo bash HeoPress-<版本>/docker/install.sh --source HeoPress-<版本> \
+  --admin-domain admin.example.com --acme-email ops@example.com
+```
+
+`--source` 让脚本使用这份本地源码树（下载源码包的步骤随之跳过）。数据库镜像需要从 github.com 取 SCWS 与 zhparser：
+网络受限时按 `docs/en/deployment/database-image.md` 的 "Restricted networks" 用 `--db-build-arg SCWS_URL=…` 指向镜像站，
+或把两个 tarball 放进 `docker/postgres/vendor/`，也可以用 `--db-image postgres:18` 降级安装（无 vector 与 zhparser）。
+
 脚本依次：
 
 1. **检查已有安装**：安装目录（默认 `/opt/heopress`）下有 `heopress.conf` 或 `.env`，或者 Compose 项目（默认 `heopress`）
@@ -25,7 +37,8 @@ sudo bash install.sh --admin-domain admin.example.com --acme-email ops@example.c
    已有 Docker 时直接使用（Compose 需 2.24.4 或更高）；
 4. **获取版本**：下载 `v<版本>` 的源码包到 `/opt/heopress/releases/`；`--source <目录>` 改用本地源码树；
 5. **镜像**：从源码构建数据库镜像（PostgreSQL 18 + pgvector + zhparser，见 `docker/postgres/Dockerfile`），
-   拉取应用与渲染服务镜像（`--build` 改为从源码构建；`--image-archive` 从 `docker save` 归档离线导入）；
+   拉取应用与渲染服务镜像——**拉不到就从同一份源码构建**（目前没有发布到镜像仓库的构建产物，所以干净安装走的就是
+   这条路；`--build` 直接构建、不再尝试拉取；`--image-archive` 从 `docker save` 归档离线导入）；
 6. **配置与秘密**：生成数据库所有者密码、应用角色密码、`JWT_SECRET`、`ENCRYPTION_KEY`、渲染角色密码与内部共享密钥，写入
    `/opt/heopress/.env`（权限 600）；服务以应用角色连接数据库（见第 3 节"数据库角色"）；
 7. **启动**：先启动 PostgreSQL、API、worker 与渲染服务（此时没有任何公网入口），等待就绪；

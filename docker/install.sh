@@ -20,7 +20,7 @@
 set -Eeuo pipefail
 umask 077
 
-DEFAULT_VERSION='1.6.1'
+DEFAULT_VERSION='1.6.2'
 DEFAULT_REPOSITORY='web-casa/HeoPress'
 DEFAULT_REGISTRY='ghcr.io/web-casa'
 MIN_COMPOSE='2.24.4'
@@ -39,10 +39,12 @@ Options:
   --project NAME          Docker Compose project name (default heopress)
   --version VERSION       release to install (default: this script's release)
   --source DIR            use this source tree (a release or a checkout) instead of downloading the release
-  --build                 build the CMS and rendering images from the source instead of pulling them
+  --build                 build the CMS and rendering images from the source instead of pulling them (a pull
+                          that fails on its own falls back to building anyway)
   --cms-image REF         CMS image (default <registry>/heopress-cms:<version>; used as is when present locally)
   --site-image REF        rendering service image (default <registry>/heopress-site-classic:<version>)
   --db-image REF          database image (default: built from the source's docker/postgres as heopress-postgres:<version>)
+  --db-build-arg VALUE    extra --build-arg for that database build, e.g. SCWS_URL=https://mirror/... (repeatable)
   --image-archive FILE    load images from a `docker save` archive first (offline installs; then name them above)
   --tls acme|internal     certificates from ACME (default) or Caddy's local CA (tests and private networks)
   --http-port PORT        host port for HTTP (default 80)
@@ -88,6 +90,7 @@ http_port=80
 https_port=443
 skip_os_check=false
 extra_compose=()
+db_build_args=()
 
 need_value() { [ "$#" -ge 2 ] && [ -n "$2" ] || { printf 'install.sh: %s needs a value\n' "$1" >&2; exit 2; }; }
 while [ "$#" -gt 0 ]; do
@@ -103,6 +106,7 @@ while [ "$#" -gt 0 ]; do
     --cms-image) need_value "$@"; cms_image="$2"; shift 2 ;;
     --site-image) need_value "$@"; site_image="$2"; shift 2 ;;
     --db-image) need_value "$@"; db_image="$2"; shift 2 ;;
+    --db-build-arg) need_value "$@"; db_build_args+=(--build-arg "$2"); shift 2 ;;
     --image-archive) need_value "$@"; image_archive="$2"; shift 2 ;;
     --tls) need_value "$@"; tls_mode="$2"; shift 2 ;;
     --http-port) need_value "$@"; http_port="$2"; shift 2 ;;
@@ -301,12 +305,23 @@ if [ "$build_images" = true ]; then
     docker build -q "${build_meta[@]}" -f "$src/docker/Dockerfile" --target site-classic -t "$site_image" "$src" >/dev/null
   fi
 else
+  # Pull when the image exists, build it when it does not. Publishing images is a separate step from releasing the
+  # source (and no images are published yet), so a clean install must not stop here: the source tree is already on
+  # disk, which is everything the build needs.
   for image in "$cms_image" "$site_image"; do
     if image_present "$image"; then
       say "using the local image $image"
+      continue
+    fi
+    say "pulling $image"
+    if docker pull -q "$image" >/dev/null 2>&1; then
+      continue
+    fi
+    say "$image is not available from the registry; building it from $src instead"
+    if [ "$image" = "$site_image" ]; then
+      docker build -q "${build_meta[@]}" -f "$src/docker/Dockerfile" --target site-classic -t "$image" "$src" >/dev/null
     else
-      say "pulling $image"
-      docker pull -q "$image" >/dev/null || die "could not pull $image (--build builds it from the source)"
+      docker build -q "${build_meta[@]}" -f "$src/docker/Dockerfile" -t "$image" "$src" >/dev/null
     fi
   done
 fi
@@ -314,7 +329,7 @@ if [ -z "$db_image" ]; then
   db_image="heopress-postgres:$version"
   if ! image_present "$db_image"; then
     say "building the database image $db_image (PostgreSQL 18 with pgvector and zhparser; several minutes)"
-    docker build -q -f "$src/docker/postgres/Dockerfile" -t "$db_image" "$src/docker/postgres" >/dev/null
+    docker build -q "${db_build_args[@]}" -f "$src/docker/postgres/Dockerfile" -t "$db_image" "$src/docker/postgres" >/dev/null
   fi
 elif ! image_present "$db_image"; then
   say "pulling $db_image"

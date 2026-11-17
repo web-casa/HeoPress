@@ -17,6 +17,37 @@ docker/postgres/verify-extensions.sh heopress-postgres:18
 
 The Dockerfile pins zhparser and SCWS to commits and checks their SHA-256 before building. CI builds and verifies the image for `linux/amd64` and `linux/arm64` (job `db-image`). The license texts of zhparser and SCWS are copied to `/usr/share/doc/heopress-postgres/` in the image.
 
+### Restricted networks
+
+The build fetches the SCWS and zhparser tarballs from github.com by default. When the build host cannot reach it,
+either point the two build arguments at a mirror:
+
+```bash
+docker build -f docker/postgres/Dockerfile -t heopress-postgres:18 \
+  --build-arg SCWS_URL=https://mirror.example/scws.tar.gz \
+  --build-arg ZHPARSER_URL=https://mirror.example/zhparser.tar.gz \
+  docker/postgres
+```
+
+or vendor the tarballs, which needs no outbound access at all:
+
+```bash
+# name each file after the SHA-256 the Dockerfile pins, then build normally
+curl -fsSL -o docker/postgres/vendor/c4f83883bf453aa9829a36abea76a11d546016fe639838b72b66bfca9f7f4d0d.tar.gz \
+  https://github.com/hightman/scws/archive/a04ef5e655213eb6b07fb57761d0eac72c281ad4.tar.gz
+```
+
+`docker/postgres/vendor/README.md` lists both names. `*.tar.gz` there is ignored by Git. Either way the SHA-256 check
+runs before anything is unpacked: a mirror that serves different bytes fails the build rather than reaching the image.
+With `docker/install.sh`, pass the same value through `--db-build-arg SCWS_URL=…`, or skip the image entirely with
+`--db-image postgres:18` (see below).
+
+### Installing without the extensions
+
+`--db-image postgres:18` runs HeoPress on the stock image: no `vector` and no `zhparser`. `pg_trgm` still ships with
+PostgreSQL, so Chinese search falls back to trigram matching (readiness reports a notice) and vector search must stay
+off. This is a deliberate degradation for hosts that cannot build the image — not the recommended deployment.
+
 The image replaces the upstream `gosu` binary (Go, used by the official entrypoint to drop from root to the `postgres` user) with a small shell script that does the same through `setpriv` from util-linux. `gosu user[:group] command…` keeps working, including in your own init scripts; the server still runs as `postgres`, never as root, and `verify-extensions.sh` checks that.
 
 ## Who creates the extensions

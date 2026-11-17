@@ -44,6 +44,19 @@ describe.skipIf(!hasDbIntegrationUrl)('briefing draft', () => {
   const site = () => fx.sites.a;
   const today = () => new Date().toISOString().slice(0, 10);
 
+  /**
+   * A moment `ms` ago clamped into the current UTC day. `now - ms` alone lands on the previous day when the suite runs
+   * just after midnight UTC: the "published today" fixtures then stop being today, the briefing counts 0 and the test
+   * fails on the clock rather than on the code.
+   */
+  const todayAgo = (ms: number): Date => {
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const earliest = startOfDay.getTime() + 1_000;
+    const latest = Math.max(Date.now() - 1_000, earliest);
+    return new Date(Math.min(Math.max(Date.now() - ms, earliest), latest));
+  };
+
   async function collection(name: string, siteId = site()) {
     const [row] = await fixtures.insert(collections).values({ siteId, name, label: name }).returning({ id: collections.id });
     return row!.id;
@@ -83,14 +96,14 @@ describe.skipIf(!hasDbIntegrationUrl)('briefing draft', () => {
   it('creates one draft whose body summarises the briefing of the day', async () => {
     const articlesId = await articles();
     const now = Date.now();
-    await item(articlesId, 'Published today A', { status: 'published', publishedAt: new Date(now - 3_600_000), updatedAt: new Date(now - 3_600_000) });
-    await item(articlesId, 'Published today B', { status: 'published', publishedAt: new Date(now - 7_200_000), updatedAt: new Date(now - 7_200_000) });
-    await item(articlesId, 'Hostile <script>alert(1)</script>', { status: 'published', publishedAt: new Date(now - 5_400_000), updatedAt: new Date(now - 5_400_000) });
+    await item(articlesId, 'Published today A', { status: 'published', publishedAt: todayAgo(3_600_000), updatedAt: todayAgo(3_600_000) });
+    await item(articlesId, 'Published today B', { status: 'published', publishedAt: todayAgo(7_200_000), updatedAt: todayAgo(7_200_000) });
+    await item(articlesId, 'Hostile <script>alert(1)</script>', { status: 'published', publishedAt: todayAgo(5_400_000), updatedAt: todayAgo(5_400_000) });
     await item(articlesId, 'Published yesterday', { status: 'published', publishedAt: new Date(now - 2 * 86_400_000), updatedAt: new Date(now - 2 * 86_400_000) });
     await item(articlesId, 'An untouched draft', { updatedAt: new Date(now - 5 * 86_400_000) });
     // A collection the editor cannot read: neither its title nor its number may reach the summary.
     const secret = await collection('secret');
-    await item(secret, 'Secret published today', { status: 'published', publishedAt: new Date(now - 1_800_000), updatedAt: new Date(now - 1_800_000) });
+    await item(secret, 'Secret published today', { status: 'published', publishedAt: todayAgo(1_800_000), updatedAt: todayAgo(1_800_000) });
 
     const res = await draft('onlyA', 'a', {});
     expect(res.status, await res.clone().text()).toBe(201);

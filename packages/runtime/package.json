@@ -1,6 +1,6 @@
 {
   "name": "@heopress/runtime",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "private": true,
   "description": "HeoPress runtime abstraction layer — adapters for Cloudflare Workers and Docker/Node.js environments.",
   "type": "module",
@@ -17,10 +17,10 @@
     "clean": "rm -rf .turbo dist"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1163.0",
+    "@aws-sdk/client-s3": "^3.1168.0",
     "@smithy/node-http-handler": "4.14.2",
-    "meilisearch": "^0.62.0",
-    "pg-boss": "12.38.1",
+    "meilisearch": "^0.63.0",
+    "pg-boss": "12.38.2",
     "postgres": "^3.4.5",
     "sharp": "0.35.5",
     "undici": "7.30.1"
