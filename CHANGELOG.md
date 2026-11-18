@@ -2,6 +2,15 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.6.4] - 2026-11-18
+
+### Fixed
+
+- **卡住的镜像拉取不再让安装无限等待**：`docker pull` 自己没有超时，v1.6.3 之后安装默认走拉取，实测在一次真实安装里
+  `ghcr.io` 的拉取挂住 15 分钟（注册表本身 1.2 秒内可达）。现在每个决定「拉还是建」的拉取都在 `timeout` 下运行，
+  默认 300 秒，`HEOPRESS_PULL_TIMEOUT` 可覆盖；超时视为不可用，走已有的源码构建回退。
+  正常网络下行为不变——同一次验证中真实拉取三个镜像、**0 次构建**、五个服务全部 healthy。
+
 ## [1.6.3] - 2026-11-18
 
 ### Added

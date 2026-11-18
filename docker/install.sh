@@ -20,7 +20,7 @@
 set -Eeuo pipefail
 umask 077
 
-DEFAULT_VERSION='1.6.3'
+DEFAULT_VERSION='1.6.4'
 DEFAULT_REPOSITORY='web-casa/HeoPress'
 DEFAULT_REGISTRY='ghcr.io/web-casa'
 MIN_COMPOSE='2.24.4'
@@ -46,6 +46,9 @@ Options:
   --db-image REF          database image (default: <registry>/heopress-postgres:<version>, else built from the
                           source's docker/postgres as heopress-postgres:<version>)
   --db-build-arg VALUE    extra --build-arg for that database build, e.g. SCWS_URL=https://mirror/... (repeatable)
+
+Environment: HEOPRESS_PULL_TIMEOUT (default 300) bounds each image pull in seconds; a pull that runs out of
+time counts as unavailable and the image is built from the source tree instead.
   --image-archive FILE    load images from a `docker save` archive first (offline installs; then name them above)
   --tls acme|internal     certificates from ACME (default) or Caddy's local CA (tests and private networks)
   --http-port PORT        host port for HTTP (default 80)
@@ -92,6 +95,18 @@ https_port=443
 skip_os_check=false
 extra_compose=()
 db_build_args=()
+
+# A pull that hangs is a failed pull: docker has no timeout of its own, and an unreachable registry can leave it
+# connected and silent for hours, which stops the install instead of falling back to the build. `timeout` (util-linux)
+# is the bound when present; without it the pull runs as before rather than refusing to install.
+PULL_TIMEOUT="${HEOPRESS_PULL_TIMEOUT:-300}"
+pull_quiet() {
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$PULL_TIMEOUT" docker pull -q "$1" >/dev/null 2>&1
+  else
+    docker pull -q "$1" >/dev/null 2>&1
+  fi
+}
 
 need_value() { [ "$#" -ge 2 ] && [ -n "$2" ] || { printf 'install.sh: %s needs a value\n' "$1" >&2; exit 2; }; }
 while [ "$#" -gt 0 ]; do
@@ -314,8 +329,8 @@ else
       say "using the local image $image"
       continue
     fi
-    say "pulling $image"
-    if docker pull -q "$image" >/dev/null 2>&1; then
+    say "pulling $image (up to ${PULL_TIMEOUT}s)"
+    if pull_quiet "$image"; then
       continue
     fi
     say "$image is not available from the registry; building it from $src instead"
@@ -335,8 +350,8 @@ if [ -z "$db_image" ]; then
   elif [ "$build_images" = true ]; then
     db_image="heopress-postgres:$version"
   else
-    say "pulling $published_db"
-    if docker pull -q "$published_db" >/dev/null 2>&1; then
+    say "pulling $published_db (up to ${PULL_TIMEOUT}s)"
+    if pull_quiet "$published_db"; then
       db_image="$published_db"
     else
       say "$published_db is not available from the registry; building heopress-postgres:$version instead (PostgreSQL 18 with pgvector and zhparser; several minutes)"
@@ -348,11 +363,11 @@ if [ -z "$db_image" ]; then
     docker build -q "${db_build_args[@]}" -f "$src/docker/postgres/Dockerfile" -t "$db_image" "$src/docker/postgres" >/dev/null
   fi
 elif ! image_present "$db_image"; then
-  say "pulling $db_image"
-  docker pull -q "$db_image" >/dev/null || die "could not pull $db_image"
+  say "pulling $db_image (up to ${PULL_TIMEOUT}s)"
+  pull_quiet "$db_image" || die "could not pull $db_image"
 fi
 caddy_image='caddy:2-alpine'
-image_present "$caddy_image" || { say "pulling $caddy_image"; docker pull -q "$caddy_image" >/dev/null; }
+image_present "$caddy_image" || { say "pulling $caddy_image (up to ${PULL_TIMEOUT}s)"; pull_quiet "$caddy_image" || die "could not pull $caddy_image"; }
 
 # ── 6. Configuration and secrets (root only, never printed) ─────────────────────────────────────────────────────────
 say "writing the configuration to $install_dir (secrets readable by root only)"

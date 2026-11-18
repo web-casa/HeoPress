@@ -1,6 +1,6 @@
 {
   "name": "@heopress/cms",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "private": true,
   "description": "HeoPress CMS API — Hono.js on Cloudflare Workers.",
   "type": "module",

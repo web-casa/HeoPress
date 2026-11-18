@@ -24,7 +24,8 @@ sudo bash HeoPress-<版本>/docker/install.sh --source HeoPress-<版本> \
   --admin-domain admin.example.com --acme-email ops@example.com
 ```
 
-`--source` 让脚本使用这份本地源码树（下载源码包的步骤随之跳过）。数据库镜像需要从 github.com 取 SCWS 与 zhparser：
+`--source` 让脚本使用这份本地源码树（下载源码包的步骤随之跳过）。镜像拉取默认最多等 300 秒
+（`HEOPRESS_PULL_TIMEOUT` 可改），超时即视为不可用并改为从源码构建——注册表挂住不会让安装无限停在那里。数据库镜像需要从 github.com 取 SCWS 与 zhparser：
 网络受限时按 `docs/en/deployment/database-image.md` 的 "Restricted networks" 用 `--db-build-arg SCWS_URL=…` 指向镜像站，
 或把两个 tarball 放进 `docker/postgres/vendor/`，也可以用 `--db-image postgres:18` 降级安装（无 vector 与 zhparser）。
 
