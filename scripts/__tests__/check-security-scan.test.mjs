@@ -170,13 +170,26 @@ test('pnpm audit: an advisory pnpm ignores leaves the counts high; with a valid 
   assert.equal(checkPnpmAudit(listed, [], { ignored: ['GHSA-zzzz'] }).status, 'failed');
 });
 
+test('pnpm audit: one advisory covering two installed versions counts twice and still completes', () => {
+  // pnpm counts findings (one per installed version), the report lists the advisory once: the counts agreeing with
+  // the findings is what makes the report complete, and both versions need their own coverage.
+  const two = advisory({ findings: [{ version: '2.3.2', paths: [] }, { version: '4.0.7', paths: [] }] });
+  const report = auditReport([two], { info: 0, low: 0, moderate: 0, high: 2, critical: 0 });
+  const partial = checkPnpmAudit(report, [audit({ versions: ['4.0.7'] })]);
+  assert.equal(partial.status, 'failed');
+  assert.match(partial.problems[0], /picomatch|left-pad@2\.3\.2/);
+  const covered = checkPnpmAudit(report, [audit({ versions: ['2.3.2', '4.0.7'] })]);
+  assert.equal(covered.status, 'passed');
+  assert.equal(covered.excepted.length, 2);
+});
+
 test('pnpm audit: an ignore does not switch the count check off — a truncated report is still not completed', () => {
   // One advisory is legitimately ignored (and excepted); the report lost the list but counts two high advisories:
   // the second is unrelated and unexcepted, so the report cannot pass.
   const truncated = auditReport([], { info: 0, low: 0, moderate: 0, high: 2, critical: 0 });
   const result = checkPnpmAudit(truncated, [], { ignored: ['GHSA-zzzz'] });
   assert.equal(result.status, 'not-completed');
-  assert.match(result.problems[0], /the counts name 2 high or critical advisories; the report lists 0 and 1 are ignored by configuration/);
+  assert.match(result.problems[0], /the counts name 2 high or critical findings; the report lists 0 and 1 are ignored by configuration/);
   // Critical counts too; a report from the scans (ignores dropped) is checked strictly.
   assert.equal(checkPnpmAudit(auditReport([advisory()], { high: 1, critical: 1 }), [], { ignored: ['GHSA-zzzz'] }).status, 'failed');
   assert.equal(checkPnpmAudit(auditReport([advisory()], { high: 1, critical: 1 }), []).status, 'not-completed');

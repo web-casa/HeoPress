@@ -2,6 +2,19 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.6.3] - 2026-11-18
+
+### Added
+
+- **发布容器镜像**：打发布标签时由 `.github/workflows/images.yml` 构建并推送 `heopress-cms`、`heopress-site-classic` 与
+  `heopress-postgres` 到 GHCR，覆盖 amd64 与 arm64，标签为不带 `v` 的版本号；`latest` 只在正式发布标签时移动。
+  工作流最后一步**匿名拉取**每个标签，拉不到即失败——发布不能声称提供了安装方取不到的镜像。
+
+### Changed
+
+- `docker/install.sh` 现在**优先拉取**发布在 GHCR 的数据库镜像（PostgreSQL 18 + pgvector + zhparser），拉取失败才从源码
+  构建；应用镜像的回退逻辑（v1.6.2）不变。受限网络下的安装行为与 v1.6.2 一致，只是多了一条更快、无需编译的路径。
+
 ## [1.6.2] - 2026-11-17
 
 ### Fixed

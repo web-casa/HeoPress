@@ -20,7 +20,7 @@
 set -Eeuo pipefail
 umask 077
 
-DEFAULT_VERSION='1.6.2'
+DEFAULT_VERSION='1.6.3'
 DEFAULT_REPOSITORY='web-casa/HeoPress'
 DEFAULT_REGISTRY='ghcr.io/web-casa'
 MIN_COMPOSE='2.24.4'
@@ -43,7 +43,8 @@ Options:
                           that fails on its own falls back to building anyway)
   --cms-image REF         CMS image (default <registry>/heopress-cms:<version>; used as is when present locally)
   --site-image REF        rendering service image (default <registry>/heopress-site-classic:<version>)
-  --db-image REF          database image (default: built from the source's docker/postgres as heopress-postgres:<version>)
+  --db-image REF          database image (default: <registry>/heopress-postgres:<version>, else built from the
+                          source's docker/postgres as heopress-postgres:<version>)
   --db-build-arg VALUE    extra --build-arg for that database build, e.g. SCWS_URL=https://mirror/... (repeatable)
   --image-archive FILE    load images from a `docker save` archive first (offline installs; then name them above)
   --tls acme|internal     certificates from ACME (default) or Caddy's local CA (tests and private networks)
@@ -326,7 +327,22 @@ else
   done
 fi
 if [ -z "$db_image" ]; then
-  db_image="heopress-postgres:$version"
+  # The published image first (it carries pgvector and zhparser, built where github.com is reachable); building it here
+  # is the fallback, because the SCWS and zhparser tarballs come from GitHub (see docker/postgres/vendor/).
+  published_db="$DEFAULT_REGISTRY/heopress-postgres:$version"
+  if image_present "heopress-postgres:$version"; then
+    db_image="heopress-postgres:$version"
+  elif [ "$build_images" = true ]; then
+    db_image="heopress-postgres:$version"
+  else
+    say "pulling $published_db"
+    if docker pull -q "$published_db" >/dev/null 2>&1; then
+      db_image="$published_db"
+    else
+      say "$published_db is not available from the registry; building heopress-postgres:$version instead (PostgreSQL 18 with pgvector and zhparser; several minutes)"
+      db_image="heopress-postgres:$version"
+    fi
+  fi
   if ! image_present "$db_image"; then
     say "building the database image $db_image (PostgreSQL 18 with pgvector and zhparser; several minutes)"
     docker build -q "${db_build_args[@]}" -f "$src/docker/postgres/Dockerfile" -t "$db_image" "$src/docker/postgres" >/dev/null

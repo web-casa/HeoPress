@@ -1877,6 +1877,18 @@
       "owner": "maintainer",
       "reason": "postgresql-18-pgvector 0.8.7-1.pgdg13+2 from apt.postgresql.org ships upstream 0.8.7 — the release that fixes this (the advisory reads 'IVFFlat index build in pgvector before 0.8.7'). Trivy reports it because its Debian trixie row has no fixed version: Debian's trixie branch ships pgvector 0.8.0-1 (vulnerable) and the fix exists only in forky/sid (0.8.7-1), so the OS-release status is 'vulnerable' regardless of the pgdg build actually installed. PGDG publishes nothing newer than 0.8.7. Verify with `SELECT extversion FROM pg_extension WHERE extname = 'vector'` on the image when this is next reviewed.",
       "reviewBy": "2027-01-13"
+    },
+    {
+      "scanner": "pnpm-audit",
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "package": "picomatch",
+      "versions": [
+        "2.3.2",
+        "4.0.7"
+      ],
+      "owner": "maintainer",
+      "reason": "picomatch parses glob patterns that come from this repository's own configuration, never from a request: 4.0.7 backs dependency-cruiser, knip and type-aware ESLint (dev only), and 2.3.2 arrives in production through astro > unstorage > anymatch, which watches the theme directory with patterns the build writes itself. The ReDoS needs a pathological single-branch repeated extglob, and there is no path from user input to a compiled pattern. No patched release exists (npm's latest is 4.0.7 and the advisory lists no fixed version), so the choice is an exception or dropping the Astro file watcher, dependency-cruiser, knip and ESLint. Remove as soon as picomatch publishes a fix.",
+      "reviewBy": "2027-05-01"
     }
   ]
 }

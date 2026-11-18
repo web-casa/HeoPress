@@ -151,10 +151,11 @@ export function auditIgnores(pkg, workspaceText = '') {
 
 /**
  * Result of a `pnpm audit --json` report: { status, problems, excepted }. Pass and fail come from the advisories and
- * the exceptions. The counts must agree with the list: pnpm counts each advisory once, and leaves an advisory it
- * ignores by configuration (`ignored`) out of the list but in the counts — so more high and critical advisories
- * counted than listed plus ignored is an incomplete report, whatever is ignored. (The scans themselves audit with
- * the ignores removed and pass `ignored: []`, the strictest form.)
+ * the exceptions. The counts must agree with the list: pnpm counts each *finding* (one per installed version of a
+ * vulnerable package) while an advisory is listed once with a `findings` array, and it leaves an advisory it ignores
+ * by configuration (`ignored`) out of the list but in the counts — so more high and critical findings counted than the
+ * findings listed plus ignored is an incomplete report, whatever is ignored. (The scans themselves audit with the
+ * ignores removed and pass `ignored: []`, the strictest form.)
  */
 export function checkPnpmAudit(report, active, { ignored = [] } = {}) {
   const incomplete = (why) => ({ status: 'not-completed', problems: [`pnpm audit did not complete: ${why}`], excepted: [] });
@@ -168,8 +169,10 @@ export function checkPnpmAudit(report, active, { ignored = [] } = {}) {
   const advisories = Object.values(report.advisories);
   const severe = advisories.filter((a) => SEVERE.has(String(a?.severity).toLowerCase()));
   const counted = (Number(counts.high) || 0) + (Number(counts.critical) || 0);
-  if (counted > severe.length + ignored.length) {
-    return incomplete(`the counts name ${counted} high or critical advisories; the report lists ${severe.length} and ${ignored.length} are ignored by configuration`);
+  // A finding is one installed version of a vulnerable package: one advisory can cover several.
+  const listed = severe.reduce((n, a) => n + Math.max(1, a?.findings?.length ?? 0), 0);
+  if (counted > listed + ignored.length) {
+    return incomplete(`the counts name ${counted} high or critical findings; the report lists ${listed} and ${ignored.length} are ignored by configuration`);
   }
   const problems = [];
   const excepted = [];

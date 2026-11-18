@@ -1,6 +1,6 @@
 {
   "name": "@heopress/public-site",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "private": true,
   "description": "HeoPress public-site read layer: host and path resolution, path space, redirect engine (shared by the CMS and the rendering service; no HTTP).",
   "type": "module",

@@ -37,8 +37,9 @@ sudo bash HeoPress-<版本>/docker/install.sh --source HeoPress-<版本> \
    已有 Docker 时直接使用（Compose 需 2.24.4 或更高）；
 4. **获取版本**：下载 `v<版本>` 的源码包到 `/opt/heopress/releases/`；`--source <目录>` 改用本地源码树；
 5. **镜像**：从源码构建数据库镜像（PostgreSQL 18 + pgvector + zhparser，见 `docker/postgres/Dockerfile`），
-   拉取应用与渲染服务镜像——**拉不到就从同一份源码构建**（目前没有发布到镜像仓库的构建产物，所以干净安装走的就是
-   这条路；`--build` 直接构建、不再尝试拉取；`--image-archive` 从 `docker save` 归档离线导入）；
+   优先拉取发布在 GHCR 上的应用、渲染与数据库镜像（`ghcr.io/web-casa/heopress-{cms,site-classic,postgres}:<版本>`，
+   由 `.github/workflows/images.yml` 在打标签时构建，amd64 与 arm64），**拉不到就从同一份源码构建**；
+   `--build` 直接构建、不再尝试拉取；`--image-archive` 从 `docker save` 归档离线导入；
 6. **配置与秘密**：生成数据库所有者密码、应用角色密码、`JWT_SECRET`、`ENCRYPTION_KEY`、渲染角色密码与内部共享密钥，写入
    `/opt/heopress/.env`（权限 600）；服务以应用角色连接数据库（见第 3 节"数据库角色"）；
 7. **启动**：先启动 PostgreSQL、API、worker 与渲染服务（此时没有任何公网入口），等待就绪；

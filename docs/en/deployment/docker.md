@@ -27,6 +27,24 @@ Cache, queue, scheduled jobs, rate limits, full-text search and vectors all run
 in PostgreSQL; media goes to the `storage` volume and image transforms run in
 process. There is no Redis, MinIO, MeiliSearch or imgproxy to operate.
 
+### Published images
+
+A release tag publishes all three images for `linux/amd64` and `linux/arm64`
+(`.github/workflows/images.yml`): `ghcr.io/web-casa/heopress-cms`,
+`heopress-site-classic` and `heopress-postgres`, tagged with the version without
+its leading `v` — the same string `docker/install.sh` appends to the registry
+prefix. `latest` moves only on a plain release tag, never on a re-published one.
+
+The images are only useful when they are **anonymously pullable**: GHCR defaults
+a new package to private, so after the first publication each of the three must
+be made public once (package → *Package settings* → *Change visibility*). The
+workflow ends with an anonymous pull of every tag and fails when that is still
+private, so a release cannot claim images that an installer cannot fetch.
+
+`docker/install.sh` pulls these first and builds from the source tree when a pull
+fails, so an install without access to the registry still works — it just costs
+the build time.
+
 Optional services sit behind profiles:
 
 | Profile | Service | Switch it on with |
