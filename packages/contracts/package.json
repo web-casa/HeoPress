@@ -1,6 +1,6 @@
 {
   "name": "@heopress/contracts",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "Shared Zod schemas, types, policy DSL, and field DSL for HeoPress. Pure ESM — no Hono/React runtime deps.",
   "license": "Apache-2.0",
   "type": "module",

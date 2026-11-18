@@ -45,6 +45,27 @@ private, so a release cannot claim images that an installer cannot fetch.
 fails, so an install without access to the registry still works — it just costs
 the build time.
 
+A release that cannot change the image contents — the installer, the docs, the
+release notes — does not rebuild: the workflow copies the previous release's
+manifests to the new tag, so the bytes are identical by construction rather than
+by a rebuild that happens to produce the same layers.
+
+### Checking what a release published
+
+Three commands answer "is this release actually installable from the registry":
+
+```bash
+# 1. The tag exists and carries more than one platform.
+docker manifest inspect ghcr.io/web-casa/heopress-cms:1.6.4 | grep -c '"architecture"'
+
+# 2. It is readable without credentials (the CI gate, done by hand).
+docker logout ghcr.io; docker pull -q ghcr.io/web-casa/heopress-postgres:1.6.4
+
+# 3. The database image really has both extensions.
+docker run --rm --entrypoint sh ghcr.io/web-casa/heopress-postgres:1.6.4 \
+  -c 'ls /usr/share/postgresql/18/extension/ | grep -E "^(vector|zhparser)\.control"'
+```
+
 Optional services sit behind profiles:
 
 | Profile | Service | Switch it on with |

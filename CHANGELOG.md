@@ -2,6 +2,20 @@
 
 本文件记录 HeoPress 的显著变更，格式参考 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)，版本号遵循 [Semantic Versioning](https://semver.org/spec/v2.0.0.html)。
 
+## [1.6.5] - 2026-11-19
+
+### Changed
+
+- **镜像发布不再无条件重建**：发布标签与上一个标签比较，只有可能改变镜像内容的路径（代码、锁文件、依赖、Dockerfile、
+  数据库镜像）才触发构建；只改安装脚本、文档或发布说明时，改为把上一版的 manifest 复制到新版本
+  （`docker buildx imagetools create`，内容寻址，不构建），`latest` 按同样规则移动。
+  匿名拉取校验照常运行，复用失败与构建失败一样会被拦住。
+
+### Documented
+
+- 部署文档补「检查某次发布真的发布了什么」：多架构 manifest、匿名拉取、以及数据库镜像里的 `vector` / `zhparser`
+  扩展文件。
+
 ## [1.6.4] - 2026-11-18
 
 ### Fixed

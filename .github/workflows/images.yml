@@ -7,6 +7,11 @@
 #
 # The database image is published too: building it needs github.com for the pinned SCWS and zhparser tarballs, which is
 # the step that fails on restricted networks.
+#
+# A tag that cannot change the image contents — the installer, the docs, the release notes, this workflow — does not
+# build again: it copies the previous release's manifests to the new version, because the bytes are the same and a
+# forty-minute rebuild of identical layers buys nothing. Everything else (code, lockfile, Dockerfiles, database image)
+# rebuilds. `dev` goes through the same decision, so the logs show which happened.
 name: Images
 
 on:
@@ -36,8 +41,65 @@ env:
 
 jobs:
 
+  # Does this tag change what is in the images? Only paths that reach the build are counted; a release that touches the
+  # installer, the docs, the release notes or the workflows reuses the previous manifests instead.
+  decide:
+    name: Image contents
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+      previous: ${{ steps.diff.outputs.previous }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+      - name: Compare with the previous release tag
+        id: diff
+        run: |
+          set -eu
+          version='${{ github.event.inputs.tag || github.ref_name }}'
+          previous="$(git describe --tags --abbrev=0 --match 'v*' "${version}^" 2>/dev/null || true)"
+          if [ -z "$previous" ]; then
+            echo "no previous release tag: building"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
+          # Paths that cannot change a layer: documentation, release notes and records, the scanner configuration, the
+          # workflows, the test and tooling scripts, the installer, and the vendored tarballs (the Dockerfile pins their
+          # SHA-256, so a file added there produces the same image).
+          candidates="$(git diff --name-only "$previous" "$version" -- \
+            | grep -vE '^(docs/|release/|security/|scripts/|\.github/|docker/install\.sh$|docker/postgres/vendor/|[^/]+\.md$)' \
+            || true)"
+          # Every workspace package.json carries the release version, and a release moves all of them. An edit that
+          # only moves `"version"` is not a change to the image; any other edit in one — a dependency, a script, a
+          # pnpm setting — is.
+          changed=""
+          for path in $candidates; do
+            case "$path" in
+              *package.json)
+                rest="$(git diff "$previous" "$version" -- "$path" \
+                  | grep -E '^[-+]' | grep -vE '^(\+\+\+|---)' | grep -vE '^[+-][[:space:]]+"version":' || true)"
+                [ -z "$rest" ] && continue
+                ;;
+            esac
+            changed="$path"
+            break
+          done
+          if [ -n "$changed" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "first path that reaches the build: $changed"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "only paths that do not reach the build changed since $previous: reusing its manifests"
+          fi
+
   publish:
     name: ${{ matrix.image }} (${{ matrix.platforms }})
+    needs: decide
+    if: needs.decide.outputs.changed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     strategy:
@@ -111,11 +173,44 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
+  # The manifests are content-addressed: copying them to the new version publishes byte-identical images without a
+  # build. `latest` moves with the tag, under the same rule the build uses.
+  reuse:
+    name: Reuse the previous manifests
+    needs: decide
+    if: needs.decide.outputs.changed == 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: docker/setup-buildx-action@f7ce87c1d6bead3e36075b2ce75da1f6cc28aaca # v3.9.0
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Copy ${{ needs.decide.outputs.previous }} manifests to this release
+        env:
+          VERSION: ${{ github.event.inputs.tag || github.ref_name }}
+          PREVIOUS: ${{ needs.decide.outputs.previous }}
+        run: |
+          set -eu
+          version="${VERSION#v}"
+          previous="${PREVIOUS#v}"
+          for image in heopress-cms heopress-site-classic heopress-postgres; do
+            from="${REGISTRY}/web-casa/${image}:${previous}"
+            docker buildx imagetools create -t "${REGISTRY}/web-casa/${image}:${version}" "$from"
+            case "$version" in
+              *-*) echo "$image: a pre-release tag does not move latest" ;;
+              *) docker buildx imagetools create -t "${REGISTRY}/web-casa/${image}:latest" "$from" ;;
+            esac
+          done
+
   # The install path only uses these images if they are readable without credentials: GHCR defaults to private, so the
   # release is not done until an anonymous pull of every tag succeeds.
   verify-anonymous-pull:
     name: Anonymous pull works
-    needs: publish
+    needs: [decide, publish, reuse]
+    if: always() && (needs.publish.result == 'success' || needs.reuse.result == 'success')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
